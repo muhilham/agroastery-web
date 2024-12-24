@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+:root {
+  --background: #1a1a1a;
+  --foreground: #171717;
+  --primary: #f5ebc9;
+  --secondary: #ccc4a9;
+  --softblack: #141414;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+}
