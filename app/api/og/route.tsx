@@ -1,7 +1,7 @@
 import { ImageResponse } from "@vercel/og";
 
 export const runtime = 'edge';
-
+//* DONT DELETE THIS FUNCTION : its unused will delete later.
 export async function GET() {
   return new ImageResponse(
     (
