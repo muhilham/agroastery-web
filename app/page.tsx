@@ -147,11 +147,11 @@ export default function Home() {
                 <Image
                   src={items.image}
                   alt={`circle-${index + 1}`}
-                  className="absolute top-5 right-5 w-24 md:w-32 lg:w-40"
+                  className="w-full lg:w-[150px] lg:absolute lg:top-5 right-2"
                   width={150}
                   height={150}
                 />
-                <div className="relative pt-32 md:pt-36 lg:pt-44">
+                <div className="relative pt-10 lg:pt-44">
                   <h1 className="text-primary text-xl md:text-2xl mb-1 font-normal">{items.title}</h1>
                   <p className="text-secondary text-base lg:text-lg mb-3 font-light">{items.subtitle}</p>
                 </div>
