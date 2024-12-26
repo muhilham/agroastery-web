@@ -1,5 +1,6 @@
 "use client"
 import { coffeList } from "@/constant/coffe-list";
+import { menuItems } from "@/constant/menu-list";
 import { ADDRESS, INSTAGRAM, MAP_LOCATION, PHONE_OR_WHATSAPP, SHOPEE, TELEGRAM, TIKTOK, TOKOPEDIA, WHATSAPP } from "@/constant/resource-and-link";
 import { testimonialContent } from "@/constant/testimonial";
 import { topSectionContent } from "@/constant/top-content";
@@ -8,19 +9,29 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 export default function Home() {
-  const [isScrolled, setIsScrolled] = useState(false);
+  const [isScrolled, setIsScrolled] = useState<boolean>(false);
+  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
 
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 0);
+
+      if (isMenuOpen) {
+        setIsMenuOpen(false)
+      }
     };
+
     window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [isMenuOpen])
 
   return (
     <div>
-      <nav className={`w-full h-16 md:h-20 lg:h-24 z-40 fixed flex justify-between items-center px-4 md:px-10 lg:px-20 transition-all duration-300 ${isScrolled ? "bg-black/20 backdrop-blur-sm" : "bg-transparent"}`}>
+      <nav className={`w-full h-16 md:h-20 lg:h-24 z-40 fixed flex justify-between items-center px-4 md:px-10 lg:px-20 transition-all duration-300 ${isScrolled ? "bg-black/20 backdrop-blur-sm" : "bg-transparent"
+        }`}>
         <Image
           src="/assets/agroastery-logo.svg"
           alt="agroastery-logo"
@@ -29,11 +40,76 @@ export default function Home() {
           className="w-32 md:w-40 lg:w-48"
         />
 
-        <ul className="text-primary font-normal flex space-x-4 text-base md:text-lg lg:text-lg">
-          <li><a href={TOKOPEDIA} className="hover:underline">Tokopedia</a></li>
-          <li><a href={WHATSAPP} className="hover:underline">Whatsapp</a></li>
+        <ul className="hidden md:flex text-primary font-normal space-x-4 text-base md:text-lg lg:text-lg">
+          <li><a href="#" className="hover:underline">Tokopedia</a></li>
+          <li><a href="#" className="hover:underline">Whatsapp</a></li>
         </ul>
+
+        <button
+          className="md:hidden text-primary z-50 relative w-6 flex items-center justify-center"
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          aria-label="Toggle menu"
+        >
+          <div className="relative w-6 h-6">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth="1.5"
+              stroke="currentColor"
+              className={`size-6 absolute inset-0 transition-all duration-300 ${isMenuOpen
+                ? "opacity-100 rotate-0"
+                : "opacity-0 rotate-90"
+                }`}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M6 18 18 6M6 6l12 12"
+              />
+            </svg>
+            {/* Menu icon */}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth="1.5"
+              stroke="currentColor"
+              className={`size-6 absolute inset-0 transition-all duration-300 ${isMenuOpen
+                ? "opacity-0 -rotate-90"
+                : "opacity-100 rotate-0"
+                }`}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M3.75 9h16.5m-16.5 6.75h16.5"
+              />
+            </svg>
+          </div>
+        </button>
       </nav>
+
+      <div
+        className={`fixed inset-0 z-30 transition-all duration-300 md:hidden ${isMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          }`}
+      >
+        <div className="pt-14 px-4 bg-black pb-4">
+          <ul className="space-y-2">
+            {menuItems.map((item, index) => (
+              <li key={index} className="border-b border-secondary ">
+                <a
+                  href={item.link}
+                  className="block py-2 text-primary font-normal text-sm hover:underline hover:text-primary"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {item.name}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
 
       <main>
         <div className="h-svh w-full flex flex-col items-center relative">
@@ -90,17 +166,17 @@ export default function Home() {
           <div className="flex overflow-x-auto md:grid md:grid-cols-2 gap-4 lg:gap-6 pb-4 md:pb-0 no-scrollbar snap-x snap-mandatory">
             {coffeList.map((items, index) => (
               <div key={index} className="border border-primary rounded-3xl px-4 md:px-6 lg:px-8 py-4 lg:py-5 relative overflow-hidden flex-none w-[85%] md:w-auto snap-center">
-                <Image
-                  src={items.image}
-                  alt={`coffee-${index + 1}`}
-                  className="absolute bottom-5 right-2 w-32 md:w-40 lg:w-48"
-                  width={200}
-                  height={200}
-                />
-                <div className="relative pb-32 md:pb-36 lg:pb-44 w-full lg:w-2/3">
+                <div className="relative pb-2 lg:pb-44 w-full lg:w-2/3">
                   <h1 className="text-primary text-xl md:text-2xl mb-2 font-normal">{items.title}</h1>
                   <p className="text-secondary text-base lg:text-lg mb-3 font-light">{items.subtitle}</p>
                 </div>
+                <Image
+                  src={items.image}
+                  alt={`coffee-${index + 1}`}
+                  className="w-full lg:w-[200px] lg:absolute lg:bottom-5 right-2"
+                  width={200}
+                  height={200}
+                />
               </div>
             ))}
           </div>

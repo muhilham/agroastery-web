@@ -9,3 +9,9 @@ export interface I_TestimonialInterface {
     message: string
     product: string
 }
+
+
+export interface I_MenuListInterface {
+    name: string
+    link: string
+}

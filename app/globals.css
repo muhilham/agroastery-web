@@ -20,6 +20,10 @@
   --softblack: #141414;
 }
 
+.thin-border {
+  border-bottom: 0.1px solid;
+}
+
 body {
   color: var(--foreground);
   background: var(--background);
