@@ -8,13 +8,14 @@ const montserrat = Montserrat({
   weight: ["100", "200", "300", "400"],
 });
 
-
 export const metadata: Metadata = {
   title: "Agroastery",
-  description: "At AGROASTERY we are passionate about sourcing and roasting the highest quality coffee beans from around the world. Our mission is to bring you the perfect cup of coffee every time.",
+  description:
+    "At AGROASTERY we are passionate about sourcing and roasting the highest quality coffee beans from around the world. Our mission is to bring you the perfect cup of coffee every time.",
   openGraph: {
     title: "Agroastery",
-    description: "At AGROASTERY we are passionate about sourcing and roasting the highest quality coffee beans from around the world. Our mission is to bring you the perfect cup of coffee every time.",
+    description:
+      "At AGROASTERY we are passionate about sourcing and roasting the highest quality coffee beans from around the world. Our mission is to bring you the perfect cup of coffee every time.",
     images: [
       {
         url: "https://github.com/user-attachments/assets/79b22a6a-f341-40f6-ac74-27c6af123b7e",
@@ -27,8 +28,11 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Agroastery",
-    description: "At AGROASTERY we are passionate about sourcing and roasting the highest quality coffee beans from around the world. Our mission is to bring you the perfect cup of coffee every time.",
-    images: ["https://github.com/user-attachments/assets/79b22a6a-f341-40f6-ac74-27c6af123b7e"],
+    description:
+      "At AGROASTERY w`e are passionate about sourcing and roasting the highest quality coffee beans from around the world. Our mission is to bring you the perfect cup of coffee every time.",
+    images: [
+      "https://github.com/user-attachments/assets/79b22a6a-f341-40f6-ac74-27c6af123b7e",
+    ],
   },
 };
 export default function RootLayout({
@@ -38,9 +42,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${montserrat.variable} antialiased`}>
-        {children}
-      </body>
+      <body className={`${montserrat.variable} antialiased`}>{children}</body>
     </html>
   );
 }

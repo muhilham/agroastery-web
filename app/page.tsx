@@ -1,12 +1,11 @@
-"use client"
-import { coffeList } from "@/constant/coffe-list";
-import { menuItems } from "@/constant/menu-list";
-import { ADDRESS, INSTAGRAM, MAP_LOCATION, PHONE_OR_WHATSAPP, SHOPEE, TELEGRAM, TIKTOK, TOKOPEDIA, WHATSAPP } from "@/constant/resource-and-link";
-import { testimonialContent } from "@/constant/testimonial";
-import { topSectionContent } from "@/constant/top-content";
-import Image from "next/image";
-import Link from "next/link";
-import { useEffect, useState } from "react";
+'use client';
+import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
+import { coffeList } from '@/constant/coffe-list';
+import { footer, menuItems } from '@/constant/menu-list';
+import { topSectionContent } from '@/constant/top-content';
+import { MAP_LOCATION } from '@/constant/resource-and-link';
+import { testimonialContent } from '@/constant/testimonial';
 
 export default function Home() {
   const [isScrolled, setIsScrolled] = useState<boolean>(false);
@@ -17,7 +16,7 @@ export default function Home() {
       setIsScrolled(window.scrollY > 0);
 
       if (isMenuOpen) {
-        setIsMenuOpen(false)
+        setIsMenuOpen(false);
       }
     };
 
@@ -26,201 +25,224 @@ export default function Home() {
     return () => {
       window.removeEventListener("scroll", handleScroll);
     };
-  }, [isMenuOpen])
+  }, [isMenuOpen]);
 
   return (
     <div>
-      <nav className={`w-full h-16 md:h-20 lg:h-24 z-40 fixed flex justify-between items-center px-4 md:px-10 lg:px-20 transition-all duration-300 ${isScrolled ? "bg-black/20 backdrop-blur-sm" : "bg-transparent"
-        }`}>
-        <Image
-          src="/assets/agroastery-logo.svg"
-          alt="agroastery-logo"
-          width={150}
-          height={36}
-          className="w-32 md:w-40 lg:w-48"
-        />
+      <div className="font-['Montserrat'] bg-[#1A1A1A] text-[#f5ebc9]">
+        <header>
+          <nav
+            className={`w-full md:h-20 p-6 lg:h-24 z-40 fixed flex justify-between items-center px-4 md:px-10 lg:px-20 transition-all duration-300 ${isScrolled ? "bg-black/20 backdrop-blur-sm" : "bg-transparent"}`}
+          >
+            <Image
+              src="/assets/agroastery-logo.svg"
+              alt="ag-logogram"
+              width={24}
+              height={24}
+              className="h-6 w-auto"
+            />
 
-        <ul className="hidden md:flex text-primary font-normal space-x-4 text-base md:text-lg lg:text-lg">
-          <li><a href="#" className="hover:underline">Tokopedia</a></li>
-          <li><a href="#" className="hover:underline">Whatsapp</a></li>
-        </ul>
-
-        <button
-          className="md:hidden text-primary z-50 relative w-6 flex items-center justify-center"
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-          aria-label="Toggle menu"
-        >
-          <div className="relative w-6 h-6">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth="1.5"
-              stroke="currentColor"
-              className={`size-6 absolute inset-0 transition-all duration-300 ${isMenuOpen
-                ? "opacity-100 rotate-0"
-                : "opacity-0 rotate-90"
-                }`}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M6 18 18 6M6 6l12 12"
-              />
-            </svg>
-            {/* Menu icon */}
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth="1.5"
-              stroke="currentColor"
-              className={`size-6 absolute inset-0 transition-all duration-300 ${isMenuOpen
-                ? "opacity-0 -rotate-90"
-                : "opacity-100 rotate-0"
-                }`}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M3.75 9h16.5m-16.5 6.75h16.5"
-              />
-            </svg>
-          </div>
-        </button>
-      </nav>
-
-      <div
-        className={`fixed inset-0 z-30 transition-all duration-300 md:hidden ${isMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-          }`}
-      >
-        <div className="pt-14 px-4 bg-black pb-4">
-          <ul className="space-y-2">
-            {menuItems.map((item, index) => (
-              <li key={index} className="border-b border-secondary ">
-                <a
-                  href={item.link}
-                  className="block py-2 text-primary font-normal text-sm hover:underline hover:text-primary"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {item.name}
+            <ul className="md:hidden sm:hidden flex text-primary font-normal py-16 space-x-4 text-base">
+              <li>
+                <a href="#" className="hover:underline">
+                  Tokopedia
                 </a>
               </li>
-            ))}
-          </ul>
-        </div>
-      </div>
+              <li>
+                <a href="#" className="hover:underline">
+                  Whatsapp
+                </a>
+              </li>
+            </ul>
 
-      <main>
-        <div className="h-svh w-full flex flex-col items-center relative">
-          <div className="container mx-auto px-4 flex items-center justify-center h-full z-10">
-            <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div></div>
-              <div className="text-start lg:text-left px-4">
-                <h1 className="text-primary text-3xl md:text-4xl lg:text-5xl font-normal mb-4">
+            <button
+              className="lg:hidden text-primary z-50 relative w-6 flex items-center justify-center"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              aria-label="Toggle menu"
+            >
+              <div className="relative w-6 h-6">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth="1.5"
+                  stroke="currentColor"
+                  className={`size-6 absolute inset-0 transition-all duration-300 ${isMenuOpen ? "opacity-100 rotate-0" : "opacity-0 rotate-90"
+                    }`}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M6 18 18 6M6 6l12 12"
+                  />
+                </svg>
+                {/* Menu icon */}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth="1.5"
+                  stroke="currentColor"
+                  className={`size-6 absolute inset-0 transition-all duration-300 ${isMenuOpen ? "opacity-0 -rotate-90" : "opacity-100 rotate-0"
+                    }`}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M3.75 9h16.5m-16.5 6.75h16.5"
+                  />
+                </svg>
+              </div>
+            </button>
+          </nav>
+          <div
+            className={`fixed inset-0 z-30 transition-all duration-300 md:hidden ${isMenuOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+              }`}
+          >
+            <div className="pt-14 px-4 bg-black pb-4">
+              <ul className="space-y-2">
+                {menuItems.map((item, index) => (
+                  <li key={index} className="border-b border-secondary ">
+                    <a
+                      href={item.link}
+                      className="block py-2 text-primary font-normal text-sm hover:underline hover:text-primary"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      {item.name}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </header>
+
+        <main>
+          <section className="bg-[url('/assets/hero.svg')] bg-no-repeat bg-cover h-screen p-16 flex flex-row justify-end items-center sm:p-6 sm:bg-auto sm:bg-[25%_0]">
+            <div className="w-1/2 max-w-[564px] flex flex-col gap-6 md:w-4/5 sm:w-full sm:max-w-none">
+              <div className="flex flex-col gap-2">
+                <h1 className="text-5xl font-light tracking-wider leading-relaxed md:text-4xl sm:text-2xl sm:font-normal">
                   CRAFTING THE FINEST STANDARD
                 </h1>
-                <p className="text-primary font-light text-base md:text-lg lg:text-xl mb-5">
-                  At AGROASTERY we are passionate about sourcing and roasting the highest quality coffee beans from around the world. Our mission is to bring you the perfect cup of coffee every time.
+                <p className="text-xl font-light text-[#f5ebc9]">
+                  At AGROASTERY we are passionate about sourcing and roasting the highest quality coffee beans from around the world.
+                  Our mission is to bring you the perfect cup of coffee every time.
                 </p>
-                <Link href={TOKOPEDIA} role="button" className="text-primary border border-primary rounded-full px-4 md:px-6 py-2 text-base lg:text-lg transition-colors inline-block">
-                  SEE CATALOG
-                </Link>
               </div>
+              <a
+                href="https://www.tokopedia.com/agroastery"
+                className="flex items-center justify-center w-36 h-10 px-4 border border-[#f5ebc9] rounded-full text-sm tracking-wider transition-all duration-700 hover:bg-[#f5ebc9] hover:text-neutral-900"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                SEE CATALOG
+              </a>
             </div>
-          </div>
-          <Image
-            src="/assets/hero.svg"
-            alt="hero-image"
-            layout="fill"
-            objectFit="cover"
-            className="z-0"
-            priority
-          />
-        </div>
+          </section>
 
-        <section className="bg-background px-4 md:px-10 lg:px-20 py-8 lg:py-10">
-          <h1 className="text-primary text-2xl md:text-3xl lg:text-4xl font-light mb-6 lg:mb-10">REDEFINING THE NEW STANDARD</h1>
-          <div className="flex overflow-x-auto md:grid md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 pb-4 md:pb-0 no-scrollbar snap-x snap-mandatory">
-            {topSectionContent.map((items, index) => (
-              <div key={index} className="border border-primary rounded-3xl px-4 md:px-6 lg:px-8 py-4 lg:py-5 relative overflow-hidden flex-none w-[85%] md:w-auto snap-center">
-                <Image
-                  src={items.image}
-                  alt={`circle-${index + 1}`}
-                  className="w-full lg:w-[150px] lg:absolute lg:top-5 right-2"
-                  width={150}
-                  height={150}
-                />
-                <div className="relative pt-10 lg:pt-44">
-                  <h1 className="text-primary text-xl md:text-2xl mb-1 font-normal">{items.title}</h1>
-                  <p className="text-secondary text-base lg:text-lg mb-3 font-light">{items.subtitle}</p>
-                </div>
+          <div className="p-16 flex flex-col gap-20 md:p-8 sm:py-6 sm:px-0">
+            {/* Values Section */}
+            <section className="w-full flex flex-col gap-8">
+              <h2 className="text-3xl font-extralight tracking-wider sm:px-6">REDEFINING THE NEW STANDARD</h2>
+              <div className="w-full flex gap-6 sm:overflow-x-scroll sm:px-6 no-scrollbar">
+                {topSectionContent.map((value, index) => (
+                  <div key={index} className="flex flex-col w-full gap-16 p-6 border border-[#f5ebc9] rounded-3xl sm:min-w-[280px]">
+                    <Image
+                      src={value.image}
+                      alt={value.title}
+                      width={160}
+                      height={160}
+                      className="w-40 h-40 self-end"
+                    />
+                    <div className="flex flex-col gap-2">
+                      <h3 className="text-lg font-light tracking-wider">{value.title}</h3>
+                      <p className="font-extralight leading-relaxed text-[#ccc4a9]">
+                        {value.subtitle}
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
+              <p className="font-extralight text-xl text-[#f5ebc9] sm:text-base sm:px-6">
+                AGROASTERY unique practice and principal shape every blend that will be served on your cup
+              </p>
+            </section>
+
+            {/* Featured Section */}
+            <section className="w-full flex flex-col gap-8">
+              <h2 className="text-3xl font-extralight tracking-wider sm:px-6">UNIQUE BLEND FOR EACH OCCASION</h2>
+              <div className="flex flex-wrap no-scrollbar gap-6 sm:flex-nowrap sm:overflow-x-scroll sm:px-6">
+                {coffeList.map((product) => (
+                  <div key={product.title} className="w-[calc(50%-12px)] flex flex-col gap-16 p-6 border border-[#f5ebc9] rounded-3xl sm:min-w-[280px]">
+                    <div className="h-full flex flex-col gap-2">
+                      <h3 className="text-lg font-light tracking-wider">{product.title}</h3>
+                      <p className="max-w-[400px] font-extralight leading-relaxed text-[#ccc4a9]">{product.subtitle}</p>
+                    </div>
+                    <Image
+                      src={product.image}
+                      alt={product.title}
+                      width={240}
+                      height={240}
+                      className="w-60 h-60 self-end"
+                    />
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* Opinion Section */}
+            <section className="w-full flex flex-col gap-8">
+              <h2 className="text-3xl font-extralight tracking-wider sm:px-6">UNFILTERED OPINION</h2>
+              <div className="w-full flex gap-6 no-scrollbar sm:flex-nowrap sm:overflow-x-scroll sm:px-6">
+                {testimonialContent.map((opinion) => (
+                  <div
+                    key={opinion.name}
+                    className="flex-1 flex flex-col gap-4 p-6 border border-[#f5ebc9] rounded-3xl sm:flex-shrink-0 sm:w-[calc(100%-48px)] sm:min-w-[280px] md:w-[calc(100%-48px)]"
+                  >
+                    <h6 className="text-xs font-bold text-[#ccc4a9]">{opinion.product}</h6>
+                    <p className="font-extralight leading-relaxed text-[#ccc4a9]">{opinion.message}</p>
+                    <h4 className="text-lg font-light">- {opinion.name}</h4>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </div>
+        </main>
+
+        <footer className="p-16 bg-[#171717] gap-10 flex w-full justify-between sm:p-8 sm:flex-col sm:gap-10">
+          <div className="flex flex-col space-y-5 sm:w-full">
+            {footer.map((link) => (
+              <a
+                key={link.label}
+                href={link.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="no-underline text-[#f5ebc9] text-sm hover:text-[#f5e4ac]"
+              >
+                {link.label}
+              </a>
             ))}
           </div>
-          <p className="text-primary text-lg lg:text-xl mt-6 lg:mt-10 font-light">AG Roastery unique practice and principal shape every blend that will be served on your cup</p>
-        </section>
 
-        <section className="bg-background px-4 md:px-10 lg:px-20 py-8 lg:py-10">
-          <h1 className="text-primary text-2xl md:text-3xl lg:text-4xl font-light mb-6 lg:mb-10">UNIQUE BLEND FOR EACH OCCASION</h1>
-          <div className="flex overflow-x-auto md:grid md:grid-cols-2 gap-4 lg:gap-6 pb-4 md:pb-0 no-scrollbar snap-x snap-mandatory">
-            {coffeList.map((items, index) => (
-              <div key={index} className="border border-primary rounded-3xl px-4 md:px-6 lg:px-8 py-4 lg:py-5 relative overflow-hidden flex-none w-[85%] md:w-auto snap-center">
-                <div className="relative pb-2 lg:pb-44 w-full lg:w-2/3">
-                  <h1 className="text-primary text-xl md:text-2xl mb-2 font-normal">{items.title}</h1>
-                  <p className="text-secondary text-base lg:text-lg mb-3 font-light">{items.subtitle}</p>
-                </div>
-                <Image
-                  src={items.image}
-                  alt={`coffee-${index + 1}`}
-                  className="w-full lg:w-[200px] lg:absolute lg:bottom-5 right-2"
-                  width={200}
-                  height={200}
-                />
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="bg-background px-4 md:px-10 lg:px-20 py-8 lg:py-10">
-          <h1 className="text-primary text-2xl md:text-3xl lg:text-4xl font-light mb-6 lg:mb-10">UNFILTERED OPINIONS</h1>
-          <div className="flex overflow-x-auto md:grid md:grid-cols-2 gap-4 lg:gap-6 pb-4 md:pb-0 no-scrollbar snap-x snap-mandatory">
-            {testimonialContent.map((items, index) => (
-              <div key={index} className="border border-primary rounded-3xl px-4 md:px-6 lg:px-8 py-4 lg:py-5 relative flex-none w-[85%] md:w-auto snap-center">
-                <h1 className="text-primary font-normal mb-3">{items.product}</h1>
-                <p className="text-secondary text-sm lg:text-base mb-3">{items.message}</p>
-                <span className="text-primary text-base lg:text-lg font-normal">- {items.name}</span>
-              </div>
-            ))}
-          </div>
-        </section>
-      </main>
-
-      <footer className="bg-[#141414] px-4 md:px-10 lg:px-20 py-8 lg:py-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10 w-full">
-          <div className="flex flex-col gap-2">
-            <Link href={TOKOPEDIA} className="text-primary text-base hover:underline lg:text-lg">Tokopedia</Link>
-            <Link href={SHOPEE} className="text-primary text-base hover:underline lg:text-lg">Shopee</Link>
-            <Link href={WHATSAPP} className="text-primary text-base hover:underline lg:text-lg">WhatsApp</Link>
-            <Link href={TELEGRAM} className="text-primary text-base hover:underline lg:text-lg">Telegram</Link>
-            <Link href={INSTAGRAM} className="text-primary text-base hover:underline lg:text-lg">Instagram</Link>
-            <Link href={TIKTOK} className="text-primary text-base hover:underline lg:text-lg">Tiktok</Link>
-          </div>
-          <div>
-            <div className="space-y-2 mb-4">
-              <h1 className="text-secondary font-light text-base lg:text-lg">Address</h1>
-              <p className="text-primary font-normal text-base lg:text-lg">{ADDRESS}</p>
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2 sm:gap-1">
+              <h6 className="text-xs font-bold text-[#ccc4a9]">ADDRESS</h6>
+              <p className="max-w-[400px] font-extralight leading-relaxed text-[#ccc4a9]">
+                Jl. Kemang Barat No.7I, RT.9/RW.1, Bangka, Kec. Mampang Prpt., Kota Jakarta Selatan,
+                Daerah Khusus Ibukota Jakarta 12730
+              </p>
             </div>
-            <div className="space-y-2 mb-4">
-              <h1 className="text-secondary font-light text-base lg:text-lg">Phone / WhatsApp</h1>
-              <p className="text-primary font-normal text-base lg:text-lg">{PHONE_OR_WHATSAPP}</p>
+            <div className="flex flex-col gap-2 sm:gap-1">
+              <h6 className="text-xs font-bold text-[#ccc4a9]">PHONE / WHATSAPP</h6>
+              <p className="font-extralight leading-relaxed text-[#ccc4a9]">+62 823-2866-4557</p>
             </div>
-            <div className="space-y-2">
-              <h1 className="text-secondary font-light text-base lg:text-lg">Operational Hour</h1>
-              <p className="text-primary font-normal text-base lg:text-lg">10am - 8pm ( WIB )</p>
+            <div className="flex flex-col gap-2 sm:gap-1">
+              <h6 className="text-xs font-bold text-[#ccc4a9]">OPERATIONAL HOUR</h6>
+              <p className="font-extralight leading-relaxed text-[#ccc4a9]">10am - 8pm ( WIB )</p>
             </div>
           </div>
-          <div className="w-full">
+
+          <div className="lg:w-full lg:max-w-[400px]">
             <iframe
               src={MAP_LOCATION}
               className="w-full h-48 md:h-60 lg:h-64 rounded-2xl"
@@ -231,8 +253,8 @@ export default function Home() {
               title="Agroastery Location"
             />
           </div>
-        </div>
-      </footer>
+        </footer>
+      </div>
     </div>
   );
 }

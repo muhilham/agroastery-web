@@ -1,4 +1,4 @@
-import { I_MenuListInterface } from "@/interface/interface";
+import { I_FooterInterface, I_MenuListInterface } from "@/interface/interface";
 import { DOUBLE_ESPRESSO, INSTAGRAM, LOWONGAN_KERJA, SHOPEE, TELEGRAM, TIKTOK, TOKOPEDIA, WHATSAPP } from "./resource-and-link";
 
 export const menuItems: I_MenuListInterface[] = [
@@ -10,4 +10,13 @@ export const menuItems: I_MenuListInterface[] = [
     { name: 'Tiktok', link: TIKTOK },
     { name: 'Double Espresso', link: DOUBLE_ESPRESSO },
     { name: 'Lowongan Kerja', link: LOWONGAN_KERJA }
+];
+
+export const footer: I_FooterInterface[] = [
+    { href: 'https://www.tokopedia.com/agroastery', label: 'Tokopedia' },
+    { href: 'https://shopee.co.id/agroastery', label: 'Shopee' },
+    { href: 'https://api.whatsapp.com/send?phone=628979092726', label: 'WhatsApp' },
+    { href: 'https://t.me/agroastery', label: 'Telegram' },
+    { href: 'https://www.instagram.com/agroastery/', label: 'Instagram' },
+    { href: 'https://www.tiktok.com/@agroastery', label: 'Tiktok' },
 ];

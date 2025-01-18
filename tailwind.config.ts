@@ -15,6 +15,11 @@ export default {
         primary: "var(--primary)",
         softblack: "var(--softblack)",
       },
+      screens: {
+        'sm': { 'max': '809px' },
+        'md': { 'min': '810px', 'max': '1023px' },
+        'lg': { 'min': '1024px' },
+      },
       fontFamily: {
         montserrat: ["var(--font-montserrat)", "sans-serif"],
       },

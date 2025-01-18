@@ -15,3 +15,8 @@ export interface I_MenuListInterface {
     name: string
     link: string
 }
+
+export interface I_FooterInterface {
+    href: string
+    label: string
+}
