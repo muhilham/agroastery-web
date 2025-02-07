@@ -1,13 +1,14 @@
-'use client';
-import React, { useState, useEffect } from 'react';
-import Image from 'next/image';
-import { coffeList } from '@/constant/coffe-list';
-import { footer, menuItems } from '@/constant/menu-list';
-import { topSectionContent } from '@/constant/top-content';
-import { MAP_LOCATION } from '@/constant/resource-and-link';
-import { testimonialContent } from '@/constant/testimonial';
-
+"use client";
+import React, { useState, useEffect } from "react";
+import Image from "next/image";
+import { coffeList } from "@/constant/coffe-list";
+import { footer, menuItems } from "@/constant/menu-list";
+import { topSectionContent } from "@/constant/top-content";
+import { MAP_LOCATION } from "@/constant/resource-and-link";
+import { testimonialContent } from "@/constant/testimonial";
+import { useRouter } from "next/navigation";
 export default function Home() {
+  const router = useRouter();
   const [isScrolled, setIsScrolled] = useState<boolean>(false);
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
 
@@ -125,8 +126,9 @@ export default function Home() {
                   CRAFTING THE FINEST STANDARD
                 </h1>
                 <p className="text-xl font-light text-[#f5ebc9]">
-                  At AGROASTERY we are passionate about sourcing and roasting the highest quality coffee beans from around the world.
-                  Our mission is to bring you the perfect cup of coffee every time.
+                  At AGROASTERY we are passionate about sourcing and roasting
+                  the highest quality coffee beans from around the world. Our
+                  mission is to bring you the perfect cup of coffee every time.
                 </p>
               </div>
               <a
@@ -143,10 +145,15 @@ export default function Home() {
           <div className="p-16 flex flex-col gap-20 md:p-8 sm:py-6 sm:px-0">
             {/* Values Section */}
             <section className="w-full flex flex-col gap-8">
-              <h2 className="text-3xl font-extralight tracking-wider sm:px-6">REDEFINING THE NEW STANDARD</h2>
+              <h2 className="text-3xl font-extralight tracking-wider sm:px-6">
+                REDEFINING THE NEW STANDARD
+              </h2>
               <div className="w-full flex gap-6 sm:overflow-x-scroll sm:px-6 no-scrollbar">
                 {topSectionContent.map((value, index) => (
-                  <div key={index} className="flex flex-col w-full gap-16 p-6 border border-[#f5ebc9] rounded-3xl sm:min-w-[280px]">
+                  <div
+                    key={index}
+                    className="flex flex-col w-full gap-16 p-6 border border-[#f5ebc9] rounded-3xl sm:min-w-[280px]"
+                  >
                     <Image
                       src={value.image}
                       alt={value.title}
@@ -155,7 +162,9 @@ export default function Home() {
                       className="w-40 h-40 self-end"
                     />
                     <div className="flex flex-col gap-2">
-                      <h3 className="text-lg font-light tracking-wider">{value.title}</h3>
+                      <h3 className="text-lg font-light tracking-wider">
+                        {value.title}
+                      </h3>
                       <p className="font-extralight leading-relaxed text-[#ccc4a9]">
                         {value.subtitle}
                       </p>
@@ -164,19 +173,31 @@ export default function Home() {
                 ))}
               </div>
               <p className="font-extralight text-xl text-[#f5ebc9] sm:text-base sm:px-6">
-                AGROASTERY unique practice and principal shape every blend that will be served on your cup
+                AGROASTERY unique practice and principal shape every blend that
+                will be served on your cup
               </p>
             </section>
 
             {/* Featured Section */}
             <section className="w-full flex flex-col gap-8">
-              <h2 className="text-3xl font-extralight tracking-wider sm:px-6">UNIQUE BLEND FOR EACH OCCASION</h2>
+              <h2 className="text-3xl font-extralight tracking-wider sm:px-6">
+                UNIQUE BLEND FOR EACH OCCASION
+              </h2>
               <div className="flex flex-wrap no-scrollbar gap-6 sm:flex-nowrap sm:overflow-x-scroll sm:px-6">
                 {coffeList.map((product) => (
-                  <div key={product.title} className="w-[calc(50%-12px)] flex flex-col gap-16 p-6 border border-[#f5ebc9] rounded-3xl sm:min-w-[280px]">
+                  <div
+                    role="button"
+                    onClick={() => router.push(product.href)}
+                    key={product.title}
+                    className="w-[calc(50%-12px)] cursor-pointer flex flex-col gap-16 p-6 border border-[#f5ebc9] rounded-3xl sm:min-w-[280px]"
+                  >
                     <div className="h-full flex flex-col gap-2">
-                      <h3 className="text-lg font-light tracking-wider">{product.title}</h3>
-                      <p className="max-w-[400px] font-extralight leading-relaxed text-[#ccc4a9]">{product.subtitle}</p>
+                      <h3 className="text-lg font-light tracking-wider">
+                        {product.title}
+                      </h3>
+                      <p className="max-w-[400px] font-extralight leading-relaxed text-[#ccc4a9]">
+                        {product.subtitle}
+                      </p>
                     </div>
                     <Image
                       src={product.image}
@@ -192,15 +213,21 @@ export default function Home() {
 
             {/* Opinion Section */}
             <section className="w-full flex flex-col gap-8">
-              <h2 className="text-3xl font-extralight tracking-wider sm:px-6">UNFILTERED OPINION</h2>
+              <h2 className="text-3xl font-extralight tracking-wider sm:px-6">
+                UNFILTERED OPINION
+              </h2>
               <div className="w-full flex gap-6 no-scrollbar sm:flex-nowrap sm:overflow-x-scroll sm:px-6">
                 {testimonialContent.map((opinion) => (
                   <div
                     key={opinion.name}
                     className="flex-1 flex flex-col gap-4 p-6 border border-[#f5ebc9] rounded-3xl sm:flex-shrink-0 sm:w-[calc(100%-48px)] sm:min-w-[280px] md:w-[calc(100%-48px)]"
                   >
-                    <h6 className="text-xs font-bold text-[#ccc4a9]">{opinion.product}</h6>
-                    <p className="font-extralight leading-relaxed text-[#ccc4a9]">{opinion.message}</p>
+                    <h6 className="text-xs font-bold text-[#ccc4a9]">
+                      {opinion.product}
+                    </h6>
+                    <p className="font-extralight leading-relaxed text-[#ccc4a9]">
+                      {opinion.message}
+                    </p>
                     <h4 className="text-lg font-light">- {opinion.name}</h4>
                   </div>
                 ))}
@@ -228,17 +255,25 @@ export default function Home() {
             <div className="flex flex-col gap-2 sm:gap-1">
               <h6 className="text-xs font-bold text-[#ccc4a9]">ADDRESS</h6>
               <p className="max-w-[400px] font-extralight leading-relaxed text-[#ccc4a9]">
-                Jl. Kemang Barat No.7I, RT.9/RW.1, Bangka, Kec. Mampang Prpt., Kota Jakarta Selatan,
-                Daerah Khusus Ibukota Jakarta 12730
+                Jl. Kemang Barat No.7I, RT.9/RW.1, Bangka, Kec. Mampang Prpt.,
+                Kota Jakarta Selatan, Daerah Khusus Ibukota Jakarta 12730
               </p>
             </div>
             <div className="flex flex-col gap-2 sm:gap-1">
-              <h6 className="text-xs font-bold text-[#ccc4a9]">PHONE / WHATSAPP</h6>
-              <p className="font-extralight leading-relaxed text-[#ccc4a9]">+62 823-2866-4557</p>
+              <h6 className="text-xs font-bold text-[#ccc4a9]">
+                PHONE / WHATSAPP
+              </h6>
+              <p className="font-extralight leading-relaxed text-[#ccc4a9]">
+                +62 823-2866-4557
+              </p>
             </div>
             <div className="flex flex-col gap-2 sm:gap-1">
-              <h6 className="text-xs font-bold text-[#ccc4a9]">OPERATIONAL HOUR</h6>
-              <p className="font-extralight leading-relaxed text-[#ccc4a9]">10am - 8pm ( WIB )</p>
+              <h6 className="text-xs font-bold text-[#ccc4a9]">
+                OPERATIONAL HOUR
+              </h6>
+              <p className="font-extralight leading-relaxed text-[#ccc4a9]">
+                10am - 8pm ( WIB )
+              </p>
             </div>
           </div>
 
