@@ -1,6 +1,5 @@
-import { I_ContentInterface } from "@/interface/interface";
+import { I_ContentInterface } from "@/types/ui";
 
-//* Coffe List Content
 export const coffeList: I_ContentInterface[] = [
     {
         title: "STANDARD GAYO ARABICA",

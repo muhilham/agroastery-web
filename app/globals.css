@@ -12,16 +12,12 @@
   }
 }
 
-:root {
-  --background: #1a1a1a;
-  --foreground: #171717;
-  --primary: #f5ebc9;
-  --secondary: #ccc4a9;
-  --softblack: #141414;
+.thin-border {
+  border-bottom: 1px solid rgba(245, 235, 201, 0.25);
 }
 
-.thin-border {
-  border-bottom: 0.1px solid;
+.thin-border-rounded {
+  border: 1px solid rgba(245, 235, 201, 0.25);
 }
 
 * {
@@ -31,7 +27,14 @@
   font-family: "Montserrat", sans-serif;
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
+.main {
+  background-color: var(--primary);
+}
+
+@layer base {
+  :root {
+    --primary: 46, 69%, 87%;
+    --secondary: 46, 26%, 73%;
+    --background: 0, 0%, 10%;
+  }
 }
