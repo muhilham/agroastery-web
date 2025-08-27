@@ -4,11 +4,9 @@ import Image from "next/image";
 import { coffeList } from "@/constant/coffe-list";
 import { topSectionContent } from "@/constant/top-content";
 import { testimonialContent } from "@/constant/testimonial";
-import { useRouter } from "next/navigation";
 import { Footer } from "@/components/ui/footer";
 import Navigation from "@/components/navigation";
 export default function Home() {
-  const router = useRouter();
   return (
     <div>
       <div className="bg-[#1A1A1A] text-[#f5ebc9]">
@@ -83,10 +81,8 @@ export default function Home() {
               <div className="flex flex-wrap no-scrollbar gap-6 sm:flex-nowrap sm:overflow-x-scroll sm:px-6">
                 {coffeList.map((product) => (
                   <div
-                    role="button"
-                    onClick={() => router.push("")}
                     key={product.title}
-                    className="w-[calc(50%-12px)] cursor-pointer flex flex-col gap-16 p-6 border border-[#f5ebc9] rounded-3xl sm:min-w-[280px]"
+                    className="w-[calc(50%-12px)]  flex flex-col gap-16 p-6 border border-[#f5ebc9] rounded-3xl sm:min-w-[280px]"
                   >
                     <div className="h-full flex flex-col gap-2">
                       <h3 className="text-lg font-light tracking-wider">

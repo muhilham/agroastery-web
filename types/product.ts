@@ -6,7 +6,7 @@ export type TProductBase = {
   coffeType: string[];
   category_ids: string[];
   images: { image: string }[];
-
+  shortDescription?: string;
   price?: number;
   priceBySize?: Record<string, number>;
 };

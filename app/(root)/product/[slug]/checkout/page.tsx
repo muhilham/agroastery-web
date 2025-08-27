@@ -1,18 +1,24 @@
 import CheckoutPage from "@/components/section/checkout";
 
-type PageProps = {
-  params: { slug: string };
-  searchParams: { size?: string; grind?: string; qty?: string };
-};
+export default async function Page({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ size?: string; grind?: string; qty?: string }>;
+}) {
+  const { slug } = await params;
+  const sp = await searchParams;
 
-export default function Page({ params, searchParams }: PageProps) {
-  const qty = Number.parseInt(searchParams.qty ?? "0", 10);
+  const rawQty = Number.parseInt(sp?.qty ?? "0", 10);
+  const qty = Number.isFinite(rawQty) ? Math.max(0, rawQty) : 0;
+
   return (
     <CheckoutPage
-      slug={params.slug}
-      defaultSize={searchParams.size ?? ""}
-      defaultGrind={searchParams.grind ?? ""}
-      defaultQty={Number.isFinite(qty) ? Math.max(0, qty) : 0}
+      slug={slug}
+      defaultSize={sp?.size ?? ""}
+      defaultGrind={sp?.grind ?? ""}
+      defaultQty={qty}
     />
   );
 }

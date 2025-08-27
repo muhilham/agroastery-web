@@ -1,5 +1,4 @@
 "use client";
-
 import { Fragment, useMemo, useState } from "react";
 import Image from "next/image";
 import Navigation from "@/components/navigation";

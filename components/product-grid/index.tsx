@@ -18,7 +18,7 @@ export default function ProductGrid() {
             key={item.slug}
             productSlug={item.slug}
             productTitle={item.title}
-            productDescription={item.description}
+            productDescription={item.shortDescription || ""}
             productImage={item.images?.[0]?.image ?? "/assets/placeholder.png"}
             productPrice={item.price}
           />
