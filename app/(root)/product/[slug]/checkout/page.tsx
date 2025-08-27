@@ -5,6 +5,8 @@ type PageProps = {
   searchParams: Promise<{ size?: string; grind?: string; qty?: string }>;
 };
 
+export const runtime = "edge";
+
 export default async function Page({ params, searchParams }: PageProps) {
   const { slug } = await params;
   const sp = await searchParams;
