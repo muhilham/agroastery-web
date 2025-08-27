@@ -1,0 +1,248 @@
+"use client";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+
+import { useMemo, useState } from "react";
+import Image from "next/image";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { PRODUCT_LIST } from "@/constant/product/product-list";
+import { numberToIdr } from "@/lib/numberToIdr";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Minus, Plus } from "lucide-react";
+import {
+  createWhatsAppMessage,
+  normalizePhoneID,
+  buildWhatsAppUrl,
+} from "@/lib/message-builder";
+import { STORE_WHATSAPP } from "@/constant/store-phone-number";
+
+const formSchema = z.object({
+  fullName: z.string().min(2, "Minimal 2 karakter").max(50),
+  phone: z.string().min(6, "Nomor tidak valid").max(20),
+  address: z.string().min(6, "Alamat terlalu singkat").max(300),
+});
+type TForm = z.infer<typeof formSchema>;
+
+type Props = {
+  slug: string;
+  size: string;
+  grind: string;
+  qty: number;
+  onQtyChange: (next: number) => void;
+};
+
+const PurchaseDialog = ({ slug, size, grind, qty, onQtyChange }: Props) => {
+  const [open, setOpen] = useState(false);
+
+  const product = useMemo(
+    () => PRODUCT_LIST.find((p) => p.slug === slug),
+    [slug],
+  );
+  const form = useForm<TForm>({
+    resolver: zodResolver(formSchema),
+    defaultValues: { fullName: "", phone: "", address: "" },
+  });
+
+  if (!product) return null;
+
+  const effectiveSize = size || product.size?.[0] || "";
+  const unitPrice =
+    product.priceBySize?.[effectiveSize] ??
+    product.priceBySize?.[product.size?.[0] || ""] ??
+    product.price ??
+    0;
+
+  const subtotal = unitPrice * Math.max(0, qty);
+
+  const dec = () => onQtyChange(Math.max(0, qty - 1));
+  const inc = () => onQtyChange(qty + 1);
+
+  const onSubmit = (values: TForm) => {
+    const message = createWhatsAppMessage({
+      productTitle: product.title,
+      size: effectiveSize,
+      grind: grind || product.grindSize?.[0] || "",
+      qty,
+      unitPrice,
+      fullName: values.fullName,
+      phone: normalizePhoneID(values.phone),
+      address: values.address,
+    });
+
+    const waUrl = buildWhatsAppUrl({
+      storePhone: STORE_WHATSAPP,
+      text: message,
+    });
+
+    window.open(waUrl, "_blank");
+    setOpen(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      {/* desktop only trigger */}
+      <DialogTrigger asChild>
+        <Button className="hidden desktop:inline-flex">Beli Langsung</Button>
+      </DialogTrigger>
+
+      <DialogContent className="max-w-2xl w-full p-0 overflow-hidden">
+        <DialogHeader className="px-6 pt-6 pb-2">
+          <DialogTitle className="text-left">Detail penerima</DialogTitle>
+        </DialogHeader>
+
+        {/* Summary */}
+        <div className="px-6 pb-4">
+          <div className="flex w-full justify-between items-end">
+            <div className="inline-flex gap-3 items-end">
+              <div className="bg-[#242424] p-2 rounded-xl">
+                <Image
+                  src={
+                    product.images?.[0]?.image ?? "/assets/coffe/blend-gayo.png"
+                  }
+                  width={64}
+                  height={64}
+                  alt={product.title}
+                />
+              </div>
+              <div className="space-y-1">
+                <div className="text-sm text-secondary">
+                  {effectiveSize}, {grind || product.grindSize?.[0]}
+                </div>
+                <div className="text-base font-extrabold text-primary">
+                  {qty > 0 ? (
+                    <>
+                      {numberToIdr({ nominal: unitPrice })}{" "}
+                      <span className="opacity-70">× {qty}</span>{" "}
+                      <span className="ml-1">
+                        = {numberToIdr({ nominal: subtotal })}
+                      </span>
+                    </>
+                  ) : (
+                    numberToIdr({ nominal: unitPrice })
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="inline-flex items-center gap-4">
+              <button
+                className="rounded-full p-1 flex flex-col items-center border border-primary w-8 h-8 text-secondary font-extrabold disabled:opacity-40"
+                onClick={dec}
+                disabled={qty === 0}
+                aria-label="Kurangi jumlah"
+              >
+                <Minus />
+              </button>
+              <div className="font-semibold text-secondary text-base min-w-8 text-center">
+                {qty}
+              </div>
+              <button
+                className="rounded-full p-1 flex flex-col items-center border border-primary w-8 h-8 text-secondary font-extrabold"
+                onClick={inc}
+                aria-label="Tambah jumlah"
+              >
+                <Plus />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Scrollable form with sticky footer */}
+        <Form {...form}>
+          <form className="max-h-[70vh] overflow-y-auto">
+            <div className="px-6 space-y-4 pb-24">
+              <FormField
+                control={form.control}
+                name="fullName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nama lengkap</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Nama lengkap" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nomor Penerima</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Nomor handphone"
+                        inputMode="tel"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Alamat</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Alamat lengkap.."
+                        className="resize-none"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="sticky bottom-0 w-full bg-[#141414] px-6 py-4 border-t border-white/10">
+              <div className="inline-flex w-full justify-between items-center mb-3">
+                <span className="text-sm text-[#CCC4A9] font-normal">
+                  Subtotal
+                </span>
+                <span className="font-bold text-[#CCC4A9]">
+                  {numberToIdr({ nominal: subtotal })}
+                </span>
+              </div>
+              <Button
+                type="button"
+                className="h-12"
+                disabled={qty === 0}
+                onClick={form.handleSubmit(onSubmit)}
+              >
+                Pesan Sekarang
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+export default PurchaseDialog;

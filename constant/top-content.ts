@@ -1,4 +1,4 @@
-import { I_ContentInterface } from "@/interface/interface";
+import { I_ContentInterface } from "@/types/ui";
 
 //* Top Section Content
 export const topSectionContent: I_ContentInterface[] = [

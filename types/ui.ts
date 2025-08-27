@@ -2,7 +2,7 @@ export interface I_ContentInterface {
     title: string;
     subtitle: string;
     image: string;
-    href: string;
+    href?: string;
 }
 
 export interface I_TestimonialInterface {

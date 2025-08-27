@@ -1,4 +1,4 @@
-import { I_TestimonialInterface } from "@/interface/interface";
+import { I_TestimonialInterface } from "@/types/ui";
 
 //* Testimonial Content
 export const testimonialContent: I_TestimonialInterface[] = [
