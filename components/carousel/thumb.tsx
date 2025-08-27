@@ -1,15 +1,22 @@
+"use client";
+
 import React from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-type PropType = {
+
+type ThumbProps = {
   selected: boolean;
-  index: number;
   onClick: () => void;
+  src: string;
+  alt?: string;
 };
 
-export const Thumb: React.FC<PropType> = (props) => {
-  const { selected, onClick } = props;
-
+export const Thumb: React.FC<ThumbProps> = ({
+  selected,
+  onClick,
+  src,
+  alt = "thumb",
+}) => {
   return (
     <div
       className={cn(
@@ -20,14 +27,13 @@ export const Thumb: React.FC<PropType> = (props) => {
       <button
         onClick={onClick}
         type="button"
-        className="w-full bg-[#242424] max-w-[80px] rounded-lg p-4"
+        aria-pressed={selected}
+        className={cn(
+          "relative w-20 h-20 rounded-lg overflow-hidden bg-[#242424]",
+          "focus:outline-none",
+        )}
       >
-        <Image
-          src="/assets/coffe/blend-gayo.png"
-          alt="title"
-          width={500}
-          height={500}
-        />
+        <Image src={src} alt={alt} fill className="object-cover" sizes="80px" />
       </button>
     </div>
   );

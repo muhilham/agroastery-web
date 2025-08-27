@@ -1,18 +1,24 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { EmblaOptionsType } from "embla-carousel";
 import useEmblaCarousel from "embla-carousel-react";
 import { Thumb } from "./thumb";
 import Image from "next/image";
 
+type ImageItem = { image: string; alt?: string } | string;
+
 type PropType = {
-  slides: number[];
+  images: ImageItem[];
   options?: EmblaOptionsType;
+  fallbackAlt?: string;
 };
 
-export const EmblaCarousel: React.FC<PropType> = (props) => {
-  const { slides, options } = props;
+export const EmblaCarousel: React.FC<PropType> = ({
+  images,
+  options,
+  fallbackAlt = "product",
+}) => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [emblaMainRef, emblaMainApi] = useEmblaCarousel(options);
   const [emblaThumbsRef, emblaThumbsApi] = useEmblaCarousel({
@@ -20,24 +26,35 @@ export const EmblaCarousel: React.FC<PropType> = (props) => {
     dragFree: true,
   });
 
+  const slides = useMemo(() => {
+    const list = (images ?? []).map((it) =>
+      typeof it === "string"
+        ? { src: it, alt: fallbackAlt }
+        : { src: it.image, alt: it.alt ?? fallbackAlt },
+    );
+    return list.length
+      ? list
+      : [{ src: "/assets/coffe/blend-gayo.png", alt: fallbackAlt }];
+  }, [images, fallbackAlt]);
+
   const onThumbClick = useCallback(
     (index: number) => {
-      if (!emblaMainApi || !emblaThumbsApi) return;
+      if (!emblaMainApi) return;
       emblaMainApi.scrollTo(index);
     },
-    [emblaMainApi, emblaThumbsApi],
+    [emblaMainApi],
   );
 
   const onSelect = useCallback(() => {
     if (!emblaMainApi || !emblaThumbsApi) return;
-    setSelectedIndex(emblaMainApi.selectedScrollSnap());
-    emblaThumbsApi.scrollTo(emblaMainApi.selectedScrollSnap());
-  }, [emblaMainApi, emblaThumbsApi, setSelectedIndex]);
+    const snap = emblaMainApi.selectedScrollSnap();
+    setSelectedIndex(snap);
+    emblaThumbsApi.scrollTo(snap);
+  }, [emblaMainApi, emblaThumbsApi]);
 
   useEffect(() => {
     if (!emblaMainApi) return;
     onSelect();
-
     emblaMainApi.on("select", onSelect).on("reInit", onSelect);
   }, [emblaMainApi, onSelect]);
 
@@ -45,14 +62,17 @@ export const EmblaCarousel: React.FC<PropType> = (props) => {
     <div className="embla desktop:max-w-[360px] block">
       <div className="embla__viewport" ref={emblaMainRef}>
         <div className="embla__container">
-          {slides.map((index) => (
+          {slides.map((item, index) => (
             <div className="embla__slide bg-[#242424] relative" key={index}>
-              <Image
-                src="/assets/coffe/blend-gayo.png"
-                alt="title"
-                width={500}
-                height={500}
-              />
+              <div className="relative w-full aspect-square">
+                <Image
+                  src={item.src}
+                  alt={item.alt}
+                  fill
+                  className="object-contain"
+                  sizes="(max-width:768px) 100vw, 360px"
+                />
+              </div>
               <div className="text-primary border rounded-xl fixed left-10 text-xs bottom-5 border-primary px-4 py-1">
                 {index + 1}/{slides.length}
               </div>
@@ -64,12 +84,13 @@ export const EmblaCarousel: React.FC<PropType> = (props) => {
       <div className="embla-thumbs">
         <div className="embla-thumbs__viewport" ref={emblaThumbsRef}>
           <div className="inline-flex items-center gap-2 p-4 desktop:p-0 w-full">
-            {slides.map((index) => (
+            {slides.map((item, index) => (
               <Thumb
                 key={index}
                 onClick={() => onThumbClick(index)}
                 selected={index === selectedIndex}
-                index={index}
+                src={item.src}
+                alt={item.alt}
               />
             ))}
           </div>
