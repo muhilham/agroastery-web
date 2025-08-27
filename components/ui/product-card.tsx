@@ -7,7 +7,6 @@ import {
   CardHeader,
   CardTitle,
 } from "./card";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { selectProductBySlug } from "@/lib/stores/product";
 
@@ -43,10 +42,20 @@ export function ProductCard({
       onClick={handleClick}
     >
       <div>
-        <Image src={productImage} alt={productTitle} width={500} height={500} />
+        <div className="relative aspect-[16/9] h-[300px] w-full overflow-hidden rounded-t-xl mb-4 relative">
+          <div className="w-full h-14 bg-gradient-to-t from-[#252525] absolute bottom-0"></div>
+          <div className="w-full h-14 bg-gradient-to-b from-[#252525] absolute top-0"></div>
+          <img
+            src={productImage}
+            alt={productTitle}
+            className="h-full w-full object-cover"
+          />
+        </div>
         <CardHeader>
           <CardTitle>{productTitle}</CardTitle>
-          <CardDescription>{productDescription}</CardDescription>
+          <CardDescription className="line-clamp-2 text-[#CCC4A9]">
+            {productDescription}
+          </CardDescription>
         </CardHeader>
       </div>
       <CardFooter>From {numberToIdr({ nominal: productPrice })}</CardFooter>

@@ -35,7 +35,11 @@ const ProductDetailPage = ({ slug }: { slug: string }) => {
   }, [product?.slug]);
 
   if (!product) {
-    return <main className="pt-20 px-6">Produk tidak ditemukan.</main>;
+    return (
+      <main className="pt-20 px-6 text-primary min-h-svh w-full flex flex-col items-center justify-center">
+        Produk tidak ditemukan.
+      </main>
+    );
   }
 
   const unitPrice =
@@ -132,9 +136,11 @@ const ProductDetailPage = ({ slug }: { slug: string }) => {
             <div className="text-base font-bold text-primary mb-2">
               Deskripsi :
             </div>
-            <p className="text-secondary text-base tracking-wide">
-              {product.description}
-            </p>
+
+            <div
+              className="text-secondary text-base tracking-wide"
+              dangerouslySetInnerHTML={{ __html: product.description }}
+            />
           </div>
         </section>
 
