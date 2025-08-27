@@ -12,6 +12,7 @@ import { Badge } from "../ui/badge";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { numberToIdr } from "@/lib/numberToIdr";
+import { SHOPEE, TOKOPEDIA } from "@/constant/resource-and-link";
 
 type OrderDetailProps = {
   slug: string;
@@ -140,7 +141,7 @@ const OrderDetail = ({
         <div className="text-base font-bold text-primary mt-4">
           Pilih grind level :
         </div>
-        <div className="inline-flex gap-2 items-center mt-2 pb-24">
+        <div className="flex flex-wrap gap-2 items-center mt-2 pb-24">
           {grindOptions.map((opt) => {
             const active = grind === opt;
             return (
@@ -195,10 +196,16 @@ export const FloatingCheckoutButton = ({
   grindOptions,
   productSlug,
 }: FloatingCheckoutButtonProps) => {
+  const router = useRouter();
+
   return (
     <div className="fixed bottom-0 w-full left-0 desktop:hidden bg-black inline-flex gap-5 z-40 px-6 items-center py-4">
       <div className="inline-flex items-center gap-2">
-        <Button size="icon" className="w-14 h-10 px-4">
+        <Button
+          size="icon"
+          className="w-14 h-10 px-4"
+          onClick={() => router.push(TOKOPEDIA)}
+        >
           <Image
             src="/assets/tokopedia.svg"
             width={24}
@@ -206,7 +213,11 @@ export const FloatingCheckoutButton = ({
             alt="tokopedia"
           />
         </Button>
-        <Button size="icon" className="w-14 h-10 px-4">
+        <Button
+          size="icon"
+          className="w-14 h-10 px-4"
+          onClick={() => router.push(SHOPEE)}
+        >
           <Image
             src="/assets/shoppe.svg"
             width={24}

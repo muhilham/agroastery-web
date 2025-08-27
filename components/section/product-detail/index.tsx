@@ -13,8 +13,10 @@ import { numberToIdr } from "@/lib/numberToIdr";
 import Navigation from "@/components/navigation";
 import { FloatingCheckoutButton } from "@/components/mobile-checkout-form";
 import PurchaseDialog from "@/components/purchase-dialog";
-
+import { useRouter } from "next/navigation";
+import { SHOPEE, TOKOPEDIA } from "@/constant/resource-and-link";
 const ProductDetailPage = ({ slug }: { slug: string }) => {
+  const router = useRouter();
   const OPTIONS: EmblaOptionsType = {};
 
   useEffect(() => {
@@ -100,7 +102,7 @@ const ProductDetailPage = ({ slug }: { slug: string }) => {
             <div className="text-base font-bold text-secondary">
               Pilih grind level :
             </div>
-            <div className="inline-flex gap-2 items-center mt-2">
+            <div className="flex flex-wrap gap-2 items-center mt-2">
               {product.grindSize?.map((gl) => {
                 const active = selectedGrind === gl;
                 return (
@@ -180,7 +182,12 @@ const ProductDetailPage = ({ slug }: { slug: string }) => {
           </div>
 
           <div className="inline-flex items-center w-full gap-4">
-            <Button variant="outline" size="icon" className="w-full h-10 px-4">
+            <Button
+              variant="outline"
+              size="icon"
+              className="w-full h-10 px-4"
+              onClick={() => router.push(TOKOPEDIA)}
+            >
               <Image
                 src="/assets/tokopedia.svg"
                 width={24}
@@ -188,7 +195,12 @@ const ProductDetailPage = ({ slug }: { slug: string }) => {
                 alt="tokopedia"
               />
             </Button>
-            <Button variant="outline" size="icon" className="w-full h-10 px-4">
+            <Button
+              variant="outline"
+              size="icon"
+              className="w-full h-10 px-4"
+              onClick={() => router.push(SHOPEE)}
+            >
               <Image
                 src="/assets/shoppe.svg"
                 width={24}

@@ -47,45 +47,49 @@ export default function Navigation() {
   return (
     <Fragment>
       {isSearchOpen ? (
-        <div className="w-full min-h-svh bg-black fixed z-50">
-          <div className="inline-flex gap-6 w-full border-b bg-black thin-border p-3">
-            <div className="relative w-full">
-              <svg
-                width="24"
-                height="24"
-                className="absolute left-0 h-full ml-3"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                aria-hidden="true"
-              >
-                <path
-                  d="M19.675 20.55L13.375 14.25C12.875 14.6666 12.2625 14.9875 11.5375 15.2125C10.8125 15.4375 10.125 15.55 9.475 15.55C7.77117 15.55 6.3285 14.9596 5.147 13.779C3.96567 12.5985 3.375 11.1568 3.375 9.45398C3.375 7.75131 3.96533 6.30831 5.146 5.12498C6.3265 3.94164 7.76817 3.34998 9.471 3.34998C11.1737 3.34998 12.6167 3.94064 13.8 5.12198C14.9833 6.30348 15.575 7.74614 15.575 9.44998C15.575 10.15 15.4625 10.8416 15.2375 11.525C15.0125 12.2083 14.7 12.7916 14.3 13.275L20.625 19.6L19.675 20.55ZM9.475 14.2C10.825 14.2 11.9542 13.7458 12.8625 12.8375C13.7708 11.9291 14.225 10.8 14.225 9.44998C14.225 8.09998 13.7708 6.97081 12.8625 6.06248C11.9542 5.15414 10.825 4.69998 9.475 4.69998C8.125 4.69998 6.99583 5.15414 6.0875 6.06248C5.17917 6.97081 4.725 8.09998 4.725 9.44998C4.725 10.8 5.17917 11.9291 6.0875 12.8375C6.99583 13.7458 8.125 14.2 9.475 14.2Z"
-                  fill="#F5EBC9"
+        <div className="fixed inset-0 z-50 bg-black h-svh flex flex-col overflow-hidden">
+          {/* HEADER */}
+          <div className="shrink-0 border-b bg-black thin-border p-3">
+            <div className="flex gap-6 w-full">
+              <div className="relative w-full">
+                <svg
+                  width="24"
+                  height="24"
+                  className="absolute left-0 h-full ml-3"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M19.675 20.55L13.375 14.25C12.875 14.6666 12.2625 14.9875 11.5375 15.2125C10.8125 15.4375 10.125 15.55 9.475 15.55C7.77117 15.55 6.3285 14.9596 5.147 13.779C3.96567 12.5985 3.375 11.1568 3.375 9.45398C3.375 7.75131 3.96533 6.30831 5.146 5.12498C6.3265 3.94164 7.76817 3.34998 9.471 3.34998C11.1737 3.34998 12.6167 3.94064 13.8 5.12198C14.9833 6.30348 15.575 7.74614 15.575 9.44998C15.575 10.15 15.4625 10.8416 15.2375 11.525C15.0125 12.2083 14.7 12.7916 14.3 13.275L20.625 19.6L19.675 20.55ZM9.475 14.2C10.825 14.2 11.9542 13.7458 12.8625 12.8375C13.7708 11.9291 14.225 10.8 14.225 9.44998C14.225 8.09998 13.7708 6.97081 12.8625 6.06248C11.9542 5.15414 10.825 4.69998 9.475 4.69998C8.125 4.69998 6.99583 5.15414 6.0875 6.06248C5.17917 6.97081 4.725 8.09998 4.725 9.44998C4.725 10.8 5.17917 11.9291 6.0875 12.8375C6.99583 13.7458 8.125 14.2 9.475 14.2Z"
+                    fill="#F5EBC9"
+                  />
+                </svg>
+                <Input
+                  type="text"
+                  placeholder="Cari Produk.."
+                  className="rounded-full w-full border-secondary placeholder:text-primary placeholder:text-sm p-5 text-secondary pl-10"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  autoFocus
                 />
-              </svg>
-              <Input
-                type="text"
-                placeholder="Cari Produk.."
-                className="rounded-full w-full border-secondary placeholder:text-primary placeholder:text-sm p-5 text-secondary pl-10"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                autoFocus
-              />
+              </div>
+
+              <button
+                className="text-primary text-sm"
+                onClick={() => {
+                  setIsSearchOpen(false);
+                  clearSearch();
+                }}
+              >
+                Cancel
+              </button>
             </div>
-            <button
-              className="text-primary text-sm"
-              onClick={() => {
-                setIsSearchOpen(false);
-                clearSearch();
-              }}
-            >
-              Cancel
-            </button>
           </div>
 
-          {/* SEARCH RESULTS */}
-          <div>
+          {/* SEARCH RESULTS (scrollable) */}
+          <div className="flex-1 overflow-y-auto overscroll-contain">
             {searchQuery.trim().length === 0 ? null : results.length === 0 ? (
               <div className="p-5 text-secondary text-sm">
                 Produk tidak ditemukan
@@ -97,12 +101,12 @@ export default function Navigation() {
                   onClick={() => goToProduct(p.slug)}
                   className="w-full text-left inline-flex justify-start items-start gap-5 p-5 thin-border"
                 >
-                  <div className="thin-border-rounded p-2 border-primary rounded-xl">
+                  <div className="thin-border-rounded aspect-video p-2 border-primary rounded-xl shrink-0">
                     <img
                       src={
                         p.images?.[0]?.image ?? "/assets/coffe/blend-gayo.png"
                       }
-                      className="size-16 h-fit"
+                      className="size-16"
                       alt={p.title}
                     />
                   </div>
@@ -111,7 +115,7 @@ export default function Navigation() {
                       {p.title}
                     </h1>
                     <p className="text-sm text-secondary line-clamp-2">
-                      {p.description}
+                      {p.shortDescription}
                     </p>
                     <div className="text-primary text-sm">
                       {numberToIdr({ nominal: p.price })}
