@@ -269,6 +269,184 @@ const RAW_PRODUCTS: TProductBase[] = [
       },
     ],
   },
+  {
+    title: "(grosir min. 10kg) Biji Kopi Blend 50/50 Kopi Susu Ekonomis 1 KG",
+    shortDescription:
+      "Balanced 50/50 Arabica–Robusta blend from East Java, dark roasted for chocolaty, sweet, and nutty kopi susu. Economical choice with multiple grind options.",
+    description:
+      "Di rekomendasikan untuk menu es kopi susu aren (atau pemanis lainnya) dengan 50% Arabica dan 50% Robusta dengan rasa yang pas dan budget ekonomis. <br/><br/> <strong>Origin</strong><br/>East Java <br/><br/> <strong>Roast Level</strong><br/>FullCity+ (very early second crack / early stage dark roast) <br/><br/> <strong>Process</strong><br/>Wash (Arabica) & Natural (Robusta) <br/><br/> <strong>Notes on Kopi Susu</strong><br/>Chocolaty, Sweet, and Nutty <br/><br/> <strong>Nett Weight</strong><br/>1000 gram x 10 <br/><br/> <strong>Grind Options</strong><br/> <strong>GRIND FINE</strong> : Tubruk, Mokapot, Vietnam Drip, Espresso Machine <br/><br/> <strong>GRIND MEDIUM</strong> : Semua alat seduh menggunakan paper filter (V60, Kalita wave, Kono, Aeropress, Chemex, dll) <br/><br/> <strong>GRIND COARSE</strong> : French Press, Cold Drip, Cold Brew, Espresso teknik rebus <br/><br/> <strong>BEANS</strong> : Biji kopi utuh ",
+    grindSize: ["Beans", "Grind Fine", "Grind Medium", "Grind Coarse"],
+    size: ["1000g"],
+    coffeType: ["Arabica", "Robusta"],
+    category_ids: ["2", "1"],
+    priceBySize: { "1000g": 175000 },
+    price: 175000,
+    images: [
+      {
+        image: `${BASE_URL_CDN}/kopi-susu-50-50/1.png`,
+      },
+      {
+        image: `${BASE_URL_CDN}/kopi-susu-50-50/2.png`,
+      },
+      {
+        image: `${BASE_URL_CDN}/kopi-susu-50-50/3.png`,
+      },
+      {
+        image: `${BASE_URL_CDN}/kopi-susu-50-50/4.png`,
+      },
+      {
+        image: `${BASE_URL_CDN}/kopi-susu-50-50/5.png`,
+      },
+      {
+        image: `${BASE_URL_CDN}/kopi-susu-50-50/6.png`,
+      },
+      {
+        image: `${BASE_URL_CDN}/kopi-susu-50-50/7.png`,
+      },
+      {
+        image: `${BASE_URL_CDN}/kopi-susu-50-50/8.png`,
+      },
+    ],
+  },
+  {
+    title: "(grosir min. 10kg) Biji Kopi Blend 70/30 Kopi Susu Ekonomis 1 KG",
+    shortDescription:
+      "A 70% Arabica and 30% Robusta blend from East Java, dark roasted for balanced kopi susu with an economical price point and versatile grind options.",
+    description:
+      " Di rekomendasikan untuk menu es kopi susu aren (atau pemanis lainnya) dengan 70% Arabica dan 30% Robusta dengan rasa yang pas dan budget ekonomis. <br/><br/> <strong>Origin</strong><br/>East Java <br/><br/> <strong>Roast Level</strong><br/>FullCity+ (very early second crack / early stage dark roast) <br/><br/> <strong>Process</strong><br/>Wash (Arabica) & Natural (Robusta) <br/><br/> <strong>Nett Weight</strong><br/>1000 gram <br/><br/> <strong>Grind Options</strong><br/> <strong>GRIND FINE</strong> : Tubruk, Mokapot, Vietnam Drip, Espresso Machine <br/><br/> <strong>GRIND MEDIUM</strong> : Semua alat seduh menggunakan paper filter (V60, Kalita wave, Kono, Aeropress, Chemex, dll) <br/><br/> <strong>GRIND COARSE</strong> : French Press, Cold Drip, Cold Brew, Espresso teknik rebus <br/><br/> <strong>BEANS</strong> : Biji kopi utuh ",
+    grindSize: ["Beans", "Grind Fine", "Grind Medium", "Grind Coarse"],
+    size: ["1000g"],
+    coffeType: ["Arabica", "Robusta"],
+    category_ids: ["2", "1"],
+    priceBySize: { "1000g": 154850 },
+    price: 154850,
+    images: [
+      {
+        image: `${BASE_URL_CDN}/kopi-susu-70-30/1.png`,
+      },
+      {
+        image: `${BASE_URL_CDN}/kopi-susu-70-30/2.png`,
+      },
+      {
+        image: `${BASE_URL_CDN}/kopi-susu-70-30/3.png`,
+      },
+      {
+        image: `${BASE_URL_CDN}/kopi-susu-70-30/4.png`,
+      },
+      {
+        image: `${BASE_URL_CDN}/kopi-susu-70-30/5.png`,
+      },
+      {
+        image: `${BASE_URL_CDN}/kopi-susu-70-30/6.png`,
+      },
+    ],
+  },
+  {
+    title:
+      "House Blend Espresso - Arabica & Fine Robusta 100 gr | PRIME73 100gr ",
+    shortDescription:
+      "A 70% Arabica and 30% Fine Robusta blend, expertly dark roasted for daily café use. Available in 100g, 500g, and 1kg packs with multiple grind options.",
+    description:
+      " Di rekomendasikan untuk menu es kopi susu aren (atau pemanis lainnya) dengan 70% Arabica dan 30% Robusta dengan rasa yang pas dan budget ekonomis. <br/><br/> <strong>Origin</strong><br/>East Java <br/><br/> <strong>Roast Level</strong><br/>FullCity+ (very early second crack / early stage dark roast) <br/><br/> <strong>Process</strong><br/>Wash (Arabica) & Natural (Robusta) <br/><br/> <strong>Nett Weight</strong><br/>1000 gram <br/><br/> <strong>Grind Options</strong><br/> <strong>GRIND FINE</strong> : Tubruk, Mokapot, Vietnam Drip, Espresso Machine <br/><br/> <strong>GRIND MEDIUM</strong> : Semua alat seduh menggunakan paper filter (V60, Kalita wave, Kono, Aeropress, Chemex, dll) <br/><br/> <strong>GRIND COARSE</strong> : French Press, Cold Drip, Cold Brew, Espresso teknik rebus <br/><br/> <strong>BEANS</strong> : Biji kopi utuh ",
+    grindSize: ["Beans", "Grind Fine", "Grind Medium", "Grind Coarse"],
+    size: ["100g"],
+    coffeType: ["Arabica", "Robusta"],
+    category_ids: ["2", "1"],
+    priceBySize: { "100g": 32300 },
+    price: 32300,
+    images: [
+      {
+        image: `${BASE_URL_CDN}/prime-73/1.png`,
+      },
+      {
+        image: `${BASE_URL_CDN}/prime-73/2.png`,
+      },
+      {
+        image: `${BASE_URL_CDN}/prime-73/3.png`,
+      },
+      {
+        image: `${BASE_URL_CDN}/prime-73/4.png`,
+      },
+      {
+        image: `${BASE_URL_CDN}/prime-73/5.png`,
+      },
+      {
+        image: `${BASE_URL_CDN}/prime-73/6.png`,
+      },
+    ],
+  },
+  {
+    title: "Biji Kopi Full Robusta Kopi Susu Ekonomis",
+    shortDescription:
+      "An economical 100% Robusta from Lampung, naturally processed and dark roasted for chocolaty, nutty, and bold kopi susu, hotel blends, or mixed coffee drinks.",
+    description:
+      "Di rekomendasikan untuk menu es kopi susu aren (atau pemanis lainnya), Kopi Hotel, atau Campuran Minuman Kopi 100% Robusta dengan budget ekonomis. <br/><br/> <strong>Species</strong><br/>Robusta <br/><br/> <strong>Origin</strong><br/>Lampung <br/><br/> <strong>Roast Level</strong><br/>FullCity (before second crack / medium to dark) <br/><br/> <strong>Process</strong><br/>Natural <br/><br/> <strong>Notes on Kopi Susu</strong><br/>Chocolaty, nutty, and Bold <br/><br/> <strong>Nett Weight</strong><br/>500 gram <br/><br/> <strong>Sample</strong><br/>100gr - <a href='https://www.tokopedia.com/agroastery/biji-kopi-full-robusta-kopi-susu-ekonomis-100-gr' target='_blank'>Tokopedia Link</a> <br/><br/> <strong>Grind Options</strong><br/> <strong>GRIND FINE</strong> : Tubruk, Mokapot, Vietnam Drip, Espresso Machine <br/><br/> <strong>GRIND MEDIUM</strong> : Semua alat seduh menggunakan paper filter (V60, Kalita wave, Kono, Aeropress, Chemex, dll) <br/><br/> <strong>GRIND COARSE</strong> : French Press, Cold Drip, Cold Brew, Espresso teknik rebus ",
+    grindSize: ["Beans", "Grind Fine", "Grind Medium", "Grind Coarse"],
+    size: ["500g"],
+    coffeType: ["Robusta"],
+    category_ids: ["2", "1"],
+    priceBySize: { "500g": 91200 },
+    price: 91200,
+    images: [
+      {
+        image: `${BASE_URL_CDN}/lampung/1.png`,
+      },
+      {
+        image: `${BASE_URL_CDN}/lampung/2.png`,
+      },
+      {
+        image: `${BASE_URL_CDN}/lampung/3.png`,
+      },
+      {
+        image: `${BASE_URL_CDN}/lampung/4.png`,
+      },
+      {
+        image: `${BASE_URL_CDN}/lampung/5.png`,
+      },
+      {
+        image: `${BASE_URL_CDN}/lampung/6.png`,
+      },
+    ],
+  },
+  {
+    title: "Biji Kopi Full Robusta Kopi Susu Ekonomis 200 gr",
+    shortDescription:
+      "Affordable 100% Robusta from Lampung, naturally processed and medium–dark roasted for chocolaty, nutty, and bold kopi susu or hotel blends.",
+    description:
+      "Di rekomendasikan untuk menu es kopi susu aren (atau pemanis lainnya), Kopi Hotel, atau Campuran Minuman Kopi 100% Robusta dengan budget ekonomis. <br/><br/> <strong>Species</strong><br/>Robusta <br/><br/> <strong>Origin</strong><br/>Lampung <br/><br/> <strong>Roast Level</strong><br/>FullCity (before second crack / medium to dark) <br/><br/> <strong>Process</strong><br/>Natural <br/><br/> <strong>Notes on Kopi Susu</strong><br/>Chocolaty, Nutty, and Bold <br/><br/> <strong>Nett Weight</strong><br/>200 gram <br/><br/> <strong>Ukuran Lebih Besar</strong><br/>1kg - <a href='https://www.tokopedia.com/agroastery/biji-kopi-full-robusta-kopi-susu-ekonomis-1-kg-1kg' target='_blank'>Tokopedia Link</a> <br/><br/> <strong>Grind Options</strong><br/> <strong>GRIND FINE</strong> : Tubruk, Mokapot, Vietnam Drip, Espresso Machine <br/><br/> <strong>GRIND MEDIUM</strong> : Semua alat seduh menggunakan paper filter (V60, Kalita wave, Kono, Aeropress, Chemex, dll) <br/><br/> <strong>GRIND COARSE</strong> : French Press, Cold Drip, Cold Brew, Espresso teknik rebus ",
+    grindSize: ["Beans", "Grind Fine", "Grind Medium", "Grind Coarse"],
+    size: ["200g"],
+    coffeType: ["Robusta"],
+    category_ids: ["2", "1"],
+    priceBySize: { "200g": 41800 },
+    price: 41800,
+    images: [
+      {
+        image: `${BASE_URL_CDN}/lampung-robusta/1.png`,
+      },
+      {
+        image: `${BASE_URL_CDN}/lampung-robusta/2.png`,
+      },
+      {
+        image: `${BASE_URL_CDN}/lampung-robusta/3.png`,
+      },
+      {
+        image: `${BASE_URL_CDN}/lampung-robusta/4.png`,
+      },
+      {
+        image: `${BASE_URL_CDN}/lampung-robusta/5.png`,
+      },
+      {
+        image: `${BASE_URL_CDN}/lampungrobusta/6.png`,
+      },
+      {
+        image: `${BASE_URL_CDN}/lampungrobusta/7.png`,
+      },
+      {
+        image: `${BASE_URL_CDN}/lampungrobusta/8.png`,
+      },
+    ],
+  },
 ];
 
 const derivePriceBySize = (p: TProductBase): Record<string, number> => {
