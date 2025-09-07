@@ -11,7 +11,7 @@ import {
 } from "./resource-and-link";
 
 export const menuItems: I_MenuListInterface[] = [
-  { name: "Katalog", link: "/katalog" },
+  { name: "Buy Now", link: "/katalog" },
   { name: "Tokopedia", link: TOKOPEDIA },
   { name: "Shopee", link: SHOPEE },
   { name: "WhatsApp", link: WHATSAPP },

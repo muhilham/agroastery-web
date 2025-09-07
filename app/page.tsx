@@ -32,7 +32,7 @@ export default function Home() {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                SEE CATALOG
+                Buy now
               </a>
             </div>
           </section>

@@ -16,10 +16,15 @@ import {
 } from "@/lib/stores/search";
 import { selectProductBySlug } from "@/lib/stores/product";
 import { numberToIdr } from "@/lib/numberToIdr";
+import { SHOPEE, TOKOPEDIA } from "@/constant/resource-and-link";
 
 export default function Navigation() {
   const pathname = usePathname();
   const router = useRouter();
+  const segs = pathname.split("/").filter(Boolean);
+
+  const isCheckoutPath = segs.at(-1) === "checkout";
+  const isProductPath = segs[0] === "product" && segs.length <= 2;
 
   const [isScrolled, setIsScrolled] = useState<boolean>(false);
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
@@ -131,7 +136,7 @@ export default function Navigation() {
       <nav
         className={`w-full tablet:h-20 p-6 desktop:h-20 z-40 fixed flex justify-between items-center px-4 tablet:px-10 desktop:px-20 transition-all duration-300 ${isScrolled ? "bg-black/20 backdrop-blur-sm" : "bg-transparent"}`}
       >
-        {pathname === "/product" ? (
+        {isProductPath ? (
           <button
             className="inline-flex gap-2 items-center"
             onClick={() => router.back()}
@@ -141,14 +146,14 @@ export default function Navigation() {
               Detail Produk
             </span>
           </button>
-        ) : pathname === "/recipant-detail" ? (
+        ) : isCheckoutPath ? (
           <button
             className="inline-flex gap-2 items-center"
             onClick={() => router.back()}
           >
             <IoMdArrowBack color="#F5EBC9" size={18} />
             <span className="text-secondary text-base font-bold">
-              Detail produk
+              Detail penerima
             </span>
           </button>
         ) : (
@@ -165,13 +170,18 @@ export default function Navigation() {
 
         <ul className="hidden desktop:flex text-primary font-normal py-16 space-x-4 text-base">
           <li>
-            <a href="#" className="hover:underline">
+            <a href={TOKOPEDIA} target="_blank" className="hover:underline">
               Tokopedia
             </a>
           </li>
           <li>
-            <a href="#" className="hover:underline">
-              Whatsapp
+            <a href={SHOPEE} target="_blank" className="hover:underline">
+              Shopee
+            </a>
+          </li>
+          <li>
+            <a href="/katalog" className="hover:underline">
+              Buy now
             </a>
           </li>
         </ul>

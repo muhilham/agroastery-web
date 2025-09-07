@@ -37,7 +37,6 @@ const OrderDetail = ({
   selectedGrind,
   qty,
   imageSrc = "/assets/coffe/blend-gayo.png",
-  variantText,
   unitPrice,
   priceBySize,
   sizeOptions = DEFAULT_SIZES,
@@ -99,9 +98,9 @@ const OrderDetail = ({
           </div>
           <div className="space-y-1">
             <div className="text-sm text-secondary">
-              {variantText ??
-                `${size || "Pilih ukuran"}, ${grind || "Pilih grind"}`}
+              {`${size || "Pilih ukuran"}, ${grind || "Pilih grind"}`}
             </div>
+
             <div className="text-base font-extrabold text-primary">
               {qty > 0 ? (
                 <>
