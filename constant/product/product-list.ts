@@ -1,6 +1,6 @@
 import type { TProduct, TProductBase } from "@/types/product";
 import { CATEGORY_BY_ID } from "../category";
-const BASE_URL_CDN = "https://ag-cdn.fiqry.dev/produk";
+const BASE_URL_CDN = "https://cdn.agroastery.com/produk";
 
 export const slugify = (slug: string) =>
   slug
