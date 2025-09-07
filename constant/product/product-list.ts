@@ -447,6 +447,35 @@ const RAW_PRODUCTS: TProductBase[] = [
       },
     ],
   },
+  {
+    title: "Biji Kopi STANDARD GAYO Full Arabica | Kopi Arabika | Freshroasted",
+    shortDescription:
+      "Standard Gayo Arabica from Wih Ilang, Aceh—semi-washed, medium roast with mild body, mid-high sweetness, and low-mid acidity. Ideal for espresso-based and daily café menus.",
+    description:
+      "<strong>STANDARD GAYO</strong><br/>Crafting The Finest Standard Coffee <br/><br/> <strong>Origin</strong><br/>Wih Ilang, Aceh <br/><br/> <strong>Process</strong><br/>Semi-Washed <br/><br/> <strong>Altitude</strong><br/>1600 mdpl <br/><br/> <strong>Species</strong><br/>Arabica <br/><br/> <strong>Varietal</strong><br/>Ateng <br/><br/> <strong>Roast Level</strong><br/>Medium <br/><br/> <strong>Recommended for</strong><br/>Espresso based, americano, longblack, latte, cappucino <br/><br/> <strong>Notes</strong><br/>Mild Body | Mid-High Sweetness | Low-Mid Acidity <br/><br/> Biji kopi grade terbaik dengan profil sangrai yang di sesuaikan dengan kebutuhan harian kedai kopi. <br/><br/> <strong>Nett Weight</strong><br/>100gr, 500gr, 1kg <br/><br/> <strong>Beli Standard Gayo</strong><br/>LEBIH BANYAK, LEBIH MURAH <br/>Grosir minimal 8kg - <a href='https://tokopedia.link/uykAgB0gKKb' target='_blank'>Tokopedia Link</a> <br/><br/> <strong>Grind Options</strong><br/> <strong>GRIND FINE</strong> : Tubruk, Mokapot, Vietnam Drip, Mesin Espresso <br/><br/> <strong>GRIND MEDIUM</strong> : Semua alat seduh menggunakan paper filter (V60, Kalita wave, Kono, Aeropress, Chemex, dll) <br/><br/> <strong>GRIND COARSE</strong> : French Press, Cold Drip, Cold Brew, Espresso teknik rebus ",
+    grindSize: ["Beans", "Grind Fine", "Grind Medium", "Grind Coarse"],
+    size: ["100g", "200g", "500g", "1000g"],
+    coffeType: ["Arabika"],
+    category_ids: ["2", "1"],
+    priceBySize: {
+      "100g": 38000,
+      "200g": 62000,
+      "500g": 137000,
+      "1000g": 248000,
+    },
+    price: 38000,
+    images: [
+      {
+        image: `${BASE_URL_CDN}/standard-gayo/1.png`,
+      },
+      {
+        image: `${BASE_URL_CDN}/standard-gayo/2.png`,
+      },
+      {
+        image: `${BASE_URL_CDN}/standard-gayo/3.png`,
+      },
+    ],
+  },
 ];
 
 const derivePriceBySize = (p: TProductBase): Record<string, number> => {

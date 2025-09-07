@@ -6,7 +6,9 @@ import { topSectionContent } from "@/constant/top-content";
 import { testimonialContent } from "@/constant/testimonial";
 import { Footer } from "@/components/ui/footer";
 import Navigation from "@/components/navigation";
+import { useRouter } from "next/navigation";
 export default function Home() {
+  const router = useRouter();
   return (
     <div>
       <div className="bg-[#1A1A1A] text-[#f5ebc9]">
@@ -82,7 +84,9 @@ export default function Home() {
                 {coffeList.map((product) => (
                   <div
                     key={product.title}
-                    className="w-[calc(50%-12px)]  flex flex-col gap-16 p-6 border border-[#f5ebc9] rounded-3xl sm:min-w-[280px]"
+                    onClick={() => router.push(`${product.href}`)}
+                    role="button"
+                    className="w-[calc(50%-12px)]  flex flex-col cursor-pointer gap-16 p-6 border border-[#f5ebc9] rounded-3xl sm:min-w-[280px]"
                   >
                     <div className="h-full flex flex-col gap-2">
                       <h3 className="text-lg font-light tracking-wider">
