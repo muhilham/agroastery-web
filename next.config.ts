@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "ag-cdn.fiqry.dev",
+        hostname: "cdn.agroastery.com",
         port: "",
         pathname: "/produk/**",
         search: "",
