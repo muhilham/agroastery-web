@@ -16,6 +16,8 @@ function createWhatsAppMessage(opts: {
   fullName: string;
   phone: string;
   address: string;
+  shipping: string;
+  total: number;
 }) {
   const {
     productTitle,
@@ -26,17 +28,25 @@ function createWhatsAppMessage(opts: {
     fullName,
     phone,
     address,
+    shipping,
+    total,
   } = opts;
   const subtotal = unitPrice * qty;
 
   const lines = [
     "Halo Agroastery,",
     "",
-    `Saya mau pesan ${productTitle.toUpperCase()} (${size}) , Grind Level (${grind}).`,
+    `Saya mau pesan *${productTitle.toUpperCase()}* (${size}) - Grind Level *${grind}*.`,
     "",
-    `Qty: ${qty} x ${numberToIdr({ nominal: unitPrice })} = ${numberToIdr({ nominal: subtotal })}`,
+    "*Detail Pesanan:*",
+    `- Qty: ${qty} x ${numberToIdr({ nominal: unitPrice })} = *${numberToIdr({ nominal: subtotal })}*`,
+    `- Pengiriman: ${shipping}`,
     "",
-    `Alamat : ${address} (${phone}) - ${fullName}`,
+    `*Total: ${numberToIdr({ nominal: total })}*`,
+    "",
+    "*Alamat Pengiriman:*",
+    `${address}`,
+    `(${fullName} - ${phone})`,
     "",
     "Terima kasih",
   ];
