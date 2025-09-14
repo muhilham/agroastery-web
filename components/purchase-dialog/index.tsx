@@ -215,13 +215,13 @@ const PurchaseDialog = ({ slug, size, grind, qty, onQtyChange }: Props) => {
         <Button className="hidden desktop:inline-flex">Beli Langsung</Button>
       </DialogTrigger>
 
-      <DialogContent className="max-w-2xl w-full p-0 overflow-hidden">
-        <DialogHeader className="px-6 pt-6 pb-2">
+      <DialogContent className="max-w-2xl w-full p-0 flex flex-col max-h-[90vh]">
+        <DialogHeader className="px-6 pt-6 pb-2 flex-shrink-0">
           <DialogTitle className="text-left">Detail penerima</DialogTitle>
         </DialogHeader>
 
         {/* Summary */}
-        <div className="px-6 pb-4">
+        <div className="px-6 pb-4 flex-shrink-0">
           <div className="flex w-full justify-between items-end">
             <div className="inline-flex gap-3 items-end">
               <div className="bg-[#242424] p-2 rounded-xl">
@@ -277,10 +277,10 @@ const PurchaseDialog = ({ slug, size, grind, qty, onQtyChange }: Props) => {
           </div>
         </div>
 
-        {/* Scrollable form with sticky footer */}
+        {/* Scrollable form area */}
         <Form {...form}>
-          <form className="max-h-[70vh] overflow-y-auto">
-            <div className="px-6 space-y-4 pb-48">
+          <form className="flex-1 overflow-y-auto contain-layout-style-paint">
+            <div className="px-6 space-y-4 pb-6">
               <FormField
                 control={form.control}
                 name="fullName"
@@ -352,102 +352,113 @@ const PurchaseDialog = ({ slug, size, grind, qty, onQtyChange }: Props) => {
               {/* --- Shipping Section --- */}
               <div className="space-y-2 pt-4">
                 <h3 className="text-lg font-semibold">Opsi Pengiriman</h3>
-                {isLoadingShipping && (
-                  <div className="flex items-center gap-2 text-secondary py-4">
-                    <LoaderCircle className="animate-spin" size={16} />
-                    <span>Mencari kurir...</span>
-                  </div>
-                )}
-                {shippingError && !isLoadingShipping && (
-                  <div className="text-destructive py-4 space-y-2">
-                    <p className="font-semibold">Gagal memuat opsi pengiriman.</p>
-                    <p className="text-sm">Error: {shippingError}</p>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={calculateShipping}
-                    >
-                      Coba Lagi
-                    </Button>
-                  </div>
-                )}
-                {!isLoadingShipping && !shippingError && shippingRates.length > 0 && (
-                  <RadioGroup
-                    onValueChange={(value: string) => {
-                      const rate = shippingRates.find(
-                        (r) => `${r.courier_code}-${r.courier_service_code}` === value
-                      ) || null;
-                      setSelectedShipping(rate);
-                    }}
-                    className="space-y-2"
-                  >
-                    {shippingRates.map((rate) => {
-                      const uniqueKey = `${rate.courier_code}-${rate.courier_service_code}`;
-                      return (
-                        <FormItem key={uniqueKey}>
-                          <FormControl>
-                            <RadioGroupItem value={uniqueKey} id={uniqueKey} className="sr-only" />
-                          </FormControl>
-                          <FormLabel
-                            htmlFor={uniqueKey}
-                            className={`flex justify-between items-center p-4 rounded-lg border-2 cursor-pointer transition-colors ${selectedShipping?.courier_service_code === rate.courier_service_code && selectedShipping?.courier_code === rate.courier_code ? 'border-primary bg-primary/10' : 'border-transparent hover:bg-white/5'}`}
-                          >
-                            <div className="flex flex-col">
-                              <span className="uppercase">{rate.company} {rate.courier_service_name}</span>
-                              <span className="text-sm text-secondary">Estimasi {rate.duration}</span>
-                            </div>
-                            <span className="text-lg">{numberToIdr({ nominal: rate.price })}</span>
-                          </FormLabel>
-                        </FormItem>
-                      );
-                    })}
-                  </RadioGroup>
-                )}
-              </div>
-            </div>
-
-            {/* Sticky Footer with updated summary */}
-            <div className="sticky bottom-0 w-full bg-[#141414] px-6 py-4 border-t border-white/10">
-              <div className="space-y-1 mb-3">
-                <div className="inline-flex w-full justify-between items-center">
-                  <span className="text-sm text-[#CCC4A9] font-normal">
-                    Subtotal
-                  </span>
-                  <span className="font-medium text-[#CCC4A9]">
-                    {numberToIdr({ nominal: subtotal })}
-                  </span>
-                </div>
-                <div className="inline-flex w-full justify-between items-center">
-                  <span className="text-sm text-[#CCC4A9] font-normal">
-                    Pengiriman
-                  </span>
-                  <span className="font-medium text-[#CCC4A9]">
-                    {selectedShipping
-                      ? numberToIdr({ nominal: selectedShipping.price })
-                      : "-"}
-                  </span>
-                </div>
-                <div className="w-full h-px bg-border/20 my-2"></div>
-                <div className="inline-flex w-full justify-between items-center">
-                  <span className="text-lg text-[#CCC4A9] font-bold">
-                    Total
-                  </span>
-                  <span className="font-bold text-xl text-[#CCC4A9]">
-                    {numberToIdr({ nominal: total })}
-                  </span>
+                <div className="transition-all duration-300 ease-in-out">
+                  {isLoadingShipping && (
+                    <div className="flex items-center gap-2 text-secondary py-4">
+                      <LoaderCircle className="animate-spin" size={16} />
+                      <span>Mencari kurir...</span>
+                    </div>
+                  )}
+                  {shippingError && !isLoadingShipping && (
+                    <div className="text-destructive py-4 space-y-2">
+                      <p className="font-semibold">
+                        Gagal memuat opsi pengiriman.
+                      </p>
+                      <p className="text-sm">Error: {shippingError}</p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={calculateShipping}
+                      >
+                        Coba Lagi
+                      </Button>
+                    </div>
+                  )}
+                  {!isLoadingShipping &&
+                    !shippingError &&
+                    shippingRates.length > 0 && (
+                      <RadioGroup
+                        onValueChange={(value: string) => {
+                          const rate =
+                            shippingRates.find(
+                              (r) =>
+                                `${r.courier_code}-${r.courier_service_code}` ===
+                                value
+                            ) || null;
+                          setSelectedShipping(rate);
+                        }}
+                        className="space-y-2"
+                      >
+                        {shippingRates.map((rate) => {
+                          const uniqueKey = `${rate.courier_code}-${rate.courier_service_code}`;
+                          return (
+                            <FormItem key={uniqueKey}>
+                              <FormControl>
+                                <RadioGroupItem
+                                  value={uniqueKey}
+                                  id={uniqueKey}
+                                  className="sr-only"
+                                />
+                              </FormControl>
+                              <FormLabel
+                                htmlFor={uniqueKey}
+                                className={`flex justify-between items-center p-4 rounded-lg border-2 cursor-pointer transition-colors ${selectedShipping?.courier_service_code === rate.courier_service_code && selectedShipping?.courier_code === rate.courier_code ? 'border-primary bg-primary/10' : 'border-transparent hover:bg-white/5'}`}
+                              >
+                                <div className="flex flex-col">
+                                  <span className="uppercase">{rate.company} {rate.courier_service_name}</span>
+                                  <span className="text-sm text-secondary">Estimasi {rate.duration}</span>
+                                </div>
+                                <span className="text-lg">{numberToIdr({ nominal: rate.price })}</span>
+                              </FormLabel>
+                            </FormItem>
+                          );
+                        })}
+                      </RadioGroup>
+                    )}
                 </div>
               </div>
-              <Button
-                type="button"
-                className="h-12"
-                disabled={qty === 0 || isLoadingShipping || !selectedShipping}
-                onClick={form.handleSubmit(onSubmit)}
-              >
-                {isLoadingShipping ? "Menghitung Ongkir..." : "Pesan Sekarang"}
-              </Button>
             </div>
           </form>
+
+          {/* Sticky Footer with updated summary */}
+          <div className="flex-shrink-0 w-full bg-[#141414] px-6 py-4 border-t border-white/10">
+            <div className="space-y-1 mb-3">
+              <div className="inline-flex w-full justify-between items-center">
+                <span className="text-sm text-[#CCC4A9] font-normal">
+                  Subtotal
+                </span>
+                <span className="font-medium text-[#CCC4A9]">
+                  {numberToIdr({ nominal: subtotal })}
+                </span>
+              </div>
+              <div className="inline-flex w-full justify-between items-center">
+                <span className="text-sm text-[#CCC4A9] font-normal">
+                  Pengiriman
+                </span>
+                <span className="font-medium text-[#CCC4A9]">
+                  {selectedShipping
+                    ? numberToIdr({ nominal: selectedShipping.price })
+                    : "-"}
+                </span>
+              </div>
+              <div className="w-full h-px bg-border/20 my-2"></div>
+              <div className="inline-flex w-full justify-between items-center">
+                <span className="text-lg text-[#CCC4A9] font-bold">Total</span>
+                <span className="font-bold text-xl text-[#CCC4A9]">
+                  {numberToIdr({ nominal: total })}
+                </span>
+              </div>
+            </div>
+            <Button
+              type="button"
+              className="h-12"
+              disabled={qty === 0 || isLoadingShipping || !selectedShipping}
+              onClick={form.handleSubmit(onSubmit)}
+            >
+              {isLoadingShipping ? "Menghitung Ongkir..." : "Pesan Sekarang"}
+            </Button>
+          </div>
         </Form>
       </DialogContent>
     </Dialog>
