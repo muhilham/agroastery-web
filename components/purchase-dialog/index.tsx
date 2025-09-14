@@ -34,6 +34,7 @@ import {
 } from "@/lib/message-builder";
 import { STORE_WHATSAPP } from "@/constant/store-phone-number";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { fetchPostalData, type PostalCodeResult } from '@/lib/utils/postal-code-api';
 
 // Custom hook for debouncing a value
 function useDebounce<T>(value: T, delay: number): T {
@@ -81,6 +82,11 @@ type Props = {
 
 const PurchaseDialog = ({ slug, size, grind, qty, onQtyChange }: Props) => {
   const [open, setOpen] = useState(false);
+
+  // State for postal code lookup
+  const [postalData, setPostalData] = useState<PostalCodeResult | null>(null);
+  const [isLoadingPostal, setIsLoadingPostal] = useState(false);
+  const [postalError, setPostalError] = useState<string | null>(null);
 
   // State for shipping calculation
   const [shippingRates, setShippingRates] = useState<TShippingRate[]>([]);
@@ -170,6 +176,41 @@ const PurchaseDialog = ({ slug, size, grind, qty, onQtyChange }: Props) => {
     calculateShipping();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedAddress, debouncedPostalCode, debouncedQty, product]);
+
+  const handlePostalCodeChange = async (value: string) => {
+    const numericValue = value.replace(/\D/g, "");
+
+    if (numericValue.length <= 5) {
+      form.setValue("postalCode", numericValue);
+      setPostalError(null);
+
+      if (numericValue.length === 5) {
+        setIsLoadingPostal(true);
+        try {
+          const data = await fetchPostalData(numericValue);
+          setPostalData(data);
+
+          if (data) {
+            // Auto-enrich address with complete location data
+            const currentAddress = form.getValues("address");
+            if (!currentAddress.includes(data.location_name)) {
+              const enrichedAddress = `${currentAddress}, ${data.full_location}`;
+              form.setValue('address', enrichedAddress, { shouldValidate: true });
+            }
+          } else {
+            setPostalError('Kode pos tidak ditemukan');
+          }
+        } catch (error) {
+          console.error("Postal code lookup failed:", error);
+          setPostalError('Gagal memuat data lokasi');
+        } finally {
+          setIsLoadingPostal(false);
+        }
+      } else {
+        setPostalData(null);
+      }
+    }
+  };
 
   if (!product) return null;
 
@@ -338,16 +379,44 @@ const PurchaseDialog = ({ slug, size, grind, qty, onQtyChange }: Props) => {
                   <FormItem>
                     <FormLabel>Kode Pos</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="12190"
-                        inputMode="numeric"
-                        {...field}
-                      />
+                      <div className="relative">
+                        <Input
+                          placeholder="12190"
+                          maxLength={5}
+                          inputMode="numeric"
+                          value={field.value}
+                          onChange={(e) => handlePostalCodeChange(e.target.value)}
+                          className="pr-10"
+                        />
+                        {isLoadingPostal && (
+                          <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                          </div>
+                        )}
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
+              {postalError && !isLoadingPostal && (
+                <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md -mt-2 mb-4">
+                  <p className="text-sm text-destructive">
+                    <strong>Error:</strong> {postalError}
+                  </p>
+                </div>
+              )}
+
+              {postalData && (
+                <div className="p-3 bg-green-50 border border-green-200 rounded-md -mt-2 mb-4">
+                  <p className="text-sm text-green-800">
+                    <strong>📍 Lokasi Ditemukan:</strong>
+                    <br />
+                    {postalData.full_location}
+                  </p>
+                </div>
+              )}
 
               {/* --- Shipping Section --- */}
               <div className="space-y-2 pt-4">
