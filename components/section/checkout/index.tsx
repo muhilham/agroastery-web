@@ -19,13 +19,12 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { LoaderCircle, Minus, Plus, RefreshCcw } from "lucide-react";
+import { LoaderCircle, Minus, Plus } from "lucide-react";
 import {
   $shipping,
   clearShippingState,
   fetchShippingRates,
   setSelectedRate,
-  TShippingRate,
 } from "@/lib/stores/shipping";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
@@ -92,8 +91,6 @@ export default function CheckoutClient({ slug, defaultSize, defaultGrind, defaul
       };
       fetchShippingRates(payload);
     }
-  // Debounce this effect to avoid firing on every keystroke
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [watchedAddress, watchedPostalCode, product, qty]);
 
   // Cleanup state on component unmount

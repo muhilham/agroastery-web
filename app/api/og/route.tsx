@@ -12,6 +12,7 @@ export async function GET() {
           height: "630px",
         }}
       >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="https://github.com/user-attachments/assets/79b22a6a-f341-40f6-ac74-27c6af123b7e"
           alt="og"

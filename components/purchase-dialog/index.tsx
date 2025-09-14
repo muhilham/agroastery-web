@@ -151,10 +151,14 @@ const PurchaseDialog = ({ slug, size, grind, qty, onQtyChange }: Props) => {
         throw new Error(result.error || "Gagal mengambil tarif pengiriman.");
       }
 
-      const sortedRates = result.pricing.sort((a: any, b: any) => a.price - b.price);
+      const sortedRates = result.pricing.sort((a: TShippingRate, b: TShippingRate) => a.price - b.price);
       setShippingRates(sortedRates);
-    } catch (error: any) {
-      setShippingError(error.message);
+    } catch (error) {
+      if (error instanceof Error) {
+        setShippingError(error.message);
+      } else {
+        setShippingError("An unknown error occurred.");
+      }
       setShippingRates([]);
     } finally {
       setIsLoadingShipping(false);

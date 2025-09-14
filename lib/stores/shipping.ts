@@ -1,4 +1,4 @@
-import { atom, map } from "nanostores";
+import { map } from "nanostores";
 
 // Defines the structure of a single shipping rate from Biteship
 export type TShippingRate = {
@@ -31,7 +31,24 @@ export const $shipping = map<{
 /**
  * Fetches shipping rates from our API endpoint.
  */
-export async function fetchShippingRates(payload: any) {
+
+// Define the structure of an item for the shipping payload
+type ShippingItem = {
+  name: string;
+  description: string;
+  value: number;
+  weight: number;
+  height: number;
+  length: number;
+  width: number;
+  quantity: number;
+};
+
+export async function fetchShippingRates(payload: {
+  destination_address: string;
+  destination_postal_code: string;
+  items: ShippingItem[];
+}) {
   $shipping.setKey("isLoading", true);
   $shipping.setKey("error", null);
   $shipping.setKey("rates", []); // Clear previous rates
@@ -55,8 +72,12 @@ export async function fetchShippingRates(payload: any) {
     );
 
     $shipping.setKey("rates", sortedRates);
-  } catch (err: any) {
-    $shipping.setKey("error", err.message);
+  } catch (err) {
+    if (err instanceof Error) {
+      $shipping.setKey("error", err.message);
+    } else {
+      $shipping.setKey("error", "An unknown error occurred.");
+    }
   } finally {
     $shipping.setKey("isLoading", false);
   }

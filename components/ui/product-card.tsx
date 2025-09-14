@@ -9,6 +9,7 @@ import {
 } from "./card";
 import { useRouter } from "next/navigation";
 import { selectProductBySlug } from "@/lib/stores/product";
+import Image from "next/image";
 
 interface I_ProductCardProps {
   productSlug: string;
@@ -45,10 +46,11 @@ export function ProductCard({
         <div className="relative aspect-[16/9]  w-full overflow-hidden rounded-t-xl mb-4">
           <div className="w-full h-14 bg-gradient-to-t from-[#252525] absolute bottom-0"></div>
           <div className="w-full h-14 bg-gradient-to-b from-[#252525] absolute top-0"></div>
-          <img
+          <Image
             src={productImage}
             alt={productTitle}
-            className="h-full w-full object-cover"
+            fill
+            className="object-cover"
           />
         </div>
         <CardHeader>
