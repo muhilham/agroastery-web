@@ -374,7 +374,7 @@ const PurchaseDialog = ({ slug, size, grind, qty, onQtyChange }: Props) => {
                 )}
                 {!isLoadingShipping && !shippingError && shippingRates.length > 0 && (
                   <RadioGroup
-                    onValueChange={(value) => {
+                    onValueChange={(value: string) => {
                       const rate = shippingRates.find(
                         (r) => `${r.courier_code}-${r.courier_service_code}` === value
                       ) || null;
@@ -391,17 +391,13 @@ const PurchaseDialog = ({ slug, size, grind, qty, onQtyChange }: Props) => {
                           </FormControl>
                           <FormLabel
                             htmlFor={uniqueKey}
-                            className={`flex justify-between items-center p-4 rounded-lg border-2 cursor-pointer transition-colors ${
-                              selectedShipping?.courier_service_code === rate.courier_service_code && selectedShipping?.courier_code === rate.courier_code
-                                ? "border-primary bg-primary/10"
-                                : "border-border"
-                            }`}
+                            className={`flex justify-between items-center p-4 rounded-lg border-2 cursor-pointer transition-colors ${selectedShipping?.courier_service_code === rate.courier_service_code && selectedShipping?.courier_code === rate.courier_code ? 'border-primary bg-primary/10' : 'border-transparent hover:bg-white/5'}`}
                           >
                             <div className="flex flex-col">
-                              <span className="font-bold uppercase">{rate.company} {rate.courier_service_name}</span>
+                              <span className="uppercase">{rate.company} {rate.courier_service_name}</span>
                               <span className="text-sm text-secondary">Estimasi {rate.duration}</span>
                             </div>
-                            <span className="font-bold text-lg">{numberToIdr({ nominal: rate.price })}</span>
+                            <span className="text-lg">{numberToIdr({ nominal: rate.price })}</span>
                           </FormLabel>
                         </FormItem>
                       );
