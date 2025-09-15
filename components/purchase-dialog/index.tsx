@@ -34,21 +34,9 @@ import {
 } from "@/lib/message-builder";
 import { STORE_WHATSAPP } from "@/constant/store-phone-number";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { fetchPostalData, type PostalCodeResult } from '@/lib/utils/postal-code-api';
 import { useDebounce } from "@/lib/hooks/useDebounce";
-
-// Define the structure for a shipping rate
-export type TShippingRate = {
-  company: string;
-  courier_name: string;
-  courier_code: string;
-  courier_service_name: string;
-  courier_service_code: string;
-  description: string;
-  duration: string;
-  price: number;
-  type: string;
-};
+import { usePostalCode } from "@/lib/hooks/usePostalCode";
+import { useShippingCalculator } from "@/lib/hooks/useShippingCalculator";
 
 // Extend the form schema to include postal code for shipping
 const formSchema = z.object({
@@ -70,18 +58,6 @@ type Props = {
 const PurchaseDialog = ({ slug, size, grind, qty, onQtyChange }: Props) => {
   const [open, setOpen] = useState(false);
 
-  // State for postal code lookup
-  const [postalData, setPostalData] = useState<PostalCodeResult | null>(null);
-  const [isLoadingPostal, setIsLoadingPostal] = useState(false);
-  const [postalError, setPostalError] = useState<string | null>(null);
-
-  // State for shipping calculation
-  const [shippingRates, setShippingRates] = useState<TShippingRate[]>([]);
-  const [selectedShipping, setSelectedShipping] = useState<TShippingRate | null>(null);
-  const [isLoadingShipping, setIsLoadingShipping] = useState(false);
-  const [shippingError, setShippingError] = useState<string | null>(null);
-  const [canCalculateShipping, setCanCalculateShipping] = useState(false);
-
   const product = useMemo(() => PRODUCT_LIST.find((p) => p.slug === slug), [slug]);
 
   const form = useForm<TForm>({
@@ -89,6 +65,25 @@ const PurchaseDialog = ({ slug, size, grind, qty, onQtyChange }: Props) => {
     defaultValues: { fullName: "", phone: "", address: "", postalCode: "" },
     mode: "onChange",
   });
+
+  // Reusable hooks for postal code and shipping
+  const {
+    postalData,
+    isLoadingPostal,
+    postalError,
+    canCalculateShipping,
+    handlePostalCodeChange,
+  } = usePostalCode();
+
+  const {
+    shippingRates,
+    isLoadingShipping,
+    shippingError,
+    selectedShipping,
+    setSelectedShipping,
+    calculateShipping,
+    setShippingError,
+  } = useShippingCalculator();
 
   // Watch form fields for changes
   const watchedAddress = useWatch({ control: form.control, name: "address" });
@@ -99,21 +94,12 @@ const PurchaseDialog = ({ slug, size, grind, qty, onQtyChange }: Props) => {
   const debouncedPostalCode = useDebounce(watchedPostalCode, 500);
   const debouncedQty = useDebounce(qty, 500);
 
-  // Effect to update canCalculateShipping state
-  useEffect(() => {
-    setCanCalculateShipping(!!postalData);
-  }, [postalData]);
-
   // Function to fetch shipping rates
-  const calculateShipping = async () => {
-    if (!product || !postalData) {
+  const handleCalculateShipping = async () => {
+    if (!product || !canCalculateShipping) {
       setShippingError("Please enter a valid postal code first");
       return;
     }
-
-    setIsLoadingShipping(true);
-    setShippingError(null);
-    setSelectedShipping(null);
 
     const shippingPayload = {
       destination: {
@@ -136,87 +122,19 @@ const PurchaseDialog = ({ slug, size, grind, qty, onQtyChange }: Props) => {
       ],
     };
 
-    try {
-      const response = await fetch("/api/shipping/rates", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(shippingPayload),
-      });
-
-      const result = await response.json();
-      if (!result.success) {
-        if (result.code === 'INVALID_POSTAL_CODE') {
-          setShippingError('Alamat pengiriman tidak valid. Silakan periksa kode pos Anda.');
-        } else {
-          setShippingError(result.error || "Gagal mengambil tarif pengiriman.");
-        }
-        setShippingRates([]);
-      } else {
-        const sortedRates = result.pricing.sort((a: TShippingRate, b: TShippingRate) => a.price - b.price);
-        setShippingRates(sortedRates);
-      }
-    } catch (error) {
-      if (error instanceof Error) {
-        setShippingError(error.message);
-      } else {
-        setShippingError("An unknown error occurred.");
-      }
-      setShippingRates([]);
-    } finally {
-      setIsLoadingShipping(false);
-    }
+    await calculateShipping(shippingPayload);
   };
 
-  // Effect to trigger shipping calculation
+  // Effect to trigger shipping calculation automatically on debounce
   useEffect(() => {
-    // Only calculate if address and postal code are valid
     const addressValidation = z.string().min(10).safeParse(debouncedAddress);
     const postalCodeValidation = z.string().length(5).safeParse(debouncedPostalCode);
+
     if (addressValidation.success && postalCodeValidation.success && canCalculateShipping) {
-      calculateShipping();
+      handleCalculateShipping();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedAddress, debouncedPostalCode, debouncedQty, product, canCalculateShipping]);
-
-  const handlePostalCodeChange = async (value: string) => {
-    const numericValue = value.replace(/\D/g, "");
-
-    if (numericValue.length <= 5) {
-      form.setValue("postalCode", numericValue);
-      setPostalError(null);
-      setCanCalculateShipping(false); // Disable shipping until valid code
-
-      if (numericValue.length === 5) {
-        setIsLoadingPostal(true);
-        try {
-          const data = await fetchPostalData(numericValue);
-          setPostalData(data);
-
-          if (data) {
-            // Auto-enrich address with complete location data
-            const currentAddress = form.getValues("address");
-            if (!currentAddress.includes(data.location_name)) {
-              const enrichedAddress = `${currentAddress}, ${data.full_location}`;
-              form.setValue('address', enrichedAddress, { shouldValidate: true });
-            }
-            setCanCalculateShipping(true); // Enable shipping calculation
-          } else {
-            setPostalError('Kode pos tidak ditemukan');
-            setCanCalculateShipping(false);
-          }
-        } catch (error) {
-          console.error("Postal code lookup failed:", error);
-          setPostalError('Gagal memuat data lokasi');
-          setCanCalculateShipping(false);
-        } finally {
-          setIsLoadingPostal(false);
-        }
-      } else {
-        setPostalData(null);
-        setCanCalculateShipping(false);
-      }
-    }
-  };
+  }, [debouncedAddress, debouncedPostalCode, debouncedQty, canCalculateShipping]);
 
   if (!product) return null;
 
@@ -230,8 +148,6 @@ const PurchaseDialog = ({ slug, size, grind, qty, onQtyChange }: Props) => {
   const subtotal = unitPrice * Math.max(0, qty);
   const total = subtotal + (selectedShipping?.price ?? 0);
 
-  const dec = () => onQtyChange(Math.max(0, qty - 1));
-  const inc = () => onQtyChange(qty + 1);
 
   const onSubmit = (values: TForm) => {
     const message = createWhatsAppMessage({
@@ -254,9 +170,9 @@ const PurchaseDialog = ({ slug, size, grind, qty, onQtyChange }: Props) => {
 
     window.open(waUrl, "_blank");
     setOpen(false);
-  };
-
-  const isShowShipping = canCalculateShipping && !isLoadingPostal && debouncedPostalCode.length === 5 && !!postalData;
+  }
+  const dec = () => onQtyChange(Math.max(0, qty - 1));
+  const inc = () => onQtyChange(qty + 1);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -393,7 +309,7 @@ const PurchaseDialog = ({ slug, size, grind, qty, onQtyChange }: Props) => {
                           maxLength={5}
                           inputMode="numeric"
                           value={field.value}
-                          onChange={(e) => handlePostalCodeChange(e.target.value)}
+                          onChange={(e) => handlePostalCodeChange(e.target.value, form)}
                           className="pr-10"
                         />
                         {isLoadingPostal && (
@@ -427,79 +343,77 @@ const PurchaseDialog = ({ slug, size, grind, qty, onQtyChange }: Props) => {
               )}
 
               {/* --- Shipping Section --- */}
-              <div className="space-y-2 pt-4">
-                {isShowShipping && (
-                  <>
-                    <h3 className="text-lg font-semibold text-white">Opsi Pengiriman</h3>
-                    <div className="transition-all duration-300 ease-in-out">
-                      {isLoadingShipping && (
-                        <div className="flex items-center gap-2 text-secondary py-4">
-                          <LoaderCircle className="animate-spin" size={16} />
-                          <span>Mencari kurir...</span>
-                        </div>
+              {canCalculateShipping && (
+                <div className="space-y-2 pt-4">
+                  <h3 className="text-lg font-semibold text-white">Opsi Pengiriman</h3>
+                  <div className="transition-all duration-300 ease-in-out">
+                    {isLoadingShipping && (
+                      <div className="flex items-center gap-2 text-secondary py-4">
+                        <LoaderCircle className="animate-spin" size={16} />
+                        <span>Mencari kurir...</span>
+                      </div>
+                    )}
+                    {shippingError && !isLoadingShipping && (
+                      <div className="text-destructive py-4 space-y-2">
+                        <p className="font-semibold">
+                          Gagal memuat opsi pengiriman.
+                        </p>
+                        <p className="text-sm">Error: {shippingError}</p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleCalculateShipping}
+                        >
+                          Coba Lagi
+                        </Button>
+                      </div>
+                    )}
+                    {postalData &&
+                      !isLoadingShipping &&
+                      !shippingError &&
+                      shippingRates.length > 0 && (
+                        <RadioGroup
+                          onValueChange={(value: string) => {
+                            const rate =
+                              shippingRates.find(
+                                (r) =>
+                                  `${r.courier_code}-${r.courier_service_code}` ===
+                                  value
+                              ) || null;
+                            setSelectedShipping(rate);
+                          }}
+                          className="space-y-2"
+                        >
+                          {shippingRates.map((rate, index) => {
+                            const uniqueKey = `${rate.courier_code}-${rate.courier_service_code}-${rate.price}-${index}`;
+                            return (
+                              <FormItem key={uniqueKey}>
+                                <FormControl>
+                                  <RadioGroupItem
+                                    value={`${rate.courier_code}-${rate.courier_service_code}`}
+                                    id={uniqueKey}
+                                    className="sr-only"
+                                  />
+                                </FormControl>
+                                <FormLabel
+                                  htmlFor={uniqueKey}
+                                  className={`flex justify-between items-center p-4 rounded-lg border-2 cursor-pointer transition-colors ${selectedShipping?.courier_service_code === rate.courier_service_code && selectedShipping?.courier_code === rate.courier_code ? 'border-primary bg-primary/10' : 'border-transparent hover:bg-white/5'}`}
+                                >
+                                  <div className="flex flex-col">
+                                    <span className="uppercase">{rate.company} {rate.courier_service_name}</span>
+                                    <span className="text-sm text-secondary">Estimasi {rate.duration}</span>
+                                  </div>
+                                  <span className="text-lg">{numberToIdr({ nominal: rate.price })}</span>
+                                </FormLabel>
+                              </FormItem>
+                            );
+                          })}
+                        </RadioGroup>
                       )}
-                      {shippingError && !isLoadingShipping && (
-                        <div className="text-destructive py-4 space-y-2">
-                          <p className="font-semibold">
-                            Gagal memuat opsi pengiriman.
-                          </p>
-                          <p className="text-sm">Error: {shippingError}</p>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={calculateShipping}
-                          >
-                            Coba Lagi
-                          </Button>
-                        </div>
-                      )}
-                      {postalData &&
-                        !isLoadingShipping &&
-                        !shippingError &&
-                        shippingRates.length > 0 && (
-                          <RadioGroup
-                            onValueChange={(value: string) => {
-                              const rate =
-                                shippingRates.find(
-                                  (r) =>
-                                    `${r.courier_code}-${r.courier_service_code}` ===
-                                    value
-                                ) || null;
-                              setSelectedShipping(rate);
-                            }}
-                            className="space-y-2"
-                          >
-                            {shippingRates.map((rate) => {
-                              const uniqueKey = `${rate.courier_code}-${rate.courier_service_code}`;
-                              return (
-                                <FormItem key={uniqueKey}>
-                                  <FormControl>
-                                    <RadioGroupItem
-                                      value={uniqueKey}
-                                      id={uniqueKey}
-                                      className="sr-only"
-                                    />
-                                  </FormControl>
-                                  <FormLabel
-                                    htmlFor={uniqueKey}
-                                    className={`flex justify-between items-center p-4 rounded-lg border-2 cursor-pointer transition-colors ${selectedShipping?.courier_service_code === rate.courier_service_code && selectedShipping?.courier_code === rate.courier_code ? 'border-primary bg-primary/10' : 'border-transparent hover:bg-white/5'}`}
-                                  >
-                                    <div className="flex flex-col">
-                                      <span className="uppercase">{rate.company} {rate.courier_service_name}</span>
-                                      <span className="text-sm text-secondary">Estimasi {rate.duration}</span>
-                                    </div>
-                                    <span className="text-lg">{numberToIdr({ nominal: rate.price })}</span>
-                                  </FormLabel>
-                                </FormItem>
-                              );
-                            })}
-                          </RadioGroup>
-                        )}
-                    </div>
-                  </>
-                )}
-              </div>
+                  </div>
+                </div>
+              )}
             </div>
           </form>
 
