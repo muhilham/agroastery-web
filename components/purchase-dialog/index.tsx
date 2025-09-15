@@ -35,20 +35,7 @@ import {
 import { STORE_WHATSAPP } from "@/constant/store-phone-number";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { fetchPostalData, type PostalCodeResult } from '@/lib/utils/postal-code-api';
-
-// Custom hook for debouncing a value
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value);
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [value, delay]);
-  return debouncedValue;
-}
+import { useDebounce } from "@/lib/hooks/useDebounce";
 
 // Define the structure for a shipping rate
 export type TShippingRate = {
