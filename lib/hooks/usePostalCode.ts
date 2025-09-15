@@ -1,17 +1,23 @@
 import { useState } from 'react';
 import { fetchPostalData, type PostalCodeResult } from '@/lib/utils/postal-code-api';
 
+// Define form interface for type safety - make it compatible with react-hook-form
+interface FormMethods<TFieldValues> {
+  setValue: (name: keyof TFieldValues, value: string) => void;
+  getValues: (name: keyof TFieldValues) => string;
+}
+
 export const usePostalCode = () => {
   const [postalData, setPostalData] = useState<PostalCodeResult | null>(null);
   const [isLoadingPostal, setIsLoadingPostal] = useState(false);
   const [postalError, setPostalError] = useState<string | null>(null);
   const [canCalculateShipping, setCanCalculateShipping] = useState(false);
 
-  const handlePostalCodeChange = async (value: string, form: any) => {
+  const handlePostalCodeChange = async <TFieldValues>(value: string, form: FormMethods<TFieldValues>) => {
     const numericValue = value.replace(/\D/g, '');
     
     if (numericValue.length <= 5) {
-      form.setValue('postalCode', numericValue);
+      form.setValue('postalCode' as keyof TFieldValues, numericValue);
       setPostalError(null);
       setCanCalculateShipping(false);
       
@@ -23,10 +29,10 @@ export const usePostalCode = () => {
           
           if (data) {
             // Auto-enrich address with complete location data
-            const currentAddress = form.getValues('address');
+            const currentAddress = form.getValues('address' as keyof TFieldValues);
             if (!currentAddress.includes(data.location_name)) {
               const enrichedAddress = `${currentAddress}, ${data.full_location}`;
-              form.setValue('address', enrichedAddress);
+              form.setValue('address' as keyof TFieldValues, enrichedAddress);
             }
             setCanCalculateShipping(true);
             return;
@@ -34,7 +40,7 @@ export const usePostalCode = () => {
           setPostalError('Kode pos tidak ditemukan');
           setCanCalculateShipping(false);
           return;
-        } catch (error) {
+        } catch {
           setPostalError('Gagal memuat data lokasi');
           setCanCalculateShipping(false);
           return;

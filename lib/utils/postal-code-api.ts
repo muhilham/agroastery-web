@@ -48,6 +48,7 @@ export async function isValidPostalCode(postalCode: string): Promise<boolean> {
     const data = await response.json();
     return data.success;
   } catch (error) {
+    console.error('Failed to validate postal code:', error);
     return false;
   }
 }

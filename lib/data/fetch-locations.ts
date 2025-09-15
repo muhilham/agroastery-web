@@ -34,8 +34,8 @@ export async function fetchProvinceData(): Promise<ProvinceData> {
     
     const data = await response.json();
     return data;
-  } catch (error) {
-    console.error('Error fetching province data:', error);
+  } catch {
+    console.error('Error fetching province data:');
     return {};
   }
 }
@@ -59,8 +59,8 @@ export async function fetchKotaKabupatenData(): Promise<KotaKabupatenData> {
     
     const data = await response.json();
     return data;
-  } catch (error) {
-    console.error('Error fetching kota/kabupaten data:', error);
+  } catch {
+    console.error('Error fetching kota/kabupaten data:');
     return {};
   }
 }
@@ -84,8 +84,8 @@ export async function fetchPostalCodeData(): Promise<PostalCodeData> {
     
     const data = await response.json();
     return data;
-  } catch (error) {
-    console.error('Error fetching postal code data:', error);
+  } catch {
+    console.error('Error fetching postal code data:');
     return {};
   }
 }
@@ -108,7 +108,7 @@ export async function getProvinceData(): Promise<ProvinceData> {
     provinceCache = await fetchProvinceData();
     lastFetchTime = now;
     return provinceCache;
-  } catch (error) {
+  } catch {
     console.warn('Using fallback province data due to fetch error');
     return {
       '11': 'Aceh',
@@ -134,7 +134,7 @@ export async function getKotaKabupatenData(): Promise<KotaKabupatenData> {
     kotaKabupatenCache = await fetchKotaKabupatenData();
     lastFetchTime = now;
     return kotaKabupatenCache;
-  } catch (error) {
+  } catch {
     console.warn('Using fallback kota/kabupaten data due to fetch error');
     return {
       '3173': 'Jakarta Pusat',
@@ -157,7 +157,7 @@ export async function getPostalCodeData(): Promise<PostalCodeData> {
     postalCodeCache = await fetchPostalCodeData();
     lastFetchTime = now;
     return postalCodeCache;
-  } catch (error) {
+  } catch {
     console.warn('Using fallback postal code data due to fetch error');
     return {
       '10110': { bps: '3173', nama: 'Gambir' },

@@ -1,5 +1,27 @@
 import { z } from 'zod'
 
+export const ShippingRequestSchema = z.object({
+  destination: z.object({
+    contact_name: z.string().min(2, "Nama terlalu pendek"),
+    contact_phone: z.string().min(6, "Nomor telepon tidak valid"),
+    address: z.string().min(10, "Alamat terlalu pendek"),
+    postal_code: z.string().length(5, "Kode pos harus 5 digit"),
+  }),
+  items: z.array(
+    z.object({
+      name: z.string(),
+      value: z.number().positive(),
+      weight: z.number().positive(),
+      height: z.number().positive(),
+      length: z.number().positive(),
+      width: z.number().positive(),
+      quantity: z.number().int().positive(),
+    })
+  ).min(1, "Minimal 1 item diperlukan"),
+});
+
+export type ShippingRequestPayload = z.infer<typeof ShippingRequestSchema>;
+
 export const ShippingPricingSchema = z.object({
   available_collection_method: z.array(z.string()),
   available_for_cash_on_delivery: z.boolean(),

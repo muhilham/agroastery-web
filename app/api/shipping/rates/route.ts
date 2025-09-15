@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     let body;
     try {
       body = await request.json();
-    } catch (error) {
+    } catch {
       return NextResponse.json(
         { success: false, error: "Invalid JSON body" },
         { status: 400 }
@@ -153,8 +153,18 @@ export async function POST(request: NextRequest) {
       success: true, 
       pricing: data.pricing,
       metadata: {
-        origin: biteshipPayload.origin,
-        destination: biteshipPayload.destination
+        origin: {
+          contact_name: biteshipPayload.origin_contact_name,
+          contact_phone: biteshipPayload.origin_contact_phone,
+          address: biteshipPayload.origin_address,
+          postal_code: biteshipPayload.origin_postal_code
+        },
+        destination: {
+          contact_name: biteshipPayload.destination_contact_name,
+          contact_phone: biteshipPayload.destination_contact_phone,
+          address: biteshipPayload.destination_address,
+          postal_code: biteshipPayload.destination_postal_code
+        }
       }
     }, { status: 200, headers });
 

@@ -54,11 +54,11 @@ const OrderDetail = ({
 
   useEffect(() => {
     setSize(selectedSize || sizeOptions[0] || "");
-  }, [selectedSize, sizeOptions.join("|")]);
+  }, [selectedSize, sizeOptions]);
 
   useEffect(() => {
     setGrind(selectedGrind || grindOptions[0] || "");
-  }, [selectedGrind, grindOptions.join("|")]);
+  }, [selectedGrind, grindOptions]);
 
   const currentUnitPrice = useMemo(() => {
     if (priceBySize && size) {

@@ -1,5 +1,9 @@
 import { useState } from 'react';
-import { ShippingPricing, ShippingResponseSchema } from '../types/shipping';
+import { 
+  ShippingPricing, 
+  ShippingRequestPayload, 
+  ShippingResponseSchema 
+} from '../types/shipping';
 
 export const useShippingCalculator = () => {
   const [shippingRates, setShippingRates] = useState<ShippingPricing[]>([]);
@@ -9,7 +13,7 @@ export const useShippingCalculator = () => {
     null
   );
 
-  const calculateShipping = async (payload: any) => {
+  const calculateShipping = async (payload: ShippingRequestPayload) => {
     setIsLoadingShipping(true);
     setShippingError(null);
 
@@ -43,7 +47,7 @@ export const useShippingCalculator = () => {
         }
         return null;
       }
-    } catch (error) {
+    } catch {
       setShippingError('Terjadi kesalahan. Silakan coba lagi.');
       return null;
     } finally {

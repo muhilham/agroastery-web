@@ -19,16 +19,25 @@ export async function fetchIndonesianPostalCodes() {
   }
 }
 
+// Define interfaces for postal code data
+export interface PostalCodeItem {
+  bps: string;
+  nama: string;
+}
+
+export interface PostalCodeData {
+  [postalCode: string]: PostalCodeItem;
+}
 
 // Local cache implementation
-let postalCodeCache: any[] | null = null;
+let postalCodeCache: PostalCodeData | null = null;
 
 
-export async function getPostalCodeData() {
+export async function getPostalCodeData(): Promise<PostalCodeData> {
   if (postalCodeCache) {
     return postalCodeCache;
   }
   
   postalCodeCache = await fetchIndonesianPostalCodes();
-  return postalCodeCache;
+  return postalCodeCache as PostalCodeData;
 }

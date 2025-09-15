@@ -54,6 +54,7 @@ export async function isValidPostalCode(postalCode: string): Promise<boolean> {
     // FIX: Check if property exists in object
     return postalCode in allPostalCodes;
   } catch (error) {
+    console.error('Postal code validation error:', error);
     return false;
   }
 }
@@ -107,6 +108,7 @@ export async function getBpsLocationName(bpsCode: string): Promise<string> {
     const kotaKabupatenData = await getKotaKabupatenData();
     return kotaKabupatenData[bpsCode] || `Wilayah ${bpsCode}`;
   } catch (error) {
+    console.error('BPS location lookup error:', error);
     return `Wilayah ${bpsCode}`;
   }
 }
@@ -116,6 +118,7 @@ export async function getProvinceName(provinceCode: string): Promise<string> {
     const provinceData = await getProvinceData();
     return provinceData[provinceCode] || `Provinsi ${provinceCode}`;
   } catch (error) {
+    console.error('Province lookup error:', error);
     return `Provinsi ${provinceCode}`;
   }
 }
