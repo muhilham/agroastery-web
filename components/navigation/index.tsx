@@ -107,10 +107,12 @@ export default function Navigation() {
                   className="w-full text-left inline-flex justify-start items-start gap-5 p-5 thin-border"
                 >
                   <div className="thin-border-rounded aspect-video p-2 border-primary rounded-xl shrink-0">
-                    <img
+                    <Image
                       src={
                         p.images?.[0]?.image ?? "/assets/coffe/blend-gayo.png"
                       }
+                      width={64}
+                      height={64}
                       className="size-16"
                       alt={p.title}
                     />

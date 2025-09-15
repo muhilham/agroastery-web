@@ -34,7 +34,7 @@ const ProductDetailPage = ({ slug }: { slug: string }) => {
     setSelectedSize(product.size?.[0] ?? "");
     setSelectedGrind(product.grindSize?.[0] ?? "");
     setQty(0);
-  }, [product?.slug]);
+  }, [product, product?.slug]);
 
   if (!product) {
     return (
