@@ -198,7 +198,7 @@ export const FloatingCheckoutButton = ({
   const router = useRouter();
 
   return (
-    <div className="fixed bottom-0 w-full left-0 desktop:hidden bg-black inline-flex gap-5 z-40 px-6 items-center py-4">
+    <div className="fixed bottom-0 w-full left-0 desktop:hidden bg-black inline-flex gap-5 z-40 px-6 items-center py-4" style={{ scrollBehavior: 'auto' }}>
       <div className="inline-flex items-center gap-2">
         <Button
           size="icon"
