@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+export const runtime = "edge";
+
 // Types for our data structures
 interface ProvinceData {
   [bpsCode: string]: string;
