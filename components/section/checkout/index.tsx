@@ -1,7 +1,6 @@
 "use client";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import { useStore } from "@nanostores/react";
 import Navigation from "@/components/navigation";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
