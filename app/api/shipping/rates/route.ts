@@ -14,37 +14,10 @@ const shippingRequestSchema = z.object({
       name: z.string(),
       value: z.number().positive(),
       weight: z.number().positive(),
-      height: z.number().positive(),
-      length: z.number().positive(),
-      width: z.number().positive(),
       quantity: z.number().int().positive(),
     })
   ).min(1, "Minimal 1 item diperlukan"),
 });
-
-// Add postal code validation function
-async function validatePostalCode(postalCode: string, request: NextRequest): Promise<boolean> {
-  try {
-    // Get the base URL from the request headers for Cloudflare compatibility
-    const protocol = request.headers.get('x-forwarded-proto') || 'https';
-    const host = request.headers.get('host');
-    const baseUrl = `${protocol}://${host}`;
-    
-    const response = await fetch(`${baseUrl}/api/postal-code?code=${postalCode}`, {
-      headers: {
-        'User-Agent': 'Agroastery-Internal/1.0',
-      },
-    });
-    
-    if (!response.ok) return false;
-    
-    const data = await response.json();
-    return data.success === true;
-  } catch (error) {
-    console.error('Postal code validation failed:', error);
-    return false;
-  }
-}
 
 export const runtime = "edge";
 
@@ -82,19 +55,6 @@ export async function POST(request: NextRequest) {
 
     const { destination, items } = validation.data;
 
-    // Validate postal code before proceeding
-    const isValidPostalCode = await validatePostalCode(destination.postal_code, request);
-    if (!isValidPostalCode) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Invalid postal code. Please check your shipping address.',
-          code: 'INVALID_POSTAL_CODE'
-        },
-        { status: 400, headers }
-      );
-    }
-
     // Validate required environment variables
     const apiKey = process.env.BITESHIP_API_KEY;
     if (!apiKey) {
@@ -115,14 +75,14 @@ export async function POST(request: NextRequest) {
       destination_contact_phone: destination.contact_phone,
       destination_address: destination.address,
       destination_postal_code: parseInt(destination.postal_code),
-      couriers: "grab,gojek,jne,anteraja",
+      couriers: "grab,gojek,jne,anteraja,sicepat",
       items: items.map(item => ({
         name: item.name,
         value: item.value,
         weight: item.weight,
-        height: item.height,
-        length: item.length,
-        width: item.width,
+        height: 1,
+        length: 1,
+        width: 1,
         quantity: item.quantity
       })),
     };
@@ -161,30 +121,30 @@ export async function POST(request: NextRequest) {
 
       const data = await response.json();
 
-      if (!data.success || !data.pricing) {
+      // Handle cases where Biteship indicates an error (e.g., invalid address)
+      if (!data.success || !data.pricing || data.pricing.length === 0) {
         return NextResponse.json(
-          { success: false, error: 'No shipping rates available' },
+          {
+            success: false,
+            error: data.error || 'No shipping rates available for the provided address.',
+            code: 'NO_SHIPPING_RATES'
+          },
           { status: 404, headers }
         );
       }
 
+      // Extract validated location data from Biteship's response
+      const location = {
+        postal_code: String(data.destination.postal_code), // Convert to string to match frontend schema
+        province: data.destination.administrative_division_level_1_name,
+        city: data.destination.administrative_division_level_2_name,
+        district: data.destination.administrative_division_level_3_name,
+      };
+
       return NextResponse.json({ 
         success: true, 
         pricing: data.pricing,
-        metadata: {
-          origin: {
-            contact_name: biteshipPayload.origin_contact_name,
-            contact_phone: biteshipPayload.origin_contact_phone,
-            address: biteshipPayload.origin_address,
-            postal_code: biteshipPayload.origin_postal_code
-          },
-          destination: {
-            contact_name: biteshipPayload.destination_contact_name,
-            contact_phone: biteshipPayload.destination_contact_phone,
-            address: biteshipPayload.destination_address,
-            postal_code: biteshipPayload.destination_postal_code
-          }
-        }
+        location: location,
       }, { status: 200, headers });
 
     } catch (fetchError) {

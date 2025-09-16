@@ -23,6 +23,11 @@ const ProductDetailPage = ({ slug }: { slug: string }) => {
     selectProductBySlug(slug);
   }, [slug]);
 
+  // Scroll to top on slug change to ensure consistent navigation behavior
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [slug]);
+
   const product = useStore($productDetailStore);
 
   const [selectedSize, setSelectedSize] = useState<string>("");

@@ -28,8 +28,8 @@ import {
 import { STORE_WHATSAPP } from "@/constant/store-phone-number";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useDebounce } from "@/lib/hooks/useDebounce";
-import { usePostalCode } from "@/lib/hooks/usePostalCode";
 import { useShippingCalculator } from "@/lib/hooks/useShippingCalculator";
+import { LocationDisplay } from "@/components/location-display";
 
 // Expanded schema to include postal code for shipping calculation
 const formSchema = z.object({
@@ -60,57 +60,37 @@ export default function CheckoutClient({ slug, defaultSize, defaultGrind, defaul
     mode: "onChange", // Validate on change to trigger effects
   });
 
-  // Reusable hooks for postal code and shipping
-  const {
-    postalData,
-    isLoadingPostal,
-    postalError,
-    canCalculateShipping,
-    handlePostalCodeChange,
-  } = usePostalCode();
-
   const {
     shippingRates,
+    location, // Get location data
     isLoadingShipping,
     shippingError,
     selectedShipping,
     setSelectedShipping,
     calculateShipping,
-    setShippingError,
+    resetShipping, // Get reset function
   } = useShippingCalculator();
 
-  // Watch for changes in address and postal code fields
-  const watchedAddress = useWatch({ control: form.control, name: "address" });
   const watchedPostalCode = useWatch({ control: form.control, name: "postalCode" });
 
-  // Debounce the watched values to avoid excessive API calls
-  const debouncedAddress = useDebounce(watchedAddress, 500);
-  const debouncedPostalCode = useDebounce(watchedPostalCode, 500);
-  const debouncedQty = useDebounce(qty, 500);
+  const debouncedPostalCode = useDebounce(watchedPostalCode, 800);
 
-  const handleCalculateShipping = async () => {
-    if (!product || !canCalculateShipping) {
-      setShippingError("Please enter a valid postal code first");
-      return;
-    }
+  const handleCalculateShipping = async (postalCode: string) => {
+    if (!product) return;
 
     const shippingPayload = {
       destination: {
         contact_name: form.getValues("fullName") || "Penerima",
         contact_phone: form.getValues("phone") || "08123456789",
         address: form.getValues("address"),
-        postal_code: form.getValues("postalCode"),
+        postal_code: postalCode,
       },
       items: [
         {
           name: product.title,
-          description: product.description || "Kopi Pilihan",
           value: product.price || 0,
           weight: 500, // Default weight 500g
-          height: 10, // Default dimensions
-          length: 10,
-          width: 10,
-          quantity: Math.max(1, debouncedQty),
+          quantity: Math.max(1, qty),
         },
       ],
     };
@@ -118,17 +98,16 @@ export default function CheckoutClient({ slug, defaultSize, defaultGrind, defaul
     await calculateShipping(shippingPayload);
   };
 
-  // Effect to trigger shipping calculation automatically on debounce
   useEffect(() => {
-    const addressValidation = z.string().min(10).safeParse(debouncedAddress);
     const postalCodeValidation = z.string().length(5).safeParse(debouncedPostalCode);
 
-    if (addressValidation.success && postalCodeValidation.success && canCalculateShipping) {
-      handleCalculateShipping();
+    if (postalCodeValidation.success) {
+      handleCalculateShipping(debouncedPostalCode);
+    } else {
+      resetShipping(); // Clear rates if postal code is invalid
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedAddress, debouncedPostalCode, debouncedQty, canCalculateShipping]);
-
+  }, [debouncedPostalCode, qty]); // Re-run on qty change too
 
   if (!product) {
     return <main className="pt-20 px-6">Produk tidak ditemukan.</main>;
@@ -144,7 +123,6 @@ export default function CheckoutClient({ slug, defaultSize, defaultGrind, defaul
   const subtotal = unitPrice * Math.max(0, qty);
   const total = subtotal + (selectedShipping?.price ?? 0);
 
-
   const dec = () => setQty((q) => Math.max(0, q - 1));
   const inc = () => setQty((q) => q + 1);
 
@@ -157,7 +135,10 @@ export default function CheckoutClient({ slug, defaultSize, defaultGrind, defaul
       unitPrice,
       fullName: values.fullName,
       phone: normalizePhoneID(values.phone),
-      address: `${values.address}, ${values.postalCode}`,
+      // Use the verified location data if available
+      address: location
+        ? `${values.address}, ${location.district}, ${location.city}, ${location.province} ${location.postal_code}`
+        : `${values.address}, ${values.postalCode}`,
       shipping: selectedShipping ? `${selectedShipping.courier_name} ${selectedShipping.courier_service_name} - ${numberToIdr({ nominal: selectedShipping.price })}` : 'Belum Dipilih',
       total: total,
     });
@@ -168,7 +149,7 @@ export default function CheckoutClient({ slug, defaultSize, defaultGrind, defaul
     });
 
     window.open(waUrl, "_blank");
-  }
+  };
 
   return (
     <Fragment>
@@ -297,13 +278,12 @@ export default function CheckoutClient({ slug, defaultSize, defaultGrind, defaul
                         placeholder="12190"
                         maxLength={5}
                         inputMode="numeric"
-                        value={field.value}
-                        onChange={(e) => handlePostalCodeChange(e.target.value, form)}
-                        className="pr-10"
+                        {...field}
+                        // No need for a complex onChange handler anymore
                       />
-                      {isLoadingPostal && (
+                      {isLoadingShipping && (
                         <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                          <LoaderCircle className="animate-spin h-4 w-4 text-primary" />
                         </div>
                       )}
                     </div>
@@ -313,96 +293,60 @@ export default function CheckoutClient({ slug, defaultSize, defaultGrind, defaul
               )}
             />
 
-            {postalError && !isLoadingPostal && (
-              <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md -mt-2 mb-4">
-                <p className="text-sm text-red-500">
-                  <strong>Error:</strong> {postalError}
-                </p>
-              </div>
-            )}
-
-            {postalData && (
-              <div className="p-3 bg-green-50 border border-green-200 rounded-md -mt-2 mb-4">
-                <p className="text-sm text-green-800">
-                  <strong>📍 Lokasi Ditemukan:</strong>
-                  <br />
-                  {postalData.full_location}
-                </p>
-              </div>
-            )}
+            {/* Replace old postal code display with the new LocationDisplay component */}
+            <LocationDisplay
+              location={location}
+              isLoading={isLoadingShipping}
+              error={shippingError}
+            />
 
             {/* --- Shipping Section --- */}
-            {canCalculateShipping && (
-                <div className="space-y-2 pt-4">
-                  <h3 className="text-lg font-semibold text-white">Opsi Pengiriman</h3>
-                  <div className="transition-all duration-300 ease-in-out">
-                    {isLoadingShipping && (
-                      <div className="flex items-center gap-2 text-secondary py-4">
-                        <LoaderCircle className="animate-spin" size={16} />
-                        <span>Mencari kurir...</span>
-                      </div>
-                    )}
-                    {shippingError && !isLoadingShipping && (
-                      <div className="text-destructive py-4 space-y-2">
-                        <p className="font-semibold">
-                          Gagal memuat opsi pengiriman.
-                        </p>
-                        <p className="text-sm">Error: {shippingError}</p>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={handleCalculateShipping}
-                        >
-                          Coba Lagi
-                        </Button>
-                      </div>
-                    )}
-                    {postalData &&
-                      !isLoadingShipping &&
-                      !shippingError &&
-                      shippingRates.length > 0 && (
-                        <RadioGroup
-                          onValueChange={(value: string) => {
-                            const rate =
-                              shippingRates.find(
-                                (r) =>
-                                  `${r.courier_code}-${r.courier_service_code}` ===
-                                  value
-                              ) || null;
-                            setSelectedShipping(rate);
-                          }}
-                          className="space-y-2"
-                        >
-                          {shippingRates.map((rate, index) => {
-                            const uniqueKey = `${rate.courier_code}-${rate.courier_service_code}-${rate.price}-${index}`;
-                            return (
-                              <FormItem key={uniqueKey}>
-                                <FormControl>
-                                  <RadioGroupItem
-                                    value={`${rate.courier_code}-${rate.courier_service_code}`}
-                                    id={uniqueKey}
-                                    className="sr-only"
-                                  />
-                                </FormControl>
-                                <FormLabel
-                                  htmlFor={uniqueKey}
-                                  className={`flex justify-between items-center p-4 rounded-lg border-2 cursor-pointer transition-colors ${selectedShipping?.courier_service_code === rate.courier_service_code && selectedShipping?.courier_code === rate.courier_code ? 'border-primary bg-primary/10' : 'border-transparent hover:bg-white/5'}`}
-                                >
-                                  <div className="flex flex-col">
-                                    <span className="uppercase">{rate.company} {rate.courier_service_name}</span>
-                                    <span className="text-sm text-secondary">Estimasi {rate.duration}</span>
-                                  </div>
-                                  <span className="text-lg">{numberToIdr({ nominal: rate.price })}</span>
-                                </FormLabel>
-                              </FormItem>
-                            );
-                          })}
-                        </RadioGroup>
-                    )}
-                  </div>
+            {/* Show shipping options only when there are rates and no errors */}
+            {shippingRates.length > 0 && !shippingError && (
+              <div className="space-y-2 pt-4">
+                <h3 className="text-lg font-semibold text-white">Opsi Pengiriman</h3>
+                <div className="transition-all duration-300 ease-in-out">
+                  {/* Remove redundant loading/error states, handled by LocationDisplay */}
+                  <RadioGroup
+                    onValueChange={(value: string) => {
+                      const rate =
+                        shippingRates.find(
+                          (r) =>
+                            `${r.courier_code}-${r.courier_service_code}` ===
+                            value
+                        ) || null;
+                      setSelectedShipping(rate);
+                    }}
+                    className="space-y-2"
+                  >
+                    {shippingRates.map((rate, index) => {
+                      const uniqueKey = `${rate.courier_code}-${rate.courier_service_code}-${rate.price}-${index}`;
+                      return (
+                        <FormItem key={uniqueKey}>
+                          <FormControl>
+                            <RadioGroupItem
+                              value={`${rate.courier_code}-${rate.courier_service_code}`}
+                              id={uniqueKey}
+                              className="sr-only"
+                            />
+                          </FormControl>
+                          <FormLabel
+                            htmlFor={uniqueKey}
+                            className={`flex justify-between items-center p-4 rounded-lg border-2 cursor-pointer transition-colors ${selectedShipping?.courier_service_code === rate.courier_service_code && selectedShipping?.courier_code === rate.courier_code ? 'border-primary bg-primary/10' : 'border-transparent hover:bg-white/5'}`}
+                          >
+                            <div className="flex flex-col">
+                              <span className="uppercase">{rate.company} {rate.courier_service_name}</span>
+                              <span className="text-sm text-secondary">Estimasi {rate.duration}</span>
+                            </div>
+                            <span className="text-lg">{numberToIdr({ nominal: rate.price })}</span>
+                          </FormLabel>
+                        </FormItem>
+                      );
+                    })}
+                  </RadioGroup>
                 </div>
-              )}
+              </div>
+            )}
 
             {/* Bottom bar */}
             <div className="bottom-0 fixed w-full inset-x-0 py-4 px-6 bg-[#141414] tablet:px-10 desktop:px-20 border-t border-border/50" style={{ scrollBehavior: 'auto' }}>
@@ -424,7 +368,7 @@ export default function CheckoutClient({ slug, defaultSize, defaultGrind, defaul
                 <span className="font-bold text-xl text-[#CCC4A9]">{numberToIdr({ nominal: total })}</span>
               </div>
               <Button type="submit" className="h-12" disabled={qty === 0 || isLoadingShipping || !selectedShipping}>
-                {isLoadingShipping ? "Mencari Kurir..." : "Pesan Sekarang"}
+                {isLoadingShipping ? "Memverifikasi Lokasi..." : "Pesan Sekarang"}
               </Button>
             </div>
           </form>

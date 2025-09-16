@@ -6,6 +6,7 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
+  SheetDescription,
 } from "@/components/ui/sheet";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
@@ -90,6 +91,9 @@ const OrderDetail = ({
       <SheetContent side="bottom">
         <SheetHeader>
           <SheetTitle>Varian produk</SheetTitle>
+          <SheetDescription>
+            Pilih ukuran dan level gilingan yang Anda inginkan sebelum melanjutkan.
+          </SheetDescription>
         </SheetHeader>
 
         <div className="inline-flex gap-3 my-3 items-end mb-4">
@@ -222,6 +226,7 @@ export const FloatingCheckoutButton = ({
             width={24}
             height={24}
             alt="tokopedia"
+            style={{ height: 'auto' }} // Maintain aspect ratio
           />
         </Button>
       </div>
