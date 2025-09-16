@@ -6,6 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog";
 
 import { useEffect, useMemo, useState } from "react";
@@ -35,8 +36,8 @@ import {
 import { STORE_WHATSAPP } from "@/constant/store-phone-number";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useDebounce } from "@/lib/hooks/useDebounce";
-import { usePostalCode } from "@/lib/hooks/usePostalCode";
 import { useShippingCalculator } from "@/lib/hooks/useShippingCalculator";
+import { LocationDisplay } from "@/components/location-display";
 
 // Extend the form schema to include postal code for shipping
 const formSchema = z.object({
@@ -66,58 +67,37 @@ const PurchaseDialog = ({ slug, size, grind, qty, onQtyChange }: Props) => {
     mode: "onChange",
   });
 
-  // Reusable hooks for postal code and shipping
-  const {
-    postalData,
-    isLoadingPostal,
-    postalError,
-    canCalculateShipping,
-    handlePostalCodeChange,
-  } = usePostalCode();
-
   const {
     shippingRates,
+    location,
     isLoadingShipping,
     shippingError,
     selectedShipping,
     setSelectedShipping,
     calculateShipping,
-    setShippingError,
+    resetShipping,
   } = useShippingCalculator();
 
-  // Watch form fields for changes
-  const watchedAddress = useWatch({ control: form.control, name: "address" });
   const watchedPostalCode = useWatch({ control: form.control, name: "postalCode" });
 
-  // Debounce the watched values to avoid excessive API calls
-  const debouncedAddress = useDebounce(watchedAddress, 500);
-  const debouncedPostalCode = useDebounce(watchedPostalCode, 500);
-  const debouncedQty = useDebounce(qty, 500);
+  const debouncedPostalCode = useDebounce(watchedPostalCode, 800);
 
-  // Function to fetch shipping rates
-  const handleCalculateShipping = async () => {
-    if (!product || !canCalculateShipping) {
-      setShippingError("Please enter a valid postal code first");
-      return;
-    }
+  const handleCalculateShipping = async (postalCode: string) => {
+    if (!product) return;
 
     const shippingPayload = {
       destination: {
         contact_name: form.getValues("fullName") || "Penerima",
         contact_phone: form.getValues("phone") || "08123456789",
         address: form.getValues("address"),
-        postal_code: form.getValues("postalCode"),
+        postal_code: postalCode,
       },
       items: [
         {
           name: product.title,
-          description: product.description || "Kopi Pilihan",
           value: product.price || 0,
           weight: 500, // Default weight 500g
-          height: 10, // Default dimensions
-          length: 10,
-          width: 10,
-          quantity: Math.max(1, debouncedQty),
+          quantity: Math.max(1, qty),
         },
       ],
     };
@@ -125,16 +105,16 @@ const PurchaseDialog = ({ slug, size, grind, qty, onQtyChange }: Props) => {
     await calculateShipping(shippingPayload);
   };
 
-  // Effect to trigger shipping calculation automatically on debounce
   useEffect(() => {
-    const addressValidation = z.string().min(10).safeParse(debouncedAddress);
     const postalCodeValidation = z.string().length(5).safeParse(debouncedPostalCode);
 
-    if (addressValidation.success && postalCodeValidation.success && canCalculateShipping) {
-      handleCalculateShipping();
+    if (postalCodeValidation.success) {
+      handleCalculateShipping(debouncedPostalCode);
+    } else {
+      resetShipping();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedAddress, debouncedPostalCode, debouncedQty, canCalculateShipping]);
+  }, [debouncedPostalCode, qty]);
 
   if (!product) return null;
 
@@ -148,7 +128,6 @@ const PurchaseDialog = ({ slug, size, grind, qty, onQtyChange }: Props) => {
   const subtotal = unitPrice * Math.max(0, qty);
   const total = subtotal + (selectedShipping?.price ?? 0);
 
-
   const onSubmit = (values: TForm) => {
     const message = createWhatsAppMessage({
       productTitle: product.title,
@@ -158,8 +137,14 @@ const PurchaseDialog = ({ slug, size, grind, qty, onQtyChange }: Props) => {
       unitPrice,
       fullName: values.fullName,
       phone: normalizePhoneID(values.phone),
-      address: `${values.address}, ${values.postalCode}`,
-      shipping: selectedShipping ? `${selectedShipping.courier_name} ${selectedShipping.courier_service_name} - ${numberToIdr({ nominal: selectedShipping.price })}` : 'Belum Dipilih',
+      address: location
+        ? `${values.address}, ${location.district}, ${location.city}, ${location.province} ${location.postal_code}`
+        : `${values.address}, ${values.postalCode}`,
+      shipping: selectedShipping
+        ? `${selectedShipping.courier_name} ${selectedShipping.courier_service_name} - ${numberToIdr({
+            nominal: selectedShipping.price,
+          })}`
+        : "Belum Dipilih",
       total: total,
     });
 
@@ -170,7 +155,8 @@ const PurchaseDialog = ({ slug, size, grind, qty, onQtyChange }: Props) => {
 
     window.open(waUrl, "_blank");
     setOpen(false);
-  }
+  };
+
   const dec = () => onQtyChange(Math.max(0, qty - 1));
   const inc = () => onQtyChange(qty + 1);
 
@@ -183,6 +169,9 @@ const PurchaseDialog = ({ slug, size, grind, qty, onQtyChange }: Props) => {
       <DialogContent className="max-w-2xl w-full p-0 flex flex-col max-h-[90vh]">
         <DialogHeader className="px-6 pt-6 pb-2 flex-shrink-0">
           <DialogTitle className="text-left">Detail penerima</DialogTitle>
+          <DialogDescription className="text-left text-sm text-gray-400">
+            Isi detail penerima dan alamat pengiriman untuk melanjutkan pemesanan.
+          </DialogDescription>
         </DialogHeader>
 
         {/* Summary */}
@@ -308,13 +297,11 @@ const PurchaseDialog = ({ slug, size, grind, qty, onQtyChange }: Props) => {
                           placeholder="12190"
                           maxLength={5}
                           inputMode="numeric"
-                          value={field.value}
-                          onChange={(e) => handlePostalCodeChange(e.target.value, form)}
-                          className="pr-10"
+                          {...field}
                         />
-                        {isLoadingPostal && (
+                        {isLoadingShipping && (
                           <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                            <LoaderCircle className="animate-spin h-4 w-4 text-primary" />
                           </div>
                         )}
                       </div>
@@ -324,93 +311,54 @@ const PurchaseDialog = ({ slug, size, grind, qty, onQtyChange }: Props) => {
                 )}
               />
 
-              {postalError && !isLoadingPostal && (
-                <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md -mt-2 mb-4">
-                  <p className="text-sm text-red-500">
-                    <strong>Error:</strong> {postalError}
-                  </p>
-                </div>
-              )}
-
-              {postalData && (
-                <div className="p-3 bg-green-50 border border-green-200 rounded-md -mt-2 mb-4">
-                  <p className="text-sm text-green-800">
-                    <strong>📍 Lokasi Ditemukan:</strong>
-                    <br />
-                    {postalData.full_location}
-                  </p>
-                </div>
-              )}
+              <LocationDisplay
+                location={location}
+                isLoading={isLoadingShipping}
+                error={shippingError}
+              />
 
               {/* --- Shipping Section --- */}
-              {canCalculateShipping && (
+              {shippingRates.length > 0 && !shippingError && (
                 <div className="space-y-2 pt-4">
                   <h3 className="text-lg font-semibold text-white">Opsi Pengiriman</h3>
                   <div className="transition-all duration-300 ease-in-out">
-                    {isLoadingShipping && (
-                      <div className="flex items-center gap-2 text-secondary py-4">
-                        <LoaderCircle className="animate-spin" size={16} />
-                        <span>Mencari kurir...</span>
-                      </div>
-                    )}
-                    {shippingError && !isLoadingShipping && (
-                      <div className="text-destructive py-4 space-y-2">
-                        <p className="font-semibold">
-                          Gagal memuat opsi pengiriman.
-                        </p>
-                        <p className="text-sm">Error: {shippingError}</p>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={handleCalculateShipping}
-                        >
-                          Coba Lagi
-                        </Button>
-                      </div>
-                    )}
-                    {postalData &&
-                      !isLoadingShipping &&
-                      !shippingError &&
-                      shippingRates.length > 0 && (
-                        <RadioGroup
-                          onValueChange={(value: string) => {
-                            const rate =
-                              shippingRates.find(
-                                (r) =>
-                                  `${r.courier_code}-${r.courier_service_code}` ===
-                                  value
-                              ) || null;
-                            setSelectedShipping(rate);
-                          }}
-                          className="space-y-2"
-                        >
-                          {shippingRates.map((rate, index) => {
-                            const uniqueKey = `${rate.courier_code}-${rate.courier_service_code}-${rate.price}-${index}`;
-                            return (
-                              <FormItem key={uniqueKey}>
-                                <FormControl>
-                                  <RadioGroupItem
-                                    value={`${rate.courier_code}-${rate.courier_service_code}`}
-                                    id={uniqueKey}
-                                    className="sr-only"
-                                  />
-                                </FormControl>
-                                <FormLabel
-                                  htmlFor={uniqueKey}
-                                  className={`flex justify-between items-center p-4 rounded-lg border-2 cursor-pointer transition-colors ${selectedShipping?.courier_service_code === rate.courier_service_code && selectedShipping?.courier_code === rate.courier_code ? 'border-primary bg-primary/10' : 'border-transparent hover:bg-white/5'}`}
-                                >
-                                  <div className="flex flex-col">
-                                    <span className="uppercase">{rate.company} {rate.courier_service_name}</span>
-                                    <span className="text-sm text-secondary">Estimasi {rate.duration}</span>
-                                  </div>
-                                  <span className="text-lg">{numberToIdr({ nominal: rate.price })}</span>
-                                </FormLabel>
-                              </FormItem>
-                            );
-                          })}
-                        </RadioGroup>
-                      )}
+                    <RadioGroup
+                      onValueChange={(value: string) => {
+                        const rate =
+                          shippingRates.find(
+                            (r) =>
+                              `${r.courier_code}-${r.courier_service_code}` ===
+                              value
+                          ) || null;
+                        setSelectedShipping(rate);
+                      }}
+                      className="space-y-2"
+                    >
+                      {shippingRates.map((rate, index) => {
+                        const uniqueKey = `${rate.courier_code}-${rate.courier_service_code}-${rate.price}-${index}`;
+                        return (
+                          <FormItem key={uniqueKey}>
+                            <FormControl>
+                              <RadioGroupItem
+                                value={`${rate.courier_code}-${rate.courier_service_code}`}
+                                id={uniqueKey}
+                                className="sr-only"
+                              />
+                            </FormControl>
+                            <FormLabel
+                              htmlFor={uniqueKey}
+                              className={`flex justify-between items-center p-4 rounded-lg border-2 cursor-pointer transition-colors ${selectedShipping?.courier_service_code === rate.courier_service_code && selectedShipping?.courier_code === rate.courier_code ? 'border-primary bg-primary/10' : 'border-transparent hover:bg-white/5'}`}
+                            >
+                              <div className="flex flex-col">
+                                <span className="uppercase">{rate.company} {rate.courier_service_name}</span>
+                                <span className="text-sm text-secondary">Estimasi {rate.duration}</span>
+                              </div>
+                              <span className="text-lg">{numberToIdr({ nominal: rate.price })}</span>
+                            </FormLabel>
+                          </FormItem>
+                        );
+                      })}
+                    </RadioGroup>
                   </div>
                 </div>
               )}
@@ -449,10 +397,10 @@ const PurchaseDialog = ({ slug, size, grind, qty, onQtyChange }: Props) => {
             <Button
               type="button"
               className="h-12"
-              disabled={qty === 0 || !canCalculateShipping || isLoadingShipping || !selectedShipping}
+              disabled={qty === 0 || isLoadingShipping || !selectedShipping}
               onClick={form.handleSubmit(onSubmit)}
             >
-              {isLoadingShipping ? "Menghitung Ongkir..." : "Pesan Sekarang"}
+              {isLoadingShipping ? "Memverifikasi Lokasi..." : "Pesan Sekarang"}
             </Button>
           </div>
         </Form>

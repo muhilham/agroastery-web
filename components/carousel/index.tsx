@@ -71,6 +71,7 @@ export const EmblaCarousel: React.FC<PropType> = ({
                   fill
                   className="object-contain"
                   sizes="(max-width:768px) 100vw, 360px"
+                  priority={index === 0}
                 />
               </div>
               <div className="text-primary border rounded-xl fixed left-10 text-xs bottom-5 border-primary px-4 py-1">
