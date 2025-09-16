@@ -12,9 +12,6 @@ export const ShippingRequestSchema = z.object({
       name: z.string(),
       value: z.number().positive(),
       weight: z.number().positive(),
-      height: z.number().positive(),
-      length: z.number().positive(),
-      width: z.number().positive(),
       quantity: z.number().int().positive(),
     })
   ).min(1, "Minimal 1 item diperlukan"),
