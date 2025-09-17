@@ -1,5 +1,8 @@
+import type { TCategory } from '@/types/categories';
 import { loadCategories } from '@/lib/catalog';
 
-const { CATEGORY, CATEGORY_BY_ID } = loadCategories();
+export const CATEGORY: TCategory[] = await loadCategories();
 
-export { CATEGORY, CATEGORY_BY_ID };
+export const CATEGORY_BY_ID: Record<string, TCategory> = Object.fromEntries(
+  CATEGORY.map((c) => [c.category_id, c])
+);

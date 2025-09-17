@@ -1,48 +1,110 @@
-import { describe, it, expect } from 'vitest';
-import { loadCategories, loadProducts, slugify } from './catalog';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { loadCategories, loadRawProducts, adaptProduct, slugify } from './catalog';
+import type { TCategory } from '@/types/categories';
 
-describe('catalog loader', () => {
-  it('should slugify strings correctly', () => {
-    expect(slugify('Hello World')).toBe('hello-world');
-    expect(slugify('  With Extra   Spaces  ')).toBe('with-extra-spaces');
-    expect(slugify('Special!@#Characters')).toBe('specialcharacters');
+// Mock local JSON data
+const mockLocalCategories = [{ category_id: 'local-1', category_name: 'Local Category' }];
+const mockLocalProducts = [
+  {
+    title: 'Local Coffee',
+    description: 'A local coffee blend.',
+    category_ids: ['local-1'],
+    images: [{ image: 'https://example.com/local.jpg' }],
+    variants: [{ weight: '250g', price: 100000, sku: 'local-sku', quantity: 10 }],
+  },
+];
+
+vi.mock('@/data/categories.json', () => ({ default: mockLocalCategories }));
+vi.mock('@/data/products.json', () => ({ default: mockLocalProducts }));
+
+describe('Hybrid Catalog Loader', () => {
+  const mockCdnCategories = [{ category_id: 'cdn-1', category_name: 'CDN Category' }];
+  const mockCdnProducts = [
+    {
+      title: 'CDN Coffee',
+      description: 'A CDN coffee blend.',
+      category_ids: ['cdn-1'],
+      images: [{ image: 'https://example.com/cdn.jpg' }],
+      variants: [
+        { weight: '200g', price: 80000, sku: 'cdn-sku-1' },
+        { weight: '1000g', price: 350000, sku: 'cdn-sku-2', quantity: 50 },
+      ],
+    },
+  ];
+
+  const fetchSpy = vi.spyOn(global, 'fetch');
+  const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
-  it('should load categories and create a map by ID', () => {
-    const { CATEGORY, CATEGORY_BY_ID } = loadCategories();
-    expect(CATEGORY.length).toBeGreaterThan(0);
-    expect(CATEGORY_BY_ID['1']).toEqual({ category_id: '1', category_name: 'Kopi Susu Ekonomis' });
+  describe('slugify', () => {
+    it('should correctly slugify strings', () => {
+      expect(slugify('Hello World!')).toBe('hello-world');
+      expect(slugify('  Test with spaces  ')).toBe('test-with-spaces');
+    });
   });
 
-  it('should load products and adapt them correctly', () => {
-    const { CATEGORY_BY_ID } = loadCategories();
-    const products = loadProducts(CATEGORY_BY_ID);
-    const product = products.find(p => p.title.includes('BALIPEACH'));
+  describe('With CATALOG_SOURCE=cdn', () => {
+    beforeEach(() => {
+      vi.stubEnv('NEXT_PUBLIC_CATALOG_SOURCE', 'cdn');
+    });
 
-    expect(product).toBeDefined();
-    if (!product) return;
+    it('should fetch and return categories from CDN if successful', async () => {
+      fetchSpy.mockResolvedValueOnce(new Response(JSON.stringify(mockCdnCategories)));
+      const categories = await loadCategories();
+      expect(categories).toEqual(mockCdnCategories);
+      expect(fetchSpy).toHaveBeenCalledWith('http://localhost:3000/api/catalog/categories.json', expect.any(Object));
+    });
 
-    expect(product.slug).toBe('biji-kopi-balipeach-roasted-for-filter-by-agroaster');
-    expect(product.price).toBe(119000);
-    expect(product.minPrice).toBe(119000);
-    expect(product.priceBySize).toEqual({ '150g': 119000 });
-    expect(product.size).toEqual(['150g']);
-    expect(product.category[0]?.category_name).toBe('Filter & Others');
-    expect(product.variants[0].sku).toBe('biji-kopi-balipeach-roasted-for-filter-by-agroaster-150g');
-    expect(product.variants[0].quantity).toBe(999);
+    it('should fall back to local categories if CDN fetch fails', async () => {
+      fetchSpy.mockResolvedValueOnce(new Response(null, { status: 500 }));
+      const categories = await loadCategories();
+      expect(categories).toEqual(mockLocalCategories);
+      expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining('CDN fetch failed'));
+    });
+
+    it('should fall back to local products if CDN data is invalid', async () => {
+      fetchSpy.mockResolvedValueOnce(new Response(JSON.stringify({ invalid: 'data' })));
+      const products = await loadRawProducts();
+      expect(products).toEqual(mockLocalProducts);
+      expect(consoleWarnSpy).toHaveBeenCalledWith(expect.stringContaining('CDN data validation failed'));
+    });
   });
 
-  it('should handle products with multiple variants', () => {
-    const { CATEGORY_BY_ID } = loadCategories();
-    const products = loadProducts(CATEGORY_BY_ID);
-    const product = products.find(p => p.title.includes('ES46 Blend'));
+  describe('With CATALOG_SOURCE=local', () => {
+    beforeEach(() => {
+      vi.stubEnv('NEXT_PUBLIC_CATALOG_SOURCE', 'local');
+    });
 
-    expect(product).toBeDefined();
-    if (!product) return;
+    it('should return local categories without fetching from CDN', async () => {
+      const categories = await loadCategories();
+      expect(categories).toEqual(mockLocalCategories);
+      expect(fetchSpy).not.toHaveBeenCalled();
+    });
 
-    expect(product.price).toBe(58000);
-    expect(product.minPrice).toBe(58000);
-    expect(product.priceBySize).toEqual({ '1000g': 196000, '200g': 58000, '500g': 114000 });
-    expect(product.size).toEqual(['1000g', '200g', '500g']);
+    it('should return local products without fetching from CDN', async () => {
+      const products = await loadRawProducts();
+      expect(products).toEqual(mockLocalProducts);
+      expect(fetchSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('adaptProduct', () => {
+    it('should correctly adapt raw product data to the TProduct shape', () => {
+      const rawProduct = mockCdnProducts[0];
+      const categoryMap: Record<string, TCategory> = { 'cdn-1': mockCdnCategories[0] };
+      const adapted = adaptProduct(rawProduct, categoryMap);
+
+      expect(adapted.slug).toBe('cdn-coffee');
+      expect(adapted.size).toEqual(['200g', '1000g']);
+      expect(adapted.priceBySize).toEqual({ '200g': 80000, '1000g': 350000 });
+      expect(adapted.minPrice).toBe(80000);
+      expect(adapted.price).toBe(80000);
+      expect(adapted.category).toEqual([mockCdnCategories[0]]);
+      expect(adapted.variants[0].quantity).toBe(999); // Default quantity
+      expect(adapted.variants[1].quantity).toBe(50); // Provided quantity
+    });
   });
 });
