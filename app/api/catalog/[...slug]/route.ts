@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+export const runtime = 'edge';
 export const dynamic = "force-dynamic"; // keep dynamic; this is an API proxy
 
 const ALLOWED = new Set(["categories.json", "products.json"]);
