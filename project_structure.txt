@@ -1,0 +1,221 @@
+.
+├── app
+│   ├── (root)
+│   │   ├── katalog
+│   │   │   └── page.tsx
+│   │   └── product
+│   │       └── [slug]
+│   │           ├── checkout
+│   │           │   └── page.tsx
+│   │           └── page.tsx
+│   ├── api
+│   │   ├── catalog
+│   │   │   └── [...slug]
+│   │   │       └── route.ts
+│   │   ├── og
+│   │   │   └── route.tsx
+│   │   ├── postal-code
+│   │   └── shipping
+│   │       └── rates
+│   │           └── route.ts
+│   ├── favicon.ico
+│   ├── globals.css
+│   ├── layout.tsx
+│   └── page.tsx
+├── components
+│   ├── carousel
+│   │   ├── index.tsx
+│   │   └── thumb.tsx
+│   ├── categories
+│   │   └── index.tsx
+│   ├── location-display
+│   │   └── index.tsx
+│   ├── mobile-checkout-form
+│   │   └── index.tsx
+│   ├── navigation
+│   │   └── index.tsx
+│   ├── product-grid
+│   │   └── index.tsx
+│   ├── purchase-dialog
+│   │   └── index.tsx
+│   ├── section
+│   │   ├── checkout
+│   │   │   └── index.tsx
+│   │   └── product-detail
+│   │       └── index.tsx
+│   └── ui
+│       ├── aside.tsx
+│       ├── badge.tsx
+│       ├── button.tsx
+│       ├── card.tsx
+│       ├── category.tsx
+│       ├── dialog.tsx
+│       ├── footer.tsx
+│       ├── form.tsx
+│       ├── icons.tsx
+│       ├── input.tsx
+│       ├── label.tsx
+│       ├── product-card.tsx
+│       ├── radio-group.tsx
+│       ├── sheet.tsx
+│       └── textarea.tsx
+├── components.json
+├── constant
+│   ├── category.ts
+│   ├── coffe-list.ts
+│   ├── menu-list.ts
+│   ├── product
+│   │   └── product-list.ts
+│   ├── resource-and-link.ts
+│   ├── store-phone-number.ts
+│   ├── testimonial.ts
+│   └── top-content.ts
+├── data
+│   ├── categories.json
+│   ├── products.json
+│   └── README.md
+├── eslint.config.mjs
+├── lib
+│   ├── actions
+│   ├── catalog.test.ts
+│   ├── catalog.ts
+│   ├── data
+│   │   └── fetch-locations.ts
+│   ├── hooks
+│   │   ├── useDebounce.ts
+│   │   └── useShippingCalculator.ts
+│   ├── message-builder.ts
+│   ├── numberToIdr.ts
+│   ├── stores
+│   │   ├── category.ts
+│   │   ├── checkout.ts
+│   │   ├── product.ts
+│   │   ├── search.ts
+│   │   └── shipping.ts
+│   ├── types
+│   │   └── shipping.ts
+│   ├── utils
+│   │   └── postal-code-lookup.ts
+│   └── utils.ts
+├── next-env.d.ts
+├── next.config.ts
+├── node_modules
+│   ├── @eslint
+│   │   ├── config-array -> ../.pnpm/@eslint+config-array@0.21.0/node_modules/@eslint/config-array
+│   │   ├── config-helpers -> ../.pnpm/@eslint+config-helpers@0.3.1/node_modules/@eslint/config-helpers
+│   │   ├── core -> ../.pnpm/@eslint+core@0.15.2/node_modules/@eslint/core
+│   │   ├── eslintrc -> ../.pnpm/@eslint+eslintrc@3.3.1/node_modules/@eslint/eslintrc
+│   │   ├── js -> ../.pnpm/@eslint+js@9.35.0/node_modules/@eslint/js
+│   │   ├── object-schema -> ../.pnpm/@eslint+object-schema@2.1.6/node_modules/@eslint/object-schema
+│   │   └── plugin-kit -> ../.pnpm/@eslint+plugin-kit@0.3.5/node_modules/@eslint/plugin-kit
+│   ├── @eslint-community
+│   │   ├── eslint-utils -> ../.pnpm/@eslint-community+eslint-utils@4.9.0_eslint@9.35.0/node_modules/@eslint-community/eslint-utils
+│   │   └── regexpp -> ../.pnpm/@eslint-community+regexpp@4.12.1/node_modules/@eslint-community/regexpp
+│   ├── @hookform
+│   │   └── resolvers -> ../.pnpm/@hookform+resolvers@5.2.1_react-hook-form@7.62.0/node_modules/@hookform/resolvers
+│   ├── @nanostores
+│   │   └── react -> ../.pnpm/@nanostores+react@1.0.0_nanostores@1.0.1_react@19.1.1/node_modules/@nanostores/react
+│   ├── @next
+│   │   └── eslint-plugin-next -> ../.pnpm/@next+eslint-plugin-next@15.5.3/node_modules/@next/eslint-plugin-next
+│   ├── @radix-ui
+│   │   ├── react-dialog -> ../.pnpm/@radix-ui+react-dialog@1.1.15_@types+react-dom@19.1.9_@types+react@19.1.13_react-dom@19.1.1_react@19.1.1/node_modules/@radix-ui/react-dialog
+│   │   ├── react-label -> ../.pnpm/@radix-ui+react-label@2.1.7_@types+react-dom@19.1.9_@types+react@19.1.13_react-dom@19.1.1_react@19.1.1/node_modules/@radix-ui/react-label
+│   │   ├── react-radio-group -> ../.pnpm/@radix-ui+react-radio-group@1.3.8_@types+react-dom@19.1.9_@types+react@19.1.13_react-dom@19.1.1_react@19.1.1/node_modules/@radix-ui/react-radio-group
+│   │   └── react-slot -> ../.pnpm/@radix-ui+react-slot@1.2.3_@types+react@19.1.13_react@19.1.1/node_modules/@radix-ui/react-slot
+│   ├── @rushstack
+│   │   └── eslint-patch -> ../.pnpm/@rushstack+eslint-patch@1.12.0/node_modules/@rushstack/eslint-patch
+│   ├── @testing-library
+│   │   ├── jest-dom -> ../.pnpm/@testing-library+jest-dom@6.8.0/node_modules/@testing-library/jest-dom
+│   │   └── react -> ../.pnpm/@testing-library+react@16.3.0_@testing-library+dom@10.4.1_@types+react-dom@19.1.9_@types+reac_4sex7szr4m527blkqmbsotjjwm/node_modules/@testing-library/react
+│   ├── @types
+│   │   ├── node -> ../.pnpm/@types+node@20.19.14/node_modules/@types/node
+│   │   ├── react -> ../.pnpm/@types+react@19.1.13/node_modules/@types/react
+│   │   └── react-dom -> ../.pnpm/@types+react-dom@19.1.9_@types+react@19.1.13/node_modules/@types/react-dom
+│   ├── @typescript-eslint
+│   │   ├── eslint-plugin -> ../.pnpm/@typescript-eslint+eslint-plugin@8.43.0_@typescript-eslint+parser@8.43.0_eslint@9.35.0_typescript@5.9.2/node_modules/@typescript-eslint/eslint-plugin
+│   │   ├── parser -> ../.pnpm/@typescript-eslint+parser@8.43.0_eslint@9.35.0_typescript@5.9.2/node_modules/@typescript-eslint/parser
+│   │   ├── project-service -> ../.pnpm/@typescript-eslint+project-service@8.43.0_typescript@5.9.2/node_modules/@typescript-eslint/project-service
+│   │   ├── scope-manager -> ../.pnpm/@typescript-eslint+scope-manager@8.43.0/node_modules/@typescript-eslint/scope-manager
+│   │   ├── tsconfig-utils -> ../.pnpm/@typescript-eslint+tsconfig-utils@8.43.0_typescript@5.9.2/node_modules/@typescript-eslint/tsconfig-utils
+│   │   ├── type-utils -> ../.pnpm/@typescript-eslint+type-utils@8.43.0_eslint@9.35.0_typescript@5.9.2/node_modules/@typescript-eslint/type-utils
+│   │   ├── types -> ../.pnpm/@typescript-eslint+types@8.43.0/node_modules/@typescript-eslint/types
+│   │   ├── typescript-estree -> ../.pnpm/@typescript-eslint+typescript-estree@8.43.0_typescript@5.9.2/node_modules/@typescript-eslint/typescript-estree
+│   │   ├── utils -> ../.pnpm/@typescript-eslint+utils@8.43.0_eslint@9.35.0_typescript@5.9.2/node_modules/@typescript-eslint/utils
+│   │   └── visitor-keys -> ../.pnpm/@typescript-eslint+visitor-keys@8.43.0/node_modules/@typescript-eslint/visitor-keys
+│   ├── @vercel
+│   │   └── og -> ../.pnpm/@vercel+og@0.6.8/node_modules/@vercel/og
+│   ├── @vitejs
+│   │   └── plugin-react -> ../.pnpm/@vitejs+plugin-react@5.0.3_vite@5.4.20/node_modules/@vitejs/plugin-react
+│   ├── @vitest
+│   │   └── ui -> ../.pnpm/@vitest+ui@1.6.1_vitest@1.6.1/node_modules/@vitest/ui
+│   ├── class-variance-authority -> .pnpm/class-variance-authority@0.7.1/node_modules/class-variance-authority
+│   ├── clsx -> .pnpm/clsx@2.1.1/node_modules/clsx
+│   ├── embla-carousel -> .pnpm/embla-carousel@8.6.0/node_modules/embla-carousel
+│   ├── embla-carousel-react -> .pnpm/embla-carousel-react@8.6.0_react@19.1.1/node_modules/embla-carousel-react
+│   ├── eslint -> .pnpm/eslint@9.35.0/node_modules/eslint
+│   ├── eslint-config-next -> .pnpm/eslint-config-next@15.1.2_eslint@9.35.0_typescript@5.9.2/node_modules/eslint-config-next
+│   ├── eslint-import-resolver-node -> .pnpm/eslint-import-resolver-node@0.3.9/node_modules/eslint-import-resolver-node
+│   ├── eslint-import-resolver-typescript -> .pnpm/eslint-import-resolver-typescript@3.10.1_eslint-plugin-import@2.32.0_eslint@9.35.0/node_modules/eslint-import-resolver-typescript
+│   ├── eslint-module-utils -> .pnpm/eslint-module-utils@2.12.1_@typescript-eslint+parser@8.43.0_eslint-import-resolver-node@0.3.9_63xwzrv7rfgaboig42vvyyy2ry/node_modules/eslint-module-utils
+│   ├── eslint-plugin-import -> .pnpm/eslint-plugin-import@2.32.0_@typescript-eslint+parser@8.43.0_eslint-import-resolver-typescript@3.10.1_eslint@9.35.0/node_modules/eslint-plugin-import
+│   ├── eslint-plugin-jsx-a11y -> .pnpm/eslint-plugin-jsx-a11y@6.10.2_eslint@9.35.0/node_modules/eslint-plugin-jsx-a11y
+│   ├── eslint-plugin-react -> .pnpm/eslint-plugin-react@7.37.5_eslint@9.35.0/node_modules/eslint-plugin-react
+│   ├── eslint-plugin-react-hooks -> .pnpm/eslint-plugin-react-hooks@5.2.0_eslint@9.35.0/node_modules/eslint-plugin-react-hooks
+│   ├── eslint-scope -> .pnpm/eslint-scope@8.4.0/node_modules/eslint-scope
+│   ├── eslint-visitor-keys -> .pnpm/eslint-visitor-keys@4.2.1/node_modules/eslint-visitor-keys
+│   ├── jsdom -> .pnpm/jsdom@27.0.0_postcss@8.5.6/node_modules/jsdom
+│   ├── lucide-react -> .pnpm/lucide-react@0.503.0_react@19.1.1/node_modules/lucide-react
+│   ├── nanostores -> .pnpm/nanostores@1.0.1/node_modules/nanostores
+│   ├── next -> .pnpm/next@15.1.2_@babel+core@7.28.4_react-dom@19.1.1_react@19.1.1/node_modules/next
+│   ├── postcss -> .pnpm/postcss@8.5.6/node_modules/postcss
+│   ├── react -> .pnpm/react@19.1.1/node_modules/react
+│   ├── react-dom -> .pnpm/react-dom@19.1.1_react@19.1.1/node_modules/react-dom
+│   ├── react-hook-form -> .pnpm/react-hook-form@7.62.0_react@19.1.1/node_modules/react-hook-form
+│   ├── react-icons -> .pnpm/react-icons@5.5.0_react@19.1.1/node_modules/react-icons
+│   ├── tailwind-merge -> .pnpm/tailwind-merge@3.3.1/node_modules/tailwind-merge
+│   ├── tailwindcss -> .pnpm/tailwindcss@3.4.17/node_modules/tailwindcss
+│   ├── tailwindcss-animate -> .pnpm/tailwindcss-animate@1.0.7_tailwindcss@3.4.17/node_modules/tailwindcss-animate
+│   ├── typescript -> .pnpm/typescript@5.9.2/node_modules/typescript
+│   ├── vite -> .pnpm/vite@5.4.20_@types+node@20.19.14/node_modules/vite
+│   ├── vitest -> .pnpm/vitest@1.6.1_@types+node@20.19.14_@vitest+ui@1.6.1_jsdom@27.0.0/node_modules/vitest
+│   └── zod -> .pnpm/zod@3.25.76/node_modules/zod
+├── package.json
+├── pnpm-lock.yaml
+├── postcss.config.mjs
+├── project_structure.txt
+├── public
+│   ├── assets
+│   │   ├── agroastery-logo.svg
+│   │   ├── coffe
+│   │   │   ├── blend-gayo.png
+│   │   │   ├── blend-house.png
+│   │   │   ├── blend-kopi-susu.png
+│   │   │   └── blend-solok.png
+│   │   ├── hero.svg
+│   │   ├── og.svg
+│   │   ├── search.svg
+│   │   ├── shoppe.svg
+│   │   ├── tokopedia.svg
+│   │   └── top-section
+│   │       ├── circle-1.svg
+│   │       ├── circle-2.svg
+│   │       └── circle-3.svg
+│   ├── file.svg
+│   ├── globe.svg
+│   ├── next.svg
+│   ├── vercel.svg
+│   └── window.svg
+├── README.md
+├── style
+│   └── embla.css
+├── tailwind.config.ts
+├── tsconfig.json
+├── types
+│   ├── categories.ts
+│   ├── product.ts
+│   └── ui.ts
+├── vitest-runner.js
+├── vitest.config.mts
+└── vitest.setup.ts
+
+122 directories, 97 files
