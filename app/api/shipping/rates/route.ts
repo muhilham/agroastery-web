@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+export const runtime = 'edge';
+export const dynamic = 'force-dynamic';
+
 // We proxy Biteship as-is and do not transform the response shape.
 // Client code must validate/normalize with BiteshipRatesResponseSchema.
 
@@ -40,7 +43,8 @@ export async function POST(req: Request) {
       origin_postal_code: Number(body.origin_postal_code),
       destination_postal_code: Number(body.destination_postal_code),
     }),
-    next: { revalidate: 0 },
+    // Remove Next.js specific options for edge runtime compatibility
+    signal: AbortSignal.timeout(30000), // 30 second timeout
   });
 
   if (!res.ok) {
