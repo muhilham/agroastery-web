@@ -18,7 +18,13 @@ export async function GET(
   }
 
   const url = `${BASE}/${path}`;
-  const res = await fetch(url, { next: { revalidate: 300 } });
+  const res = await fetch(url, { 
+    // Remove Next.js specific options for edge runtime compatibility
+    signal: AbortSignal.timeout(10000), // 10 second timeout
+    headers: {
+      'User-Agent': 'Agroastery-Web/1.0',
+    }
+  });
   if (!res.ok) {
     return NextResponse.json(
       { error: "Upstream fetch failed", status: res.status },

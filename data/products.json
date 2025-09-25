@@ -1,281 +1,993 @@
 [
   {
-    "title": "Biji Kopi ccc BALIPEACH roasted for filter by AGROASTER",
-    "description": "Introducing our Peach-Infused Coffee Beans —a truly unique single-origin experience. Grown in the volcanic soils of the Buleleng region, these coffee beans are meticulously infused with the natural essence of ripe peach, creating a coffee that’s both bold and delightfully aromatic. This is not a blend, but a single-origin coffee transformed through innovation. Perfect for enthusiasts looking to explore new dimensions of flavor, our peach-Infused Buleleng Coffee Beans offer a harmonious fusion of tradition and creativity. <br/><br/><strong>Location</strong><br/>Bulelng, Bali, Indonesia <br/><br/><strong>Process</strong><br/>Peach Infused Natural Anaerob <br/><br/><strong>Species</strong><br/>Arabica <br/><br/><strong>Varietal</strong><br/>Kopyol, Lini-s <br/><br/><strong>Altitude</strong><br/>1300 masl <br/><br/><strong>Nett Weight</strong><br/>150gr <br/><br/><strong>Flavor Notes Perception</strong><br/>Peach Jam - Grape - Red Cherry <br/><br/><strong>Roast Date</strong><br/>16 AUGUST 25",
-    "shortDescription": "Introducing our Peach-Infused Coffee Beans —a truly unique single-origin experience. Grown in the volcanic soils of the Buleleng region,",
-    "grindSize": ["Beans", "Grind Fine", "Grind Medium"],
-    "coffeType": ["Arabica"],
-    "category_ids": ["5"],
+    "title": "Biji Kopi STRAWBERRIJEN",
+    "description": "<strong>Strawberry-Infused Ijen Coffee Beans</strong><br />Introducing our Strawberry-Infused Ijen Coffee Beans—a truly unique single-origin experience. Grown in the volcanic soils of the Ijen region, these premium Arabica beans are meticulously infused with the natural essence of ripe strawberries, creating a coffee that's both bold and delightfully aromatic.<br /><br />This is not a blend, but a single-origin coffee transformed through innovation. Perfect for enthusiasts looking to explore new dimensions of flavor, our Strawberry-Infused Ijen Coffee Beans offer a harmonious fusion of tradition and creativity. <br /><br /> <strong>Location</strong><br />East Java, Indonesia <br /><br /> <strong>Process</strong><br />Strawberry Infused Natural Anaerob <br /><br /> <strong>Species</strong><br />Arabica <br /><br /> <strong>Varietal</strong><br />mix <br /><br /> <strong>Altitude</strong><br />1400 masl <br /><br /> <strong>Flavor Notes Perception</strong><br />Strawberry Jam - Floral - Red Cherry",
+    "shortDescription": "Introducing our Strawberry-Infused Coffee Beans —a truly unique single-origin experience. Grown in the volcanic soils of the Ijen region,",
+    "grindSize": [
+      "Beans",
+      "Grind Fine",
+      "Grind Medium"
+    ],
+    "coffeType": [
+      "Arabica"
+    ],
+    "category_ids": [
+      "5"
+    ],
     "images": [
-      { "image": "https://cdn.agroastery.com/produk/kopi-bali-peach/1.png" },
-      { "image": "https://cdn.agroastery.com/produk/kopi-bali-peach/2.png" },
-      { "image": "https://cdn.agroastery.com/produk/kopi-bali-peach/3.png" },
-      { "image": "https://cdn.agroastery.com/produk/kopi-bali-peach/4.png" },
-      { "image": "https://cdn.agroastery.com/produk/kopi-bali-peach/5.png" }
+      {
+        "image": "https://cdn.agroastery.com/produk/strawberrijen/1.jpeg"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/strawberrijen/2.jpg"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/strawberrijen/3.jpg"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/strawberrijen/4.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/strawberrijen/5.png"
+      }
     ],
     "variants": [
-      { "weight": "150g", "price": 119000, "sku": "biji-kopi-balipeach-roasted-for-filter-by-agroaster-150g", "quantity": 999 }
+      {
+        "weight": "150g",
+        "shipWeightGrams": 220,
+        "price": 140000,
+        "sku": "biji-kopi-strawberrijen-roasted-for-filter-by-agroaster-150g",
+        "quantity": 999
+      }
     ]
   },
   {
-    "title": "Blend Full Arabica Espresso | CHOCO BUNCH 1 KG | Freshroast",
-    "description": "<strong>Origin</strong> : Brazil - Bali <br/><br/> <strong>Process</strong> : Natural - Wash Anaerobic <br/><br/> <strong>Altitude</strong> : 1200 - 1380 masl <br/><br/> <strong>Varietal</strong> : mix varietas <br/><br/> <strong>Roast Degree (Profile)</strong> : Fullcityplus Roast/Very Early Second Crack/Dark Roast <br/><br/> <strong>Notes</strong> : Mid-High Body | Mid-High Sweetness | Low-Mid Acidity <br/><br/> <strong>Recommended for</strong> : Espresso based , americano, longblack, latte, cappucino <br/><br/> Biji kopi grade terbaik dengan profil sangrai yang di sesuaikan dengan kebutuhan harian kedai kopi. <br/><br/> <strong>Nett Weight</strong> : 1000gram <br/><br/> Berikut adalah jenis variasi gilingan/grindsize berdasarkan alat seduh yang dipakai : <br/><br/> <strong>GRIND FINE</strong> : Tubruk, Mokapot, Vietnam Drip <br/><br/> <strong>GRIND MEDIUM</strong> : Semua alat seduh menggunakan paper filter (V60, Kalita wave, Kono, Aeropress, Chemex, dll) <br/><br/> <strong>GRIND COARSE</strong> : French Press, Cold Drip, Cold Brew, Espresso teknik rebus ",
-    "shortDescription": "Rich Brazil–Bali Arabica with natural and wash anaerobic process, dark roasted for espresso-based drinks. Balanced body, sweetness, and acidity, ideal for daily café needs with multiple grind options.",
-    "grindSize": ["Beans", "Grind Fine", "Grind Medium", "Grind Coarse"],
-    "coffeType": ["Arabica"],
-    "category_ids": ["2"],
+    "title": "Biji Kopi BALIPEACH roasted for filter by AGROASTER",
+    "description": "Introducing our Peach-Infused Coffee Beans —a truly unique single-origin experience. Grown in the volcanic soils of the Buleleng region, these coffee beans are meticulously infused with the natural essence of ripe peach, creating a coffee that’s both bold and delightfully aromatic. This is not a blend, but a single-origin coffee transformed through innovation. Perfect for enthusiasts looking to explore new dimensions of flavor, our peach-Infused Buleleng Coffee Beans offer a harmonious fusion of tradition and creativity. <br/><br/><strong>Location</strong><br/>Bulelng, Bali, Indonesia <br/><br/><strong>Process</strong><br/>Peach Infused Natural Anaerob <br/><br/><strong>Species</strong><br/>Arabica <br/><br/><strong>Varietal</strong><br/>Kopyol, Lini-s <br/><br/><strong>Altitude</strong><br/>1300 masl <br/><br/><strong>Nett Weight</strong><br/>150gr <br/><br/><strong>Flavor Notes Perception</strong><br/>Peach Jam - Grape - Red Cherry <br/><br/><strong>Roast Date</strong><br/>16 AUGUST 25",
+    "shortDescription": "Introducing our Peach-Infused Coffee Beans —a truly unique single-origin experience. Grown in the volcanic soils of the Buleleng region,",
+    "grindSize": [
+      "Beans",
+      "Grind Fine",
+      "Grind Medium"
+    ],
+    "coffeType": [
+      "Arabica"
+    ],
+    "category_ids": [
+      "5"
+    ],
     "images": [
-      { "image": "https://cdn.agroastery.com/produk/arabica-espresso/1.png" },
-      { "image": "https://cdn.agroastery.com/produk/arabica-espresso/2.png" },
-      { "image": "https://cdn.agroastery.com/produk/arabica-espresso/3.png" },
-      { "image": "https://cdn.agroastery.com/produk/arabica-espresso/4.png" },
-      { "image": "https://cdn.agroastery.com/produk/arabica-espresso/5.png" }
+      {
+        "image": "https://cdn.agroastery.com/produk/kopi-bali-peach/1.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/kopi-bali-peach/2.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/kopi-bali-peach/3.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/kopi-bali-peach/4.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/kopi-bali-peach/5.png"
+      }
     ],
     "variants": [
-      { "weight": "1000g", "price": 246000, "sku": "blend-full-arabica-espresso-choco-bunch-1-kg-freshroast-1000g", "quantity": 999 }
+      {
+        "weight": "150g",
+        "shipWeightGrams": 220,
+        "price": 140000,
+        "sku": "biji-kopi-balipeach-roasted-for-filter-by-agroaster-150g",
+        "quantity": 999
+      }
     ]
   },
   {
     "title": "Biji Kopi KAMOJANG roasted for filter by AGROASTERY",
     "description": "We discovered this Kamojang coffee from Wanoja during a cupping session offered by our vendor as part of their Padmana Series. Among all the lots, this one stood out with its clarity, sweetness, and vibrant character—making it an easy choice for our next release. <br/><br/> This coffee made its debut at the World Coffee Event Jakarta 2025, during our dedicated 2-hour session at our vendor's booth, Coffee Beyond Borders. A once-in-a-lifetime event that made the launch of this beautiful West Java coffee even more special. <br/><br/> <strong>Location</strong><br/>Mount Kamojang, West Java <br/><br/> <strong>Process</strong><br/>Natural <br/><br/> <strong>Species</strong><br/>Arabica <br/><br/> <strong>Varietal</strong><br/>S-795, Ateng, Sigararutang <br/><br/> <strong>Altitude</strong><br/>1500 - 1700 masl <br/><br/> <strong>Nett Weight</strong><br/>150gr <br/><br/> <strong>Flavor Notes Perception</strong><br/>Blueberry cream - Starfruit - Almond <br/><br/> <strong>Roast Date</strong><br/>09 AUGUST 2025 ",
     "shortDescription": "A standout West Java Arabica from Mount Kamojang, naturally processed with vibrant blueberry, starfruit, and almond notes. Showcased at World Coffee Event Jakarta 2025.",
-    "grindSize": ["Beans"],
-    "coffeType": ["Arabica"],
-    "category_ids": ["5"],
+    "grindSize": [
+      "Beans"
+    ],
+    "coffeType": [
+      "Arabica"
+    ],
+    "category_ids": [
+      "5"
+    ],
     "images": [
-      { "image": "https://cdn.agroastery.com/produk/kamojang/1.png" },
-      { "image": "https://cdn.agroastery.com/produk/kamojang/2.png" },
-      { "image": "https://cdn.agroastery.com/produk/kamojang/3.png" },
-      { "image": "https://cdn.agroastery.com/produk/kamojang/4.png" },
-      { "image": "https://cdn.agroastery.com/produk/kamojang/5.png" }
+      {
+        "image": "https://cdn.agroastery.com/produk/kamojang/1.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/kamojang/2.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/kamojang/3.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/kamojang/4.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/kamojang/5.png"
+      }
     ],
     "variants": [
-      { "weight": "150g", "price": 89000, "sku": "biji-kopi-kamojang-roasted-for-filter-by-agroastery-150g", "quantity": 999 }
-    ]
-  },
-  {
-    "title": "(Grosir min. 10kg) House Blend Espresso - Arabica & Fine Robusta 1 KG | ES46 Blend 1KG ",
-    "shortDescription": "A bold espresso house blend of 40% Arabica and 60% Fine Robusta, dark roasted for strong sweetness and dark chocolate notes. Perfect for milk-based and black coffee menus.",
-    "description": "<strong>Composition</strong><br/>40% Arabica Wethull - (Fullcityplus Roast/Very Early Second Crack/Dark Roast)<br/>60% Fine Robusta Fullwash - (Fullcity Roast/MediumToDark Roast) <br/><br/> Biji kopi grade terbaik dengan profil sangrai yang di sesuaikan dengan kebutuhan harian kedai kopi. <br/><br/> <strong>Recommended for</strong><br/>Kopi susu aren, latte, cappucino, americano, long black dengan karakter manis Dark choco dan Sweetness yang kuat. <br/><br/> <strong>Tasting Notes</strong><br/> <em>Black</em> : Dark Chocolate, Hint of Spice, Bold, Long Aftertaste <br/><em>Milk</em> : Dark Chocolate, Biscuit, Creamy <br/>High Body | Mid High Sweetness | Low Acidity <br/><br/> <strong>Nett Weight</strong><br/>970gr <br/><br/> <strong>Ukuran Lain</strong><br/>200gr - <a href='https://www.tokopedia.com/agroastery/house-blend-espresso-arabica-fine-robusta-200-gram-es46-blend' target='_blank'>Tokopedia Link</a><br/>500gr - <a href='https://www.tokopedia.com/agroastery/biji-kopi-blend-espresso-arabica-fine-robusta-500-gr-es46-blend' target='_blank'>Tokopedia Link</a> <br/><br/> <strong>Grind Options</strong><br/> <strong>BEANS</strong> : Biji kopi utuh <br/><br/> <strong>GRIND FINE</strong> : Tubruk, Mokapot, Vietnam Drip, Espresso Machine <br/><br/> <strong>GRIND MEDIUM</strong> : Semua alat seduh menggunakan paper filter (V60, Kalita wave, Kono, Aeropress, Chemex, dll) <br/><br/> <strong>GRIND COARSE</strong> : French Press, Cold Drip, Cold Brew, Espresso teknik rebus ",
-    "grindSize": ["Beans", "Grind Fine", "Grind Medium", "Grind Coarse"],
-    "coffeType": ["Arabica"],
-    "category_ids": ["2"],
-    "images": [
-      { "image": "https://cdn.agroastery.com/produk/es-46/1.png" },
-      { "image": "https://cdn.agroastery.com/produk/es-46/2.png" },
-      { "image": "https://cdn.agroastery.com/produk/es-46/3.png" },
-      { "image": "https://cdn.agroastery.com/produk/es-46/4.png" },
-      { "image": "https://cdn.agroastery.com/produk/es-46/5.png" }
-    ],
-    "variants": [
-      { "weight": "1000g", "price": 196000, "sku": "grosir-min-10kg-house-blend-espresso-arabica-fine-robusta-1-kg-es46-blend-1kg-1000g", "quantity": 999 },
-      { "weight": "200g", "price": 58000, "sku": "grosir-min-10kg-house-blend-espresso-arabica-fine-robusta-1-kg-es46-blend-1kg-200g", "quantity": 999 },
-      { "weight": "500g", "price": 114000, "sku": "grosir-min-10kg-house-blend-espresso-arabica-fine-robusta-1-kg-es46-blend-1kg-500g", "quantity": 999 }
+      {
+        "weight": "150g",
+        "price": 89000,
+        "sku": "biji-kopi-kamojang-roasted-for-filter-by-agroastery-150g",
+        "quantity": 999,
+        "shipWeightGrams": 220
+      }
     ]
   },
   {
     "title": "Biji Kopi MANG DEWA roasted for filter by AGROASTERY",
     "shortDescription": "A natural anaerobic Arabica from East Manglayang, West Java. Handpicked and processed with care, offering grape, dried fruit, and hibiscus notes.",
     "description": "Tucked away in the cool, pine-shaded hills of Genteng Village, Kelompok Tani Berdikari is a small group of farmers and coffee processors. Reaching their farm is no easy feat—steep, damaged roads make the journey challenging. Coffee trees grow beneath towering pine canopies, creating a natural harmony that contributes to the cup's distinct character. <br/><br/> During a cupping session with the processors, we discovered a standout lot from Mang Dewa—one of the producers whose careful attention is evident in every sip. The cherries for this lot were selectively handpicked at peak ripeness. <br/><br/> <strong>Location</strong><br/>East Manglayang, West Java <br/><br/> <strong>Process</strong><br/>Natural Anaerob 240H <br/><br/> <strong>Species</strong><br/>Arabica <br/><br/> <strong>Varietal</strong><br/>Java, Ateng Super, Sigararutang <br/><br/> <strong>Altitude</strong><br/>1450 - 1500 masl <br/><br/> <strong>Nett Weight</strong><br/>150gr <br/><br/> <strong>Flavor Notes Perception</strong><br/>Grapes - Dried fruit - Hibiscus <br/><br/> <strong>Roast Date</strong><br/>09 AUGUST 2025 ",
-    "grindSize": ["Beans"],
-    "coffeType": ["Arabica"],
-    "category_ids": ["5"],
+    "grindSize": [
+      "Beans"
+    ],
+    "coffeType": [
+      "Arabica"
+    ],
+    "category_ids": [
+      "5"
+    ],
     "images": [
-      { "image": "https://cdn.agroastery.com/produk/mang-dewa/1.png" },
-      { "image": "https://cdn.agroastery.com/produk/mang-dewa/2.png" },
-      { "image": "https://cdn.agroastery.com/produk/mang-dewa/3.png" },
-      { "image": "https://cdn.agroastery.com/produk/mang-dewa/4.png" },
-      { "image": "https://cdn.agroastery.com/produk/mang-dewa/5.png" }
+      {
+        "image": "https://cdn.agroastery.com/produk/mang-dewa/1.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/mang-dewa/2.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/mang-dewa/3.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/mang-dewa/4.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/mang-dewa/5.png"
+      }
     ],
     "variants": [
-      { "weight": "150g", "price": 89000, "sku": "biji-kopi-mang-dewa-roasted-for-filter-by-agroastery-150g", "quantity": 999 }
+      {
+        "weight": "150g",
+        "price": 120000,
+        "sku": "biji-kopi-mang-dewa-roasted-for-filter-by-agroastery-150g",
+        "quantity": 999,
+        "shipWeightGrams": 220
+      }
     ]
   },
   {
     "title": "Biji Kopi BLACKCURRANTJI roasted for filter by AGROASTERY",
     "shortDescription": "A bold single-origin Arabica from Mount Kerinci, infused with blackcurrant for a vibrant cup featuring jammy blackcurrant, grape, and red cherry notes.",
     "description": "Introducing our Blackcurrant-Infused Kerinci Coffee Beans—a truly unique single-origin experience. Grown in the volcanic soils of the Kerinci region, these coffee beans are meticulously infused with the natural essence of ripe blackcurrant, creating a coffee that's both bold and delightfully aromatic. <br/><br/> This is not a blend, but a single-origin coffee transformed through innovation. Perfect for enthusiasts looking to explore new dimensions of flavor, our Blackcurrant-Infused Kerinci Coffee Beans offer a harmonious fusion of tradition and creativity. <br/><br/> <strong>Location</strong><br/>Mount Kerinci, Indonesia <br/><br/> <strong>Process</strong><br/>Blackcurrant Infused Natural Anaerob <br/><br/> <strong>Species</strong><br/>Arabica <br/><br/> <strong>Varietal</strong><br/>Mix <br/><br/> <strong>Altitude</strong><br/>1500 masl <br/><br/> <strong>Nett Weight</strong><br/>150gr <br/><br/> <strong>Flavor Notes Perception</strong><br/>Blackcurrant Jam - Grape - Red Cherry <br/><br/> <strong>Roast Date</strong><br/>19 AGUSTUS 2025 ",
-    "grindSize": ["Beans", "Grind Fine", "Grind Medium", "Grind Coarse"],
-    "coffeType": ["Arabica"],
-    "category_ids": ["5"],
+    "grindSize": [
+      "Beans",
+      "Grind Fine",
+      "Grind Medium",
+      "Grind Coarse"
+    ],
+    "coffeType": [
+      "Arabica"
+    ],
+    "category_ids": [
+      "5"
+    ],
     "images": [
-      { "image": "https://cdn.agroastery.com/produk/blackcurrant/1.png" },
-      { "image": "https://cdn.agroastery.com/produk/blackcurrant/2.png" },
-      { "image": "https://cdn.agroastery.com/produk/blackcurrant/3.png" }
+      {
+        "image": "https://cdn.agroastery.com/produk/blackcurrant/1.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/blackcurrant/2.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/blackcurrant/3.png"
+      }
     ],
     "variants": [
-      { "weight": "150g", "price": 119000, "sku": "biji-kopi-blackcurrantji-roasted-for-filter-by-agroastery-150g", "quantity": 999 }
+      {
+        "weight": "150g",
+        "price": 140000,
+        "sku": "biji-kopi-blackcurrantji-roasted-for-filter-by-agroastery-150g",
+        "quantity": 999,
+        "shipWeightGrams": 220
+      }
     ]
   },
   {
     "title": "Biji Kopi ETHIOPIA URAGA WASH roasted for filter by AGROASTERY",
     "shortDescription": "A washed Grade 1 heirloom Arabica from Uraga, Ethiopia—tea-like with raisin and rose water notes, grown at 1950–2300 masl.",
     "description": " Reaching Uraga means navigating steep, rugged mountain roads—an experience locals jokingly call an “African Massage.” This remote region is home to smallholder “garden” farms, where cherries are hand-harvested. At the washing station, cherries are depulped, floaters removed, and fermented in water for 12–24 hours. <br/><br/> Following washing in channels, the beans are dried on raised African beds for a period of 10–15 days. On very hot days, beds may be covered to regulate drying. Once dried, beans are stored in parchment, then undergo triple-pass color sorting and hand-sorting before export by Project Origin’s partner, Primrose. <br/><br/> <strong>Location</strong><br/>Uraga, Guji, Ethiopia <br/><br/> <strong>Process</strong><br/>Wash G1 <br/><br/> <strong>Species</strong><br/>Arabica <br/><br/> <strong>Varietal</strong><br/>Heirloom <br/><br/> <strong>Altitude</strong><br/>1950 - 2300 masl <br/><br/> <strong>Nett Weight</strong><br/>150gr <br/><br/> <strong>Flavor Notes Perception</strong><br/>Raisin - Rose Water - Tea Like <br/><br/> <strong>Roast Date</strong><br/>03 AUGUST 2025 ",
-    "grindSize": ["Beans"],
-    "coffeType": ["Arabica"],
-    "category_ids": ["5"],
+    "grindSize": [
+      "Beans"
+    ],
+    "coffeType": [
+      "Arabica"
+    ],
+    "category_ids": [
+      "5"
+    ],
     "images": [
-      { "image": "https://cdn.agroastery.com/produk/uraga/1.png" },
-      { "image": "https://cdn.agroastery.com/produk/uraga/2.png" },
-      { "image": "https://cdn.agroastery.com/produk/uraga/3.png" }
+      {
+        "image": "https://cdn.agroastery.com/produk/uraga/1.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/uraga/2.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/uraga/3.png"
+      }
     ],
     "variants": [
-      { "weight": "150g", "price": 129000, "sku": "biji-kopi-ethiopia-uraga-wash-roasted-for-filter-by-agroastery-150g", "quantity": 999 }
+      {
+        "weight": "150g",
+        "price": 129000,
+        "sku": "biji-kopi-ethiopia-uraga-wash-roasted-for-filter-by-agroastery-150g",
+        "quantity": 999,
+        "shipWeightGrams": 220
+      }
     ]
   },
   {
-    "title": "(grosir min. 10kg) Biji Kopi Full Arabica Kopi Susu Ekonomis 1 KG",
+    "title": "Biji Kopi Full Arabica Kopi Susu Ekonomis",
     "shortDescription": "An economical 100% Arabica from East Java, washed and dark roasted, delivering chocolaty sweetness—perfect for es kopi susu and daily café use.",
     "description": "Di rekomendasikan untuk menu es kopi susu aren (atau pemanis lainnya) dengan 100% Arabica dengan budget ekonomis. <br/><br/> <strong>Origin</strong><br/>East Java Grade Commercial <br/><br/> <strong>Roast Level</strong><br/>FullCity+ (very early second crack / early stage dark roast) <br/><br/> <strong>Process</strong><br/>Wash <br/><br/> <strong>Notes on Kopi Susu</strong><br/>Chocolaty and Sweet <br/><br/> <strong>Nett Weight</strong><br/>1000 gram <br/><br/> <strong>Sample</strong><br/>100gr - <a href='https://www.tokopedia.com/agroastery/biji-kopi-full-arabica-kopi-susu-ekonomis-100-gr' target='_blank'>Tokopedia Link</a> <br/><br/> <strong>Grind Options</strong><br/> <strong>GRIND FINE</strong> : Tubruk, Mokapot, Espresso Machine <br/><br/> <strong>GRIND MEDIUM</strong> : Semua alat seduh menggunakan paper filter (V60, Kalita wave, Kono, Aeropress, Chemex, dll) <br/><br/> <strong>GRIND COARSE</strong> : French Press, Cold Drip, Cold Brew, Espresso teknik rebus, Vietnam Drip ",
-    "grindSize": ["Beans", "Grind Fine", "Grind Medium", "Grind Coarse"],
-    "coffeType": ["Arabica"],
-    "category_ids": ["1"],
+    "grindSize": [
+      "Beans",
+      "Grind Fine",
+      "Grind Medium",
+      "Grind Coarse"
+    ],
+    "coffeType": [
+      "Arabica"
+    ],
+    "category_ids": [
+      "1"
+    ],
     "images": [
-      { "image": "https://cdn.agroastery.com/produk/full-arabica/1.png" },
-      { "image": "https://cdn.agroastery.com/produk/full-arabica/2.png" },
-      { "image": "https://cdn.agroastery.com/produk/full-arabica/3.png" },
-      { "image": "https://cdn.agroastery.com/produk/full-arabica/4.png" },
-      { "image": "https://cdn.agroastery.com/produk/full-arabica/5.png" }
+      {
+        "image": "https://cdn.agroastery.com/produk/full-arabica/1.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/full-arabica/2.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/full-arabica/3.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/full-arabica/4.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/full-arabica/5.png"
+      }
     ],
     "variants": [
-      { "weight": "1000g", "price": 178000, "sku": "grosir-min-10kg-biji-kopi-full-arabica-kopi-susu-ekonomis-1-kg-1000g", "quantity": 999 },
-      { "weight": "100g", "price": 29000, "sku": "grosir-min-10kg-biji-kopi-full-arabica-kopi-susu-ekonomis-1-kg-100g", "quantity": 999 }
+      {
+        "weight": "1000g",
+        "price": 187000,
+        "sku": "biji-kopi-full-arabica-kopi-susu-ekonomis-1000g",
+        "quantity": 999,
+        "shipWeightGrams": 1200
+      },
+      {
+        "weight": "500g",
+        "price": 103000,
+        "sku": "biji-kopi-full-arabica-kopi-susu-ekonomis-500g",
+        "quantity": 999,
+        "shipWeightGrams": 650
+      },
+      {
+        "weight": "100g",
+        "price": 29000,
+        "sku": "biji-kopi-full-arabica-kopi-susu-ekonomis-100g",
+        "quantity": 999,
+        "shipWeightGrams": 170
+      }
     ]
   },
   {
-    "title": "(grosir min. 10kg) Biji Kopi Blend 20/80 Kopi Susu Ekonomis 1 KG",
+    "title": "Biji Kopi Blend 20/80 Kopi Susu Ekonomis 1 KG",
     "shortDescription": "A budget-friendly East Java blend of 20% Arabica and 80% Robusta, dark roasted for balanced kopi susu—ideal for wholesale purchases starting at 8kg.",
     "description": "<strong>Grosir</strong><br/>Minimal pembelian 8kg <br/><br/> Setiap produk ditambah 1, maka akan ditambahkan 1kg. <br/><br/> Di rekomendasikan untuk menu es kopi susu aren (atau pemanis lainnya) dengan 20% Arabica dan 80% Robusta dengan rasa yang pas dan budget ekonomis. <br/><br/> <strong>Origin</strong><br/>East Java <br/><br/> <strong>Roast Level</strong><br/>FullCity+ (very early second crack / early stage dark roast) <br/><br/> <strong>Process</strong><br/>Wash (Arabica) & Natural (Robusta) <br/><br/> <strong>Nett Weight</strong><br/>1000 gram <br/><br/> <strong>Grind Options</strong><br/> <strong>GRIND FINE</strong> : Tubruk, Mokapot, Vietnam Drip, Espresso Machine <br/><br/> <strong>GRIND MEDIUM</strong> : Semua alat seduh menggunakan paper filter (V60, Kalita wave, Kono, Aeropress, Chemex, dll) <br/><br/> <strong>GRIND COARSE</strong> : French Press, Cold Drip, Cold Brew, Espresso teknik rebus ",
-    "grindSize": ["Beans", "Grind Fine", "Grind Medium", "Grind Coarse"],
-    "coffeType": ["Arabica", "Robusta"],
-    "category_ids": ["1"],
+    "grindSize": [
+      "Beans",
+      "Grind Fine",
+      "Grind Medium",
+      "Grind Coarse"
+    ],
+    "coffeType": [
+      "Arabica",
+      "Robusta"
+    ],
+    "category_ids": [
+      "1"
+    ],
     "images": [
-      { "image": "https://cdn.agroastery.com/produk/blend-ekonomis/1.png" },
-      { "image": "https://cdn.agroastery.com/produk/blend-ekonomis/2.png" },
-      { "image": "https://cdn.agroastery.com/produk/blend-ekonomis/3.png" },
-      { "image": "https://cdn.agroastery.com/produk/blend-ekonomis/4.png" },
-      { "image": "https://cdn.agroastery.com/produk/blend-ekonomis/5.png" }
+      {
+        "image": "https://cdn.agroastery.com/produk/blend-ekonomis/1.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/blend-ekonomis/2.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/blend-ekonomis/3.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/blend-ekonomis/4.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/blend-ekonomis/5.png"
+      }
     ],
     "variants": [
-      { "weight": "1000g", "price": 171000, "sku": "grosir-min-10kg-biji-kopi-blend-2080-kopi-susu-ekonomis-1-kg-1000g", "quantity": 999 }
+      {
+        "weight": "1000g",
+        "price": 180000,
+        "sku": "biji-kopi-blend-2080-kopi-susu-ekonomis-1000g",
+        "quantity": 999,
+        "shipWeightGrams": 1200
+      },
+      {
+        "weight": "500g",
+        "price": 99000,
+        "sku": "biji-kopi-blend-2080-kopi-susu-ekonomis-500g",
+        "quantity": 999,
+        "shipWeightGrams": 650
+      },
+      {
+        "weight": "200g",
+        "price": 45000,
+        "sku": "biji-kopi-blend-2080-kopi-susu-ekonomis-200g",
+        "quantity": 999,
+        "shipWeightGrams": 270
+      },
+      {
+        "weight": "100g",
+        "price": 27000,
+        "sku": "biji-kopi-blend-2080-kopi-susu-ekonomis-100g",
+        "quantity": 999,
+        "shipWeightGrams": 170
+      }
     ]
   },
   {
-    "title": "(grosir min. 10kg) Biji Kopi Blend 50/50 Kopi Susu Ekonomis 1 KG",
+    "title": "Biji Kopi Blend 50/50 Kopi Susu Ekonomis 1 KG",
     "shortDescription": "Balanced 50/50 Arabica–Robusta blend from East Java, dark roasted for chocolaty, sweet, and nutty kopi susu. Economical choice with multiple grind options.",
     "description": "Di rekomendasikan untuk menu es kopi susu aren (atau pemanis lainnya) dengan 50% Arabica dan 50% Robusta dengan rasa yang pas dan budget ekonomis. <br/><br/> <strong>Origin</strong><br/>East Java <br/><br/> <strong>Roast Level</strong><br/>FullCity+ (very early second crack / early stage dark roast) <br/><br/> <strong>Process</strong><br/>Wash (Arabica) & Natural (Robusta) <br/><br/> <strong>Notes on Kopi Susu</strong><br/>Chocolaty, Sweet, and Nutty <br/><br/> <strong>Nett Weight</strong><br/>1000 gram x 10 <br/><br/> <strong>Grind Options</strong><br/> <strong>GRIND FINE</strong> : Tubruk, Mokapot, Vietnam Drip, Espresso Machine <br/><br/> <strong>GRIND MEDIUM</strong> : Semua alat seduh menggunakan paper filter (V60, Kalita wave, Kono, Aeropress, Chemex, dll) <br/><br/> <strong>GRIND COARSE</strong> : French Press, Cold Drip, Cold Brew, Espresso teknik rebus <br/><br/> <strong>BEANS</strong> : Biji kopi utuh ",
-    "grindSize": ["Beans", "Grind Fine", "Grind Medium", "Grind Coarse"],
-    "coffeType": ["Arabica", "Robusta"],
-    "category_ids": ["1"],
+    "grindSize": [
+      "Beans",
+      "Grind Fine",
+      "Grind Medium",
+      "Grind Coarse"
+    ],
+    "coffeType": [
+      "Arabica",
+      "Robusta"
+    ],
+    "category_ids": [
+      "1"
+    ],
     "images": [
-      { "image": "https://cdn.agroastery.com/produk/kopi-susu-50-50/1.png" },
-      { "image": "https://cdn.agroastery.com/produk/kopi-susu-50-50/2.png" },
-      { "image": "https://cdn.agroastery.com/produk/kopi-susu-50-50/3.png" },
-      { "image": "https://cdn.agroastery.com/produk/kopi-susu-50-50/4.png" },
-      { "image": "https://cdn.agroastery.com/produk/kopi-susu-50-50/5.png" },
-      { "image": "https://cdn.agroastery.com/produk/kopi-susu-50-50/6.png" },
-      { "image": "https://cdn.agroastery.com/produk/kopi-susu-50-50/7.png" },
-      { "image": "https://cdn.agroastery.com/produk/kopi-susu-50-50/8.png" }
+      {
+        "image": "https://cdn.agroastery.com/produk/kopi-susu-50-50/1.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/kopi-susu-50-50/2.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/kopi-susu-50-50/3.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/kopi-susu-50-50/4.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/kopi-susu-50-50/5.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/kopi-susu-50-50/6.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/kopi-susu-50-50/7.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/kopi-susu-50-50/8.png"
+      }
     ],
     "variants": [
-      { "weight": "1000g", "price": 175000, "sku": "grosir-min-10kg-biji-kopi-blend-5050-kopi-susu-ekonomis-1-kg-1000g", "quantity": 999 }
+      {
+        "weight": "1000g",
+        "price": 184000,
+        "sku": "biji-kopi-blend-5050-kopi-susu-ekonomis-1-kg-1000g",
+        "quantity": 999,
+        "shipWeightGrams": 1200
+      },
+      {
+        "weight": "500g",
+        "price": 102000,
+        "sku": "biji-kopi-blend-5050-kopi-susu-ekonomis-1-kg-500g",
+        "quantity": 999,
+        "shipWeightGrams": 650
+      },
+      {
+        "weight": "200g",
+        "price": 46000,
+        "sku": "biji-kopi-blend-5050-kopi-susu-ekonomis-1-kg-200g",
+        "quantity": 999,
+        "shipWeightGrams": 270
+      },
+      {
+        "weight": "100g",
+        "price": 28000,
+        "sku": "biji-kopi-blend-5050-kopi-susu-ekonomis-1-kg-100g",
+        "quantity": 999,
+        "shipWeightGrams": 170
+      }
     ]
   },
   {
-    "title": "(grosir min. 10kg) Biji Kopi Blend 70/30 Kopi Susu Ekonomis 1 KG",
+    "title": "Biji Kopi Blend 70/30 Kopi Susu Ekonomis 1 KG",
     "shortDescription": "A 70% Arabica and 30% Robusta blend from East Java, dark roasted for balanced kopi susu with an economical price point and versatile grind options.",
     "description": " Di rekomendasikan untuk menu es kopi susu aren (atau pemanis lainnya) dengan 70% Arabica dan 30% Robusta dengan rasa yang pas dan budget ekonomis. <br/><br/> <strong>Origin</strong><br/>East Java <br/><br/> <strong>Roast Level</strong><br/>FullCity+ (very early second crack / early stage dark roast) <br/><br/> <strong>Process</strong><br/>Wash (Arabica) & Natural (Robusta) <br/><br/> <strong>Nett Weight</strong><br/>1000 gram <br/><br/> <strong>Grind Options</strong><br/> <strong>GRIND FINE</strong> : Tubruk, Mokapot, Vietnam Drip, Espresso Machine <br/><br/> <strong>GRIND MEDIUM</strong> : Semua alat seduh menggunakan paper filter (V60, Kalita wave, Kono, Aeropress, Chemex, dll) <br/><br/> <strong>GRIND COARSE</strong> : French Press, Cold Drip, Cold Brew, Espresso teknik rebus <br/><br/> <strong>BEANS</strong> : Biji kopi utuh ",
-    "grindSize": ["Beans", "Grind Fine", "Grind Medium", "Grind Coarse"],
-    "coffeType": ["Arabica", "Robusta"],
-    "category_ids": ["1"],
+    "grindSize": [
+      "Beans",
+      "Grind Fine",
+      "Grind Medium",
+      "Grind Coarse"
+    ],
+    "coffeType": [
+      "Arabica",
+      "Robusta"
+    ],
+    "category_ids": [
+      "1"
+    ],
     "images": [
-      { "image": "https://cdn.agroastery.com/produk/kopi-susu-70-30/1.png" },
-      { "image": "https://cdn.agroastery.com/produk/kopi-susu-70-30/2.png" },
-      { "image": "https://cdn.agroastery.com/produk/kopi-susu-70-30/3.png" },
-      { "image": "https://cdn.agroastery.com/produk/kopi-susu-70-30/4.png" },
-      { "image": "https://cdn.agroastery.com/produk/kopi-susu-70-30/5.png" },
-      { "image": "https://cdn.agroastery.com/produk/kopi-susu-70-30/6.png" }
+      {
+        "image": "https://cdn.agroastery.com/produk/kopi-susu-70-30/1.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/kopi-susu-70-30/2.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/kopi-susu-70-30/3.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/kopi-susu-70-30/4.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/kopi-susu-70-30/5.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/kopi-susu-70-30/6.png"
+      }
     ],
     "variants": [
-      { "weight": "1000g", "price": 154850, "sku": "grosir-min-10kg-biji-kopi-blend-7030-kopi-susu-ekonomis-1-kg-1000g", "quantity": 999 }
-    ]
-  },
-  {
-    "title": "House Blend Espresso - Arabica & Fine Robusta 100 gr | PRIME73 100gr ",
-    "shortDescription": "A 70% Arabica and 30% Fine Robusta blend, expertly dark roasted for daily café use. Available in 100g, 500g, and 1kg packs with multiple grind options.",
-    "description": " Di rekomendasikan untuk menu es kopi susu aren (atau pemanis lainnya) dengan 70% Arabica dan 30% Robusta dengan rasa yang pas dan budget ekonomis. <br/><br/> <strong>Origin</strong><br/>East Java <br/><br/> <strong>Roast Level</strong><br/>FullCity+ (very early second crack / early stage dark roast) <br/><br/> <strong>Process</strong><br/>Wash (Arabica) & Natural (Robusta) <br/><br/> <strong>Nett Weight</strong><br/>1000 gram <br/><br/> <strong>Grind Options</strong><br/> <strong>GRIND FINE</strong> : Tubruk, Mokapot, Vietnam Drip, Espresso Machine <br/><br/> <strong>GRIND MEDIUM</strong> : Semua alat seduh menggunakan paper filter (V60, Kalita wave, Kono, Aeropress, Chemex, dll) <br/><br/> <strong>GRIND COARSE</strong> : French Press, Cold Drip, Cold Brew, Espresso teknik rebus <br/><br/> <strong>BEANS</strong> : Biji kopi utuh ",
-    "grindSize": ["Beans", "Grind Fine", "Grind Medium", "Grind Coarse"],
-    "coffeType": ["Arabica", "Robusta"],
-    "category_ids": ["2"],
-    "images": [
-      { "image": "https://cdn.agroastery.com/produk/prime-73/1.png" },
-      { "image": "https://cdn.agroastery.com/produk/prime-73/2.png" },
-      { "image": "https://cdn.agroastery.com/produk/prime-73/3.png" },
-      { "image": "https://cdn.agroastery.com/produk/prime-73/4.png" },
-      { "image": "https://cdn.agroastery.com/produk/prime-73/5.png" },
-      { "image": "https://cdn.agroastery.com/produk/prime-73/6.png" }
-    ],
-    "variants": [
-      { "weight": "100g", "price": 32300, "sku": "house-blend-espresso-arabica-fine-robusta-100-gr-prime73-100gr-100g", "quantity": 999 }
+      {
+        "weight": "1000g",
+        "price": 187000,
+        "sku": "biji-kopi-blend-7030-kopi-susu-ekonomis-1000g",
+        "quantity": 999,
+        "shipWeightGrams": 1200
+      },
+      {
+        "weight": "500g",
+        "price": 103000,
+        "sku": "biji-kopi-blend-7030-kopi-susu-ekonomis-500g",
+        "quantity": 999,
+        "shipWeightGrams": 650
+      },
+      {
+        "weight": "200g",
+        "price": 47000,
+        "sku": "biji-kopi-blend-7030-kopi-susu-ekonomis-200g",
+        "quantity": 999,
+        "shipWeightGrams": 270
+      },
+      {
+        "weight": "100g",
+        "price": 29000,
+        "sku": "biji-kopi-blend-7030-kopi-susu-ekonomis-100g",
+        "quantity": 999,
+        "shipWeightGrams": 170
+      }
     ]
   },
   {
     "title": "Biji Kopi Full Robusta Kopi Susu Ekonomis",
     "shortDescription": "An economical 100% Robusta from Lampung, naturally processed and dark roasted for chocolaty, nutty, and bold kopi susu, hotel blends, or mixed coffee drinks.",
     "description": "Di rekomendasikan untuk menu es kopi susu aren (atau pemanis lainnya), Kopi Hotel, atau Campuran Minuman Kopi 100% Robusta dengan budget ekonomis. <br/><br/> <strong>Species</strong><br/>Robusta <br/><br/> <strong>Origin</strong><br/>Lampung <br/><br/> <strong>Roast Level</strong><br/>FullCity (before second crack / medium to dark) <br/><br/> <strong>Process</strong><br/>Natural <br/><br/> <strong>Notes on Kopi Susu</strong><br/>Chocolaty, nutty, and Bold <br/><br/> <strong>Nett Weight</strong><br/>500 gram <br/><br/> <strong>Sample</strong><br/>100gr - <a href='https://www.tokopedia.com/agroastery/biji-kopi-full-robusta-kopi-susu-ekonomis-100-gr' target='_blank'>Tokopedia Link</a> <br/><br/> <strong>Grind Options</strong><br/> <strong>GRIND FINE</strong> : Tubruk, Mokapot, Vietnam Drip, Espresso Machine <br/><br/> <strong>GRIND MEDIUM</strong> : Semua alat seduh menggunakan paper filter (V60, Kalita wave, Kono, Aeropress, Chemex, dll) <br/><br/> <strong>GRIND COARSE</strong> : French Press, Cold Drip, Cold Brew, Espresso teknik rebus ",
-    "grindSize": ["Beans", "Grind Fine", "Grind Medium", "Grind Coarse"],
-    "coffeType": ["Robusta"],
-    "category_ids": [ "1"],
+    "grindSize": [
+      "Beans",
+      "Grind Fine",
+      "Grind Medium",
+      "Grind Coarse"
+    ],
+    "coffeType": [
+      "Robusta"
+    ],
+    "category_ids": [
+      "1"
+    ],
     "images": [
-      { "image": "https://cdn.agroastery.com/produk/lampung/1.png" },
-      { "image": "https://cdn.agroastery.com/produk/lampung/2.png" },
-      { "image": "https://cdn.agroastery.com/produk/lampung/3.png" },
-      { "image": "https://cdn.agroastery.com/produk/lampung/4.png" },
-      { "image": "https://cdn.agroastery.com/produk/lampung/5.png" },
-      { "image": "https://cdn.agroastery.com/produk/lampung/6.png" }
+      {
+        "image": "https://cdn.agroastery.com/produk/lampung/1.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/lampung/2.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/lampung/3.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/lampung/4.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/lampung/5.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/lampung/6.png"
+      }
     ],
     "variants": [
-      { "weight": "500g", "price": 91200, "sku": "biji-kopi-full-robusta-kopi-susu-ekonomis-500g", "quantity": 999 }
+      {
+        "weight": "1000g",
+        "price": 174000,
+        "sku": "biji-kopi-full-robusta-kopi-susu-ekonomis-500g",
+        "quantity": 999,
+        "shipWeightGrams": 1200
+      },
+      {
+        "weight": "500g",
+        "price": 91200,
+        "sku": "biji-kopi-full-robusta-kopi-susu-ekonomis-500g",
+        "quantity": 999,
+        "shipWeightGrams": 650
+      },
+      {
+        "weight": "200g",
+        "price": 44000,
+        "sku": "biji-kopi-full-robusta-kopi-susu-ekonomis-200g",
+        "quantity": 999,
+        "shipWeightGrams": 270
+      },
+      {
+        "weight": "100g",
+        "price": 27000,
+        "sku": "biji-kopi-full-robusta-kopi-susu-ekonomis-500g",
+        "quantity": 999,
+        "shipWeightGrams": 170
+      }
     ]
   },
   {
-    "title": "Biji Kopi Full Robusta Kopi Susu Ekonomis 200 gr",
-    "shortDescription": "Affordable 100% Robusta from Lampung, naturally processed and medium–dark roasted for chocolaty, nutty, and bold kopi susu or hotel blends.",
-    "description": "Di rekomendasikan untuk menu es kopi susu aren (atau pemanis lainnya), Kopi Hotel, atau Campuran Minuman Kopi 100% Robusta dengan budget ekonomis. <br/><br/> <strong>Species</strong><br/>Robusta <br/><br/> <strong>Origin</strong><br/>Lampung <br/><br/> <strong>Roast Level</strong><br/>FullCity (before second crack / medium to dark) <br/><br/> <strong>Process</strong><br/>Natural <br/><br/> <strong>Notes on Kopi Susu</strong><br/>Chocolaty, Nutty, and Bold <br/><br/> <strong>Nett Weight</strong><br/>200 gram <br/><br/> <strong>Ukuran Lebih Besar</strong><br/>1kg - <a href='https://www.tokopedia.com/agroastery/biji-kopi-full-robusta-kopi-susu-ekonomis-1-kg-1kg' target='_blank'>Tokopedia Link</a> <br/><br/> <strong>Grind Options</strong><br/> <strong>GRIND FINE</strong> : Tubruk, Mokapot, Vietnam Drip, Espresso Machine <br/><br/> <strong>GRIND MEDIUM</strong> : Semua alat seduh menggunakan paper filter (V60, Kalita wave, Kono, Aeropress, Chemex, dll) <br/><br/> <strong>GRIND COARSE</strong> : French Press, Cold Drip, Cold Brew, Espresso teknik rebus ",
-    "grindSize": ["Beans", "Grind Fine", "Grind Medium", "Grind Coarse"],
-    "coffeType": ["Robusta"],
-    "category_ids": ["1"],
+    "title": "House Blend Espresso - Arabica & Fine Robusta PRIME73",
+    "shortDescription": "A 70% Arabica and 30% Fine Robusta blend, expertly dark roasted for daily café use. Available in 100g, 500g, and 1kg packs with multiple grind options.",
+    "description": " Di rekomendasikan untuk menu es kopi susu aren (atau pemanis lainnya) dengan 70% Arabica dan 30% Robusta dengan rasa yang pas dan budget ekonomis. <br/><br/> <strong>Origin</strong><br/>East Java <br/><br/> <strong>Roast Level</strong><br/>FullCity+ (very early second crack / early stage dark roast) <br/><br/> <strong>Process</strong><br/>Wash (Arabica) & Natural (Robusta) <br/><br/> <strong>Nett Weight</strong><br/>1000 gram <br/><br/> <strong>Grind Options</strong><br/> <strong>GRIND FINE</strong> : Tubruk, Mokapot, Vietnam Drip, Espresso Machine <br/><br/> <strong>GRIND MEDIUM</strong> : Semua alat seduh menggunakan paper filter (V60, Kalita wave, Kono, Aeropress, Chemex, dll) <br/><br/> <strong>GRIND COARSE</strong> : French Press, Cold Drip, Cold Brew, Espresso teknik rebus <br/><br/> <strong>BEANS</strong> : Biji kopi utuh ",
+    "grindSize": [
+      "Beans",
+      "Grind Fine",
+      "Grind Medium",
+      "Grind Coarse"
+    ],
+    "coffeType": [
+      "Arabica",
+      "Robusta"
+    ],
+    "category_ids": [
+      "2"
+    ],
     "images": [
-      { "image": "https://cdn.agroastery.com/produk/lampung-robusta/1.png" },
-      { "image": "https://cdn.agroastery.com/produk/lampung-robusta/2.png" },
-      { "image": "https://cdn.agroastery.com/produk/lampung-robusta/3.png" },
-      { "image": "https://cdn.agroastery.com/produk/lampung-robusta/4.png" },
-      { "image": "https://cdn.agroastery.com/produk/lampung-robusta/5.png" },
-      { "image": "https://cdn.agroastery.com/produk/lampungrobusta/6.png" },
-      { "image": "https://cdn.agroastery.com/produk/lampungrobusta/7.png" },
-      { "image": "https://cdn.agroastery.com/produk/lampungrobusta/8.png" }
+      {
+        "image": "https://cdn.agroastery.com/produk/prime-73/1.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/prime-73/2.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/prime-73/3.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/prime-73/4.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/prime-73/5.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/prime-73/6.png"
+      }
     ],
     "variants": [
-      { "weight": "200g", "price": 41800, "sku": "biji-kopi-full-robusta-kopi-susu-ekonomis-200-gr-200g", "quantity": 999 }
+      {
+        "weight": "1000g",
+        "price": 224000,
+        "sku": "house-blend-espresso-arabica-fine-robusta-100-gr-prime73-1kg-1000g",
+        "quantity": 999,
+        "shipWeightGrams": 1200
+      },
+      {
+        "weight": "500g",
+        "price": 124000,
+        "sku": "house-blend-espresso-arabica-fine-robusta-100-gr-prime73-500gr-500g",
+        "quantity": 999,
+        "shipWeightGrams": 650
+      },
+      {
+        "weight": "200g",
+        "price": 56000,
+        "sku": "house-blend-espresso-arabica-fine-robusta-100-gr-prime73-100gr-200g",
+        "quantity": 999,
+        "shipWeightGrams": 270
+      },
+      {
+        "weight": "100g",
+        "price": 34000,
+        "sku": "house-blend-espresso-arabica-fine-robusta-100-gr-prime73-100gr-100g",
+        "quantity": 999,
+        "shipWeightGrams": 170
+      }
     ]
   },
   {
-    "title": "Biji Kopi STANDARD GAYO Full Arabica | Kopi Arabika | Freshroasted",
+    "title": "Blend Full Arabica Espresso | CHOCO BUNCH",
+    "description": "<strong>Origin</strong> : Brazil - Bali <br/><br/> <strong>Process</strong> : Natural - Wash Anaerobic <br/><br/> <strong>Altitude</strong> : 1200 - 1380 masl <br/><br/> <strong>Varietal</strong> : mix varietas <br/><br/> <strong>Roast Degree (Profile)</strong> : Fullcityplus Roast/Very Early Second Crack/Dark Roast <br/><br/> <strong>Notes</strong> : Mid-High Body | Mid-High Sweetness | Low-Mid Acidity <br/><br/> <strong>Recommended for</strong> : Espresso based , americano, longblack, latte, cappucino <br/><br/> Biji kopi grade terbaik dengan profil sangrai yang di sesuaikan dengan kebutuhan harian kedai kopi. <br/><br/> <strong>Nett Weight</strong> : 1000gram <br/><br/> Berikut adalah jenis variasi gilingan/grindsize berdasarkan alat seduh yang dipakai : <br/><br/> <strong>GRIND FINE</strong> : Tubruk, Mokapot, Vietnam Drip <br/><br/> <strong>GRIND MEDIUM</strong> : Semua alat seduh menggunakan paper filter (V60, Kalita wave, Kono, Aeropress, Chemex, dll) <br/><br/> <strong>GRIND COARSE</strong> : French Press, Cold Drip, Cold Brew, Espresso teknik rebus ",
+    "shortDescription": "Rich Brazil–Bali Arabica with natural and wash anaerobic process, dark roasted for espresso-based drinks. Balanced body, sweetness, and acidity, ideal for daily café needs with multiple grind options.",
+    "grindSize": [
+      "Beans",
+      "Grind Fine",
+      "Grind Medium",
+      "Grind Coarse"
+    ],
+    "coffeType": [
+      "Arabica"
+    ],
+    "category_ids": [
+      "2"
+    ],
+    "images": [
+      {
+        "image": "https://cdn.agroastery.com/produk/arabica-espresso/1.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/arabica-espresso/2.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/arabica-espresso/3.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/arabica-espresso/4.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/arabica-espresso/5.png"
+      }
+    ],
+    "variants": [
+      {
+        "weight": "1000g",
+        "price": 297000,
+        "sku": "blend-full-arabica-espresso-choco-bunch-freshroast-1000g",
+        "quantity": 999,
+        "shipWeightGrams": 1200
+      },
+      {
+        "weight": "500g",
+        "price": 159000,
+        "sku": "blend-full-arabica-espresso-choco-bunch-freshroast-500g",
+        "quantity": 999,
+        "shipWeightGrams": 650
+      },
+      {
+        "weight": "200g",
+        "price": 72000,
+        "sku": "blend-full-arabica-espresso-choco-bunch-freshroast-200g",
+        "quantity": 999,
+        "shipWeightGrams": 270
+      },
+      {
+        "weight": "100g",
+        "price": 42000,
+        "sku": "blend-full-arabica-espresso-choco-bunch-freshroast-100g",
+        "quantity": 999,
+        "shipWeightGrams": 170
+      }
+    ]
+  },
+  {
+    "title": "House Blend Espresso - Arabica & Fine Robusta ES46 Blend",
+    "shortDescription": "A bold espresso house blend of 40% Arabica and 60% Fine Robusta, dark roasted for strong sweetness and dark chocolate notes. Perfect for milk-based and black coffee menus.",
+    "description": "<strong>Composition</strong><br/>40% Arabica Wethull - (Fullcityplus Roast/Very Early Second Crack/Dark Roast)<br/>60% Fine Robusta Fullwash - (Fullcity Roast/MediumToDark Roast) <br/><br/> Biji kopi grade terbaik dengan profil sangrai yang di sesuaikan dengan kebutuhan harian kedai kopi. <br/><br/> <strong>Recommended for</strong><br/>Kopi susu aren, latte, cappucino, americano, long black dengan karakter manis Dark choco dan Sweetness yang kuat. <br/><br/> <strong>Tasting Notes</strong><br/> <em>Black</em> : Dark Chocolate, Hint of Spice, Bold, Long Aftertaste <br/><em>Milk</em> : Dark Chocolate, Biscuit, Creamy <br/>High Body | Mid High Sweetness | Low Acidity <br/><br/> <strong>Nett Weight</strong><br/>970gr <br/><br/> <strong>Ukuran Lain</strong><br/>200gr - <a href='https://www.tokopedia.com/agroastery/house-blend-espresso-arabica-fine-robusta-200-gram-es46-blend' target='_blank'>Tokopedia Link</a><br/>500gr - <a href='https://www.tokopedia.com/agroastery/biji-kopi-blend-espresso-arabica-fine-robusta-500-gr-es46-blend' target='_blank'>Tokopedia Link</a> <br/><br/> <strong>Grind Options</strong><br/> <strong>BEANS</strong> : Biji kopi utuh <br/><br/> <strong>GRIND FINE</strong> : Tubruk, Mokapot, Vietnam Drip, Espresso Machine <br/><br/> <strong>GRIND MEDIUM</strong> : Semua alat seduh menggunakan paper filter (V60, Kalita wave, Kono, Aeropress, Chemex, dll) <br/><br/> <strong>GRIND COARSE</strong> : French Press, Cold Drip, Cold Brew, Espresso teknik rebus ",
+    "grindSize": [
+      "Beans",
+      "Grind Fine",
+      "Grind Medium",
+      "Grind Coarse"
+    ],
+    "coffeType": [
+      "Arabica"
+    ],
+    "category_ids": [
+      "2"
+    ],
+    "images": [
+      {
+        "image": "https://cdn.agroastery.com/produk/es-46/1.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/es-46/2.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/es-46/3.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/es-46/4.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/es-46/5.png"
+      }
+    ],
+    "variants": [
+      {
+        "weight": "1000g",
+        "price": 206000,
+        "sku": "house-blend-espresso-arabica-fine-robusta-es46-blend-1000g",
+        "quantity": 999,
+        "shipWeightGrams": 1200
+      },
+      {
+        "weight": "500g",
+        "price": 114000,
+        "sku": "house-blend-espresso-arabica-fine-robusta-es46-blend-500g",
+        "quantity": 999,
+        "shipWeightGrams": 650
+      },
+      {
+        "weight": "200g",
+        "price": 58000,
+        "sku": "house-blend-espresso-arabica-fine-robusta-es46-blend-200g",
+        "quantity": 999,
+        "shipWeightGrams": 270
+      },
+      {
+        "weight": "100g",
+        "price": 31000,
+        "sku": "house-blend-espresso-arabica-fine-robusta-es46-blend-100g",
+        "quantity": 999,
+        "shipWeightGrams": 170
+      }
+    ]
+  },
+  {
+    "title": "Biji Kopi STANDARD BRAZIL CERRADO Full Arabica",
+    "shortDescription": "Standard Brazil Arabica from Cerrado, Brazil—natural, medium roast with mild body, mid-high sweetness, and low-mid acidity. Ideal for espresso-based and daily café menus.",
+    "description": "<strong>STANDARD BRAZIL</strong><br />Crafting The Finest Standard Coffee <br /><br /> <strong>Origin</strong><br />Cerrado, Brazil <br /><br /> <strong>Process</strong><br />Natural <br /><br /> <strong>Altitude</strong><br />1200 MDPL <br /><br /> <strong>Species</strong><br />Arabica <br /><br /> <strong>Varietal</strong><br />Mundo Novo - Catuai - Bourbon <br /><br /> <strong>Roast Level</strong><br />Medium To Dark Roast <br /><br /> <strong>Recommended for</strong><br />Espresso based <br /><br /> <strong>Notes</strong><br />Mid Body | Mild Sweetness | Low-Mid Acidity | Chocolate | Hazelnut <br /><br /> Kami hanya memilih biji kopi dengan grade terbaik dengan profil sangrai yang di sesuaikan dengan kebutuhan harian kedai kopi. <br /><br /> <strong>Grind Options</strong><br /> <strong>BUBUK HALUS</strong> : Tubruk, Mokapot, Vietnam Drip <br /><br /> <strong>BUBUK SEDANG</strong> : Semua alat seduh menggunakan paper filter (V60, Kalita wave, Kono, Aeropress, Chemex, dll) <br /><br /> <strong>BUBUK KASAR</strong> : French Press, Cold Drip, Cold Brew, Espresso teknik rebus",
+    "grindSize": [
+      "Beans",
+      "Grind Fine",
+      "Grind Medium",
+      "Grind Coarse"
+    ],
+    "coffeType": [
+      "Arabika"
+    ],
+    "category_ids": [
+      "3"
+    ],
+    "images": [
+      {
+        "image": "https://cdn.agroastery.com/produk/standard-brazil/1.jpeg"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/standard-brazil/2.jpeg"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/standard-brazil/3.png"
+      }
+    ],
+    "variants": [
+      {
+        "weight": "100g",
+        "price": 44000,
+        "sku": "biji-kopi-standard-brazil-full-arabica-kopi-arabika-freshroasted-100g",
+        "quantity": 999,
+        "shipWeightGrams": 170
+      },
+      {
+        "weight": "200g",
+        "price": 72000,
+        "sku": "biji-kopi-standard-brazil-full-arabica-kopi-arabika-freshroasted-200g",
+        "quantity": 999,
+        "shipWeightGrams": 270
+      },
+      {
+        "weight": "500g",
+        "price": 159000,
+        "sku": "biji-kopi-standard-brazil-full-arabica-kopi-arabika-freshroasted-500g",
+        "quantity": 999,
+        "shipWeightGrams": 650
+      },
+      {
+        "weight": "1000g",
+        "price": 288000,
+        "sku": "biji-kopi-standard-brazil-full-arabica-kopi-arabika-freshroasted-1000g",
+        "quantity": 999,
+        "shipWeightGrams": 1200
+      }
+    ]
+  },
+  {
+    "title": "Biji Kopi STANDARD GAYO Full Arabica",
     "shortDescription": "Standard Gayo Arabica from Wih Ilang, Aceh—semi-washed, medium roast with mild body, mid-high sweetness, and low-mid acidity. Ideal for espresso-based and daily café menus.",
     "description": "<strong>STANDARD GAYO</strong><br/>Crafting The Finest Standard Coffee <br/><br/> <strong>Origin</strong><br/>Wih Ilang, Aceh <br/><br/> <strong>Process</strong><br/>Semi-Washed <br/><br/> <strong>Altitude</strong><br/>1600 mdpl <br/><br/> <strong>Species</strong><br/>Arabica <br/><br/> <strong>Varietal</strong><br/>Ateng <br/><br/> <strong>Roast Level</strong><br/>Medium <br/><br/> <strong>Recommended for</strong><br/>Espresso based, americano, longblack, latte, cappucino <br/><br/> <strong>Notes</strong><br/>Mild Body | Mid-High Sweetness | Low-Mid Acidity <br/><br/> Biji kopi grade terbaik dengan profil sangrai yang di sesuaikan dengan kebutuhan harian kedai kopi. <br/><br/> <strong>Nett Weight</strong><br/>100gr, 500gr, 1kg <br/><br/> <strong>Beli Standard Gayo</strong><br/>LEBIH BANYAK, LEBIH MURAH <br/>Grosir minimal 8kg - <a href='https://tokopedia.link/uykAgB0gKKb' target='_blank'>Tokopedia Link</a> <br/><br/> <strong>Grind Options</strong><br/> <strong>GRIND FINE</strong> : Tubruk, Mokapot, Vietnam Drip, Mesin Espresso <br/><br/> <strong>GRIND MEDIUM</strong> : Semua alat seduh menggunakan paper filter (V60, Kalita wave, Kono, Aeropress, Chemex, dll) <br/><br/> <strong>GRIND COARSE</strong> : French Press, Cold Drip, Cold Brew, Espresso teknik rebus ",
-    "grindSize": ["Beans", "Grind Fine", "Grind Medium", "Grind Coarse"],
-    "coffeType": ["Arabika"],
-    "category_ids": ["3"],
+    "grindSize": [
+      "Beans",
+      "Grind Fine",
+      "Grind Medium",
+      "Grind Coarse"
+    ],
+    "coffeType": [
+      "Arabika"
+    ],
+    "category_ids": [
+      "3"
+    ],
     "images": [
-      { "image": "https://cdn.agroastery.com/produk/standard-gayo/1.png" },
-      { "image": "https://cdn.agroastery.com/produk/standard-gayo/2.png" },
-      { "image": "https://cdn.agroastery.com/produk/standard-gayo/3.png" }
+      {
+        "image": "https://cdn.agroastery.com/produk/standard-gayo/1.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/standard-gayo/2.png"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/standard-gayo/3.png"
+      }
     ],
     "variants": [
-      { "weight": "100g", "price": 38000, "sku": "biji-kopi-standard-gayo-full-arabica-kopi-arabika-freshroasted-100g", "quantity": 999 },
-      { "weight": "200g", "price": 62000, "sku": "biji-kopi-standard-gayo-full-arabica-kopi-arabika-freshroasted-200g", "quantity": 999 },
-      { "weight": "500g", "price": 137000, "sku": "biji-kopi-standard-gayo-full-arabica-kopi-arabika-freshroasted-500g", "quantity": 999 },
-      { "weight": "1000g", "price": 248000, "sku": "biji-kopi-standard-gayo-full-arabica-kopi-arabika-freshroasted-1000g", "quantity": 999 }
+      {
+        "weight": "100g",
+        "price": 38000,
+        "sku": "biji-kopi-standard-gayo-full-arabica-kopi-arabika-freshroasted-100g",
+        "quantity": 999,
+        "shipWeightGrams": 170
+      },
+      {
+        "weight": "200g",
+        "price": 62000,
+        "sku": "biji-kopi-standard-gayo-full-arabica-kopi-arabika-freshroasted-200g",
+        "quantity": 999,
+        "shipWeightGrams": 270
+      },
+      {
+        "weight": "500g",
+        "price": 137000,
+        "sku": "biji-kopi-standard-gayo-full-arabica-kopi-arabika-freshroasted-500g",
+        "quantity": 999,
+        "shipWeightGrams": 650
+      },
+      {
+        "weight": "1000g",
+        "price": 248000,
+        "sku": "biji-kopi-standard-gayo-full-arabica-kopi-arabika-freshroasted-1000g",
+        "quantity": 999,
+        "shipWeightGrams": 1200
+      }
+    ]
+  },
+  {
+    "title": "Biji Kopi STANDARD KINTAMANI Full Arabica",
+    "shortDescription": "Standard KINTAMANI Arabica, Bali—fully-washed, medium roast with mild body, mid-high sweetness, and low-mid acidity. Ideal for espresso-based and daily café menus.",
+    "description": "<strong>STANDARD KINTAMANI</strong><br />Crafting The Finest Standard Coffee <br /><br /> <strong>Origin</strong><br />Bali Kintamani <br /><br /> <strong>Process</strong><br />Full Wash Aerobic fermentation water 36 hour <br /><br /> <strong>Altitude</strong><br />1200 - 1380 asl <br /><br /> <strong>Species</strong><br />Arabica <br /><br /> <strong>Varietal</strong><br />Kopyol <br /><br /> <strong>Roast Level</strong><br />Medium <br /><br /> <strong>Recommended for</strong><br />Espresso based, americano, longblack, latte, cappucino <br /><br /> <strong>Notes</strong><br />Mild Body | Mid Sweetness | Mid-High Acidity <br /><br /> Berikut adalah jenis variasi gilingan/grindsize berdasarkan alat seduh yang dipakai : <br /><br /> <strong>Grind Options</strong><br /> <strong>GRIND FINE</strong><br />Tubruk, Mokapot, Vietnam Drip, Mesin Espresso <br /><br /> <strong>GRIND MEDIUM</strong><br />Semua alat seduh menggunakan paper filter (V60, Kalita wave, Kono, Aeropress, Chemex, dll) <br /><br /> <strong>GRIND COARSE</strong><br />French Press, Cold Drip, Cold Brew, Espresso teknik rebus",
+    "grindSize": [
+      "Beans",
+      "Grind Fine",
+      "Grind Medium",
+      "Grind Coarse"
+    ],
+    "coffeType": [
+      "Arabika"
+    ],
+    "category_ids": [
+      "3"
+    ],
+    "images": [
+      {
+        "image": "https://cdn.agroastery.com/produk/standard-kintamani/1.jpg"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/standard-kintamani/3.png"
+      }
+    ],
+    "variants": [
+      {
+        "weight": "100g",
+        "price": 42000,
+        "sku": "biji-kopi-standard-kintamani-full-arabica-kopi-arabika-freshroasted-100g",
+        "quantity": 999,
+        "shipWeightGrams": 170
+      },
+      {
+        "weight": "200g",
+        "price": 69000,
+        "sku": "biji-kopi-standard-kintamani-full-arabica-kopi-arabika-freshroasted-200g",
+        "quantity": 999,
+        "shipWeightGrams": 270
+      },
+      {
+        "weight": "500g",
+        "price": 152000,
+        "sku": "biji-kopi-standard-kintamani-full-arabica-kopi-arabika-freshroasted-500g",
+        "quantity": 999,
+        "shipWeightGrams": 650
+      },
+      {
+        "weight": "1000g",
+        "price": 275000,
+        "sku": "biji-kopi-standard-kintamani-full-arabica-kopi-arabika-freshroasted-1000g",
+        "quantity": 999,
+        "shipWeightGrams": 1200
+      }
+    ]
+  },
+  {
+    "title": "Biji Kopi STANDARD SOLOK Full Arabica",
+    "shortDescription": "Standard SOLOK Arabica, Solok—wethull, medium roast with mild body, mid-high sweetness, and low-mid acidity. Ideal for espresso-based and daily café menus.",
+    "description": "<strong>STANDARD SOLOK</strong><br />Crafting The Finest Standard Coffee <br /><br /> <strong>Origin</strong><br />Solok Selatan, Sumatera Barat <br /><br /> <strong>Process</strong><br />Wethull <br /><br /> <strong>Altitude</strong><br />1200 - 1380 asl <br /><br /> <strong>Species</strong><br />Arabica <br /><br /> <strong>Roast Level</strong><br />Medium <br /><br /> <strong>Recommended for</strong><br />Espresso based, americano, longblack, latte, cappucino <br /><br /> <strong>Notes</strong><br />Mid Body | Mid-High Sweetness | Low-Mid Acidity <br /><br /> Berikut adalah jenis variasi gilingan/grindsize berdasarkan alat seduh yang dipakai : <br /><br /> <strong>Grind Options</strong><br /> <strong>GRIND FINE</strong><br />Tubruk, Mokapot, Vietnam Drip, Mesin Espresso <br /><br /> <strong>GRIND MEDIUM</strong><br />Semua alat seduh menggunakan paper filter (V60, Kalita wave, Kono, Aeropress, Chemex, dll) <br /><br /> <strong>GRIND COARSE</strong><br />French Press, Cold Drip, Cold Brew, Espresso teknik rebus",
+    "grindSize": [
+      "Beans",
+      "Grind Fine",
+      "Grind Medium",
+      "Grind Coarse"
+    ],
+    "coffeType": [
+      "Arabika"
+    ],
+    "category_ids": [
+      "3"
+    ],
+    "images": [
+      {
+        "image": "https://cdn.agroastery.com/produk/standard-solok/1.jpg"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/standard-solok/2.jpg"
+      },
+      {
+        "image": "https://cdn.agroastery.com/produk/standard-solok/3.png"
+      }
+    ],
+    "variants": [
+      {
+        "weight": "100g",
+        "price": 42000,
+        "sku": "biji-kopi-standard-solok-full-arabica-kopi-arabika-freshroasted-100g",
+        "quantity": 999,
+        "shipWeightGrams": 170
+      },
+      {
+        "weight": "200g",
+        "price": 69000,
+        "sku": "biji-kopi-standard-solok-full-arabica-kopi-arabika-freshroasted-200g",
+        "quantity": 999,
+        "shipWeightGrams": 270
+      },
+      {
+        "weight": "500g",
+        "price": 152000,
+        "sku": "biji-kopi-standard-solok-full-arabica-kopi-arabika-freshroasted-500g",
+        "quantity": 999,
+        "shipWeightGrams": 650
+      },
+      {
+        "weight": "1000g",
+        "price": 275000,
+        "sku": "biji-kopi-standard-solok-full-arabica-kopi-arabika-freshroasted-1000g",
+        "quantity": 999,
+        "shipWeightGrams": 1200
+      }
     ]
   }
 ]

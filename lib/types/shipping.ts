@@ -1,5 +1,37 @@
 import { z } from 'zod'
 
+export type ShippingCalcParams = {
+  originPostalCode: string | number;
+  destinationPostalCode: string | number;
+  quantity: number;
+  price: number; // IDR per unit
+  name: string;
+  description?: string;
+  length?: number; 
+  width?: number; 
+  height?: number;
+  weightGrams: number; // from variant.shipWeightGrams
+  couriers?: string; // comma separated
+};
+
+export type ShippingItem = {
+  name: string;
+  description?: string;
+  value: number;
+  length: number;
+  width: number;
+  height: number;
+  weight: number;
+  quantity: number;
+};
+
+export type ShippingRateRequest = {
+  origin_postal_code: number | string;
+  destination_postal_code: number | string;
+  couriers: string;
+  items: ShippingItem[];
+};
+
 export const ShippingRequestSchema = z.object({
   destination: z.object({
     contact_name: z.string().min(2, "Nama terlalu pendek"),
@@ -19,29 +51,54 @@ export const ShippingRequestSchema = z.object({
 
 export type ShippingRequestPayload = z.infer<typeof ShippingRequestSchema>;
 
-export const ShippingPricingSchema = z.object({
-  available_collection_method: z.array(z.string()),
-  available_for_cash_on_delivery: z.boolean(),
-  available_for_proof_of_delivery: z.boolean(),
-  available_for_instant_waybill_id: z.boolean(),
-  available_for_insurance: z.boolean(),
-  company: z.string(),
-  courier_name: z.string(),
-  courier_code: z.string(),
-  courier_service_name: z.string(),
-  courier_service_code: z.string(),
-  currency: z.string(),
-  description: z.string(),
-  duration: z.string(),
-  shipment_duration_range: z.string(),
-  shipment_duration_unit: z.string(),
-  service_type: z.string(),
-  shipping_type: z.string(),
-  price: z.number(),
-  tax_lines: z.array(z.any()), // Assuming tax_lines can be any type for now
-  type: z.string(),
-})
+// ---- Biteship pricing item (subset we actually use) ----
+export const BiteshipPricingSchema = z.object({
+  company: z.string().optional(),              // e.g., 'jne'
+  courier_name: z.string(),                    // 'JNE'
+  courier_code: z.string(),                    // 'jne'
+  courier_service_name: z.string(),            // 'City to City (CTC)'
+  courier_service_code: z.string(),            // 'ctc'
+  description: z.string().optional(),
+  duration: z.string().optional(),             // '2 - 3 days'
+  shipment_duration_range: z.string().optional(),
+  shipment_duration_unit: z.string().optional(),
+  service_type: z.string().optional(),         // 'standard', 'overnight', ...
+  shipping_type: z.string().optional(),        // 'parcel', 'freight'
+  price: z.number().int().nonnegative(),
+  currency: z.string().default('IDR'),
+  available_collection_method: z.array(z.string()).optional(),
+  available_for_cash_on_delivery: z.boolean().optional(),
+  available_for_proof_of_delivery: z.boolean().optional(),
+  available_for_instant_waybill_id: z.boolean().optional(),
+  available_for_insurance: z.boolean().optional(),
+  tax_lines: z.array(z.any()).optional(),
+  type: z.string().optional(),
+});
+export type BiteshipPricing = z.infer<typeof BiteshipPricingSchema>;
 
+// ---- Full Biteship response (trimmed to relevant fields) ----
+export const BiteshipRatesResponseSchema = z.object({
+  success: z.boolean().optional(),
+  object: z.string().optional(),
+  message: z.string().optional(),
+  code: z.number().optional(),
+  origin: z.record(z.any()).optional(),
+  destination: z.record(z.any()).optional(),
+  pricing: z.array(BiteshipPricingSchema),
+});
+export type BiteshipRatesResponse = z.infer<typeof BiteshipRatesResponseSchema>;
+
+// ---- UI-facing normalized type ----
+export type NormalizedRate = {
+  carrier: string;              // 'JNE'
+  code: string;                 // 'jne-ctc'
+  service: string;              // 'City to City (CTC)'
+  eta?: string;                 // '2 - 3 days'
+  price: number;                // IDR
+  raw: BiteshipPricing;         // keep raw for debugging
+};
+
+// ---- Legacy types for backward compatibility ----
 export const VerifiedLocationSchema = z.object({
   postal_code: z.string(),
   province: z.string(),
@@ -51,9 +108,11 @@ export const VerifiedLocationSchema = z.object({
 
 export type VerifiedLocation = z.infer<typeof VerifiedLocationSchema>;
 
+// Legacy schema - deprecated, use BiteshipRatesResponseSchema instead
+export const ShippingPricingSchema = BiteshipPricingSchema;
+export type ShippingPricing = BiteshipPricing;
+
 export const ShippingResponseSchemaV2 = z.object({
   pricing: z.array(ShippingPricingSchema),
-  location: VerifiedLocationSchema,
+  location: VerifiedLocationSchema.optional(),
 });
-
-export type ShippingPricing = z.infer<typeof ShippingPricingSchema>

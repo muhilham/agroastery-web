@@ -1,8 +1,12 @@
-export type TVariant = { 
-  weight: string; 
-  price: number; 
-  sku: string; 
-  quantity: number 
+export type TVariant = {
+  /** Display label shown to user (e.g., "150g", "1kg") */
+  weight: string;
+  /** Price in IDR for this variant */
+  price: number;
+  sku: string;
+  quantity: number;
+  /** Real shipping mass in grams (includes packaging, etc.). Used for courier pricing. */
+  shipWeightGrams: number;
 };
 
 export type TProductBase = {

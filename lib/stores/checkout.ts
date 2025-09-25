@@ -9,6 +9,7 @@ export type TCheckoutDraft = {
   size: string;
   grind: string;
   qty: number;
+  shipWeightGrams: number;
 };
 
 export const $checkoutDraft = atom<TCheckoutDraft | null>(null);
@@ -22,14 +23,18 @@ export function setCheckoutFromProduct(opts: {
   const p = PRODUCT_LIST.find((x) => x.slug === opts.slug);
   if (!p) return;
 
+  const selectedVariant = p.variants.find(v => v.weight === opts.size);
+  if (!selectedVariant) return;
+
   $checkoutDraft.set({
     slug: p.slug,
     title: p.title,
     image: p.images?.[0]?.image ?? "/assets/coffe/blend-gayo.png",
-    unitPrice: p.price ?? 0,
+    unitPrice: selectedVariant.price,
     size: opts.size,
     grind: opts.grind,
     qty: Math.max(0, opts.qty || 0),
+    shipWeightGrams: selectedVariant.shipWeightGrams,
   });
 }
 
@@ -42,3 +47,7 @@ export function updateCheckoutQty(qty: number) {
 export function clearCheckout() {
   $checkoutDraft.set(null);
 }
+
+// Selectors for shipping calculator
+export const getCheckoutSnapshot = () => $checkoutDraft.get();
+export const getSelectedWeightGrams = () => $checkoutDraft.get()?.shipWeightGrams ?? null;

@@ -85,24 +85,27 @@ const PurchaseDialog = ({ slug, size, grind, qty, onQtyChange }: Props) => {
   const handleCalculateShipping = async (postalCode: string) => {
     if (!product) return;
 
-    const shippingPayload = {
-      destination: {
-        contact_name: form.getValues("fullName") || "Penerima",
-        contact_phone: form.getValues("phone") || "08123456789",
-        address: form.getValues("address"),
-        postal_code: postalCode,
-      },
-      items: [
-        {
-          name: product.title,
-          value: product.price || 0,
-          weight: 500, // Default weight 500g
-          quantity: Math.max(1, qty),
-        },
-      ],
+    // Find the selected variant to get proper weight and price
+    const selectedVariant = product.variants.find(v => v.weight === size);
+    if (!selectedVariant) return;
+
+    const weightGrams = selectedVariant.shipWeightGrams || 500; // Fallback to 500g
+
+    const shippingParams = {
+      originPostalCode: process.env.NEXT_PUBLIC_ORIGIN_POSTAL_CODE || "12440",
+      destinationPostalCode: postalCode,
+      couriers: "anteraja,jne,sicepat",
+      name: product.title,
+      description: product.shortDescription ?? product.title,
+      price: selectedVariant.price,
+      quantity: Math.max(1, qty),
+      weightGrams,
+      length: 20,
+      width: 15,
+      height: 10,
     };
 
-    await calculateShipping(shippingPayload);
+    await calculateShipping(shippingParams);
   };
 
   useEffect(() => {
@@ -141,7 +144,7 @@ const PurchaseDialog = ({ slug, size, grind, qty, onQtyChange }: Props) => {
         ? `${values.address}, ${location.district}, ${location.city}, ${location.province} ${location.postal_code}`
         : `${values.address}, ${values.postalCode}`,
       shipping: selectedShipping
-        ? `${selectedShipping.courier_name} ${selectedShipping.courier_service_name} - ${numberToIdr({
+        ? `${selectedShipping.carrier} ${selectedShipping.service} - ${numberToIdr({
             nominal: selectedShipping.price,
           })}`
         : "Belum Dipilih",
@@ -326,32 +329,30 @@ const PurchaseDialog = ({ slug, size, grind, qty, onQtyChange }: Props) => {
                       onValueChange={(value: string) => {
                         const rate =
                           shippingRates.find(
-                            (r) =>
-                              `${r.courier_code}-${r.courier_service_code}` ===
-                              value
+                            (r) => r.code === value
                           ) || null;
                         setSelectedShipping(rate);
                       }}
                       className="space-y-2"
                     >
                       {shippingRates.map((rate, index) => {
-                        const uniqueKey = `${rate.courier_code}-${rate.courier_service_code}-${rate.price}-${index}`;
+                        const uniqueKey = `${rate.code}-${rate.price}-${index}`;
                         return (
                           <FormItem key={uniqueKey}>
                             <FormControl>
                               <RadioGroupItem
-                                value={`${rate.courier_code}-${rate.courier_service_code}`}
+                                value={rate.code}
                                 id={uniqueKey}
                                 className="sr-only"
                               />
                             </FormControl>
                             <FormLabel
                               htmlFor={uniqueKey}
-                              className={`flex justify-between items-center p-4 rounded-lg border-2 cursor-pointer transition-colors ${selectedShipping?.courier_service_code === rate.courier_service_code && selectedShipping?.courier_code === rate.courier_code ? 'border-primary bg-primary/10' : 'border-transparent hover:bg-white/5'}`}
+                              className={`flex justify-between items-center p-4 rounded-lg border-2 cursor-pointer transition-colors ${selectedShipping?.code === rate.code ? 'border-primary bg-primary/10' : 'border-transparent hover:bg-white/5'}`}
                             >
                               <div className="flex flex-col">
-                                <span className="uppercase">{rate.company} {rate.courier_service_name}</span>
-                                <span className="text-sm text-secondary">Estimasi {rate.duration}</span>
+                                <span className="uppercase">{rate.carrier} {rate.service}</span>
+                                <span className="text-sm text-secondary">Estimasi {rate.eta || 'N/A'}</span>
                               </div>
                               <span className="text-lg">{numberToIdr({ nominal: rate.price })}</span>
                             </FormLabel>

@@ -1,9 +1,9 @@
 [
-  { "category_id": "1", "category_name": "Kopi Susu Ekonomis" },
-  { "category_id": "2", "category_name": "House Blend" },
-  { "category_id": "3", "category_name": "Full Arabica" },
+  { "category_id": "1", "category_name": "Kopi Susu Ekonomis Series" },
+  { "category_id": "2", "category_name": "AG Signature Blend" },
+  { "category_id": "3", "category_name": "AG Signature Full Arabica - for Espresso" },
   { "category_id": "4", "category_name": "Fine Robusta" },
-  { "category_id": "5", "category_name": "Seduh Manual" },
+  { "category_id": "5", "category_name": "Roasted for Filter" },
   { "category_id": "6", "category_name": "Base Brew Espresso" },
   { "category_id": "7", "category_name": "Paper Filter & Others" }
 ]

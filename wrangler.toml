@@ -1,0 +1,25 @@
+# Cloudflare Pages configuration for Next.js
+name = "agroastery-web"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[build]
+command = "npm run build"
+cwd = "."
+
+[build.environment_variables]
+NODE_VERSION = "18"
+
+# Environment variables for Cloudflare deployment
+[env.production.vars]
+CATALOG_BASE = "https://cdn.agroastery.com/produk"
+NEXT_PUBLIC_BITESHIP_DEFAULT_COURIERS = "anteraja,jne,sicepat"
+NEXT_PUBLIC_ORIGIN_POSTAL_CODE = "12440"
+ORIGIN_CONTACT_NAME = "Agroastery"
+ORIGIN_CONTACT_PHONE = "08123456789"
+ORIGIN_ADDRESS = "Jl. Origin Address"
+PACKAGING_EXTRA_GRAMS = "0"
+PACKAGING_EXTRA_PERCENT = "0"
+
+# Secrets (set via Cloudflare dashboard or wrangler secret)
+# BITESHIP_API_KEY = "sk_live_your_key_here"
