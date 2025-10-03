@@ -211,6 +211,7 @@ const ProductDetailPage = ({ slug }: { slug: string }) => {
                 width={24}
                 height={24}
                 alt="tokopedia"
+                style={{ height: 'auto' }} // Maintain aspect ratio
               />
             </Button>
           </div>

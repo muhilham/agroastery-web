@@ -38,13 +38,16 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useDebounce } from "@/lib/hooks/useDebounce";
 import { useShippingCalculator } from "@/lib/hooks/useShippingCalculator";
 import { LocationDisplay } from "@/components/location-display";
+import MapPicker from "@/components/map/MapPicker";
 
-// Extend the form schema to include postal code for shipping
+// Extend the form schema to include postal code for shipping and coordinates
 const formSchema = z.object({
   fullName: z.string().min(2, "Minimal 2 karakter").max(50),
   phone: z.string().min(6, "Nomor tidak valid").max(20),
   address: z.string().min(10, "Alamat terlalu singkat").max(300),
   postalCode: z.string().length(5, "Kode pos harus 5 digit"),
+  lat: z.number().min(-90).max(90).optional(),
+  lng: z.number().min(-180).max(180).optional(),
 });
 type TForm = z.infer<typeof formSchema>;
 
@@ -63,7 +66,7 @@ const PurchaseDialog = ({ slug, size, grind, qty, onQtyChange }: Props) => {
 
   const form = useForm<TForm>({
     resolver: zodResolver(formSchema),
-    defaultValues: { fullName: "", phone: "", address: "", postalCode: "" },
+    defaultValues: { fullName: "", phone: "", address: "", postalCode: "", lat: undefined, lng: undefined },
     mode: "onChange",
   });
 
@@ -319,6 +322,27 @@ const PurchaseDialog = ({ slug, size, grind, qty, onQtyChange }: Props) => {
                 isLoading={isLoadingShipping}
                 error={shippingError}
               />
+
+              {/* Map Picker for Desktop */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-white">
+                  Pilih Lokasi Pengiriman (Opsional)
+                </label>
+                <MapPicker
+                  value={{
+                    lat: form.getValues('lat') || null,
+                    lng: form.getValues('lng') || null,
+                  }}
+                  onChange={(coords) => {
+
+                    console.log(coords)
+                    form.setValue('lat', coords.lat);
+                    form.setValue('lng', coords.lng);
+                  }}
+                  height={280}
+                  className="w-full"
+                />
+              </div>
 
               {/* --- Shipping Section --- */}
               {shippingRates.length > 0 && !shippingError && (
