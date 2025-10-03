@@ -3,14 +3,19 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { loadGoogleMaps } from '@/lib/maps/loadGoogleMaps';
 import { Button } from '@/components/ui/button';
+import AddressSearch from './AddressSearch';
+import { useDebounce } from '@/lib/hooks/useDebounce';
 
 interface MapPickerProps {
   value?: { lat: number | null; lng: number | null };
   onChange: (coords: { lat: number; lng: number }) => void;
+  onAddressChange?: (address: string) => void;
   height?: number | string;
   className?: string;
   initialCenter?: { lat: number; lng: number };
   zoom?: number;
+  showSearch?: boolean;
+  searchValue?: string;
 }
 
 const JAKARTA_CENTER = { lat: -6.200000, lng: 106.816666 };
@@ -18,20 +23,65 @@ const JAKARTA_CENTER = { lat: -6.200000, lng: 106.816666 };
 export default function MapPicker({
   value,
   onChange,
+  onAddressChange,
   height = 320,
   className = '',
   initialCenter = JAKARTA_CENTER,
   zoom = 14,
+  showSearch = true,
+  searchValue = ''
 }: MapPickerProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
   const markerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null);
+  const geocoderRef = useRef<google.maps.Geocoder | null>(null);
   const clickListenerRef = useRef<google.maps.MapsEventListener | null>(null);
   const dragListenerRef = useRef<google.maps.MapsEventListener | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentCenter, setCurrentCenter] = useState<{ lat: number; lng: number }>(initialCenter);
+  const [searchInputValue, setSearchInputValue] = useState(searchValue);
+
+  // Debounce reverse geocoding to avoid quota spikes
+  const debouncedReverseGeocode = useDebounce(
+    useCallback(async (lat: number, lng: number) => {
+      if (!geocoderRef.current || !onAddressChange) return;
+      
+      // Validate lat/lng values
+      if (typeof lat !== 'number' || typeof lng !== 'number' || 
+          isNaN(lat) || isNaN(lng) || 
+          lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+        console.warn('Invalid coordinates for reverse geocoding:', { lat, lng });
+        return;
+      }
+
+      try {
+        const response = await new Promise<google.maps.GeocoderResponse>((resolve, reject) => {
+          geocoderRef.current!.geocode(
+            { location: { lat, lng } },
+            (results, status) => {
+              if (status === 'OK') {
+                resolve({ results: results || [] } as google.maps.GeocoderResponse);
+              } else {
+                reject(new Error(`Geocoder failed: ${status}`));
+              }
+            }
+          );
+        });
+
+        if (response.results?.[0]) {
+          const address = response.results[0].formatted_address;
+          onAddressChange(address);
+          setSearchInputValue(address);
+        }
+      } catch (err) {
+        // Gracefully handle geocoding failures
+        console.warn('Reverse geocoding failed:', err);
+      }
+    }, [onAddressChange]),
+    300
+  );
 
   // Get user's current location
   const getCurrentLocation = useCallback(() => {
@@ -73,7 +123,10 @@ export default function MapPicker({
     
     // Call onChange callback
     onChange({ lat, lng });
-  }, [onChange]);
+    
+    // Perform reverse geocoding
+    debouncedReverseGeocode(lat, lng);
+  }, [onChange, debouncedReverseGeocode]);
 
   // Handle marker drag
   const handleMarkerDrag = useCallback((event: google.maps.MapMouseEvent) => {
@@ -83,7 +136,34 @@ export default function MapPicker({
     const lng = event.latLng.lng();
     
     onChange({ lat, lng });
-  }, [onChange]);
+    
+    // Perform reverse geocoding
+    debouncedReverseGeocode(lat, lng);
+  }, [onChange, debouncedReverseGeocode]);
+
+  // Handle place selection from search
+  const handlePlaceSelected = useCallback((coords: { lat: number; lng: number }, address: string) => {
+    // Update marker position
+    if (markerRef.current) {
+      markerRef.current.position = coords;
+    }
+    
+    // Pan and zoom map
+    if (mapRef.current) {
+      mapRef.current.setCenter(coords);
+      mapRef.current.setZoom(16);
+    }
+    
+    // Update form values
+    onChange(coords);
+    
+    // Update address
+    if (onAddressChange) {
+      onAddressChange(address);
+    }
+    
+    setSearchInputValue(address);
+  }, [onChange, onAddressChange]);
 
   // Initialize map
   const initializeMap = useCallback(async () => {
@@ -113,6 +193,9 @@ export default function MapPicker({
       });
 
       mapRef.current = map;
+
+      // Initialize geocoder
+      geocoderRef.current = new google.maps.Geocoder();
 
       // Create marker using AdvancedMarkerElement
       const marker = new google.maps.marker.AdvancedMarkerElement({
@@ -185,6 +268,20 @@ export default function MapPicker({
 
   return (
     <div className={`space-y-3 ${className}`}>
+      {/* Address Search */}
+      {showSearch && (
+        <div className="space-y-1">
+          <AddressSearch
+            value={searchInputValue}
+            onPlaceSelected={handlePlaceSelected}
+            className="w-full"
+          />
+          <p className="text-xs text-gray-400">
+            Pilih dari saran untuk menetapkan pin
+          </p>
+        </div>
+      )}
+
       {/* Map container */}
       <div 
         className="relative border border-white/10 rounded-lg overflow-hidden bg-gray-900"
@@ -220,21 +317,6 @@ export default function MapPicker({
         {isMobile ? 'Tap map to drop a pin' : 'Click map to drop a pin'}
       </p>
 
-      {/* Coordinate display */}
-      <div className="grid grid-cols-2 gap-3 text-sm">
-        <div>
-          <label className="block text-xs text-gray-400 mb-1">Latitude</label>
-          <div className="bg-gray-800 border border-white/10 rounded px-3 py-2 text-white font-mono text-xs">
-            {formatCoordinate(value?.lat || null)}
-          </div>
-        </div>
-        <div>
-          <label className="block text-xs text-gray-400 mb-1">Longitude</label>
-          <div className="bg-gray-800 border border-white/10 rounded px-3 py-2 text-white font-mono text-xs">
-            {formatCoordinate(value?.lng || null)}
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

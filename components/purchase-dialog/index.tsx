@@ -46,6 +46,7 @@ const formSchema = z.object({
   phone: z.string().min(6, "Nomor tidak valid").max(20),
   address: z.string().min(10, "Alamat terlalu singkat").max(300),
   postalCode: z.string().length(5, "Kode pos harus 5 digit"),
+  searchAddress: z.string().max(256).optional(), // For address search
   lat: z.number().min(-90).max(90).optional(),
   lng: z.number().min(-180).max(180).optional(),
 });
@@ -66,7 +67,7 @@ const PurchaseDialog = ({ slug, size, grind, qty, onQtyChange }: Props) => {
 
   const form = useForm<TForm>({
     resolver: zodResolver(formSchema),
-    defaultValues: { fullName: "", phone: "", address: "", postalCode: "", lat: undefined, lng: undefined },
+    defaultValues: { fullName: "", phone: "", address: "", postalCode: "", searchAddress: "", lat: undefined, lng: undefined },
     mode: "onChange",
   });
 
@@ -334,15 +335,29 @@ const PurchaseDialog = ({ slug, size, grind, qty, onQtyChange }: Props) => {
                     lng: form.getValues('lng') || null,
                   }}
                   onChange={(coords) => {
-
-                    console.log(coords)
                     form.setValue('lat', coords.lat);
                     form.setValue('lng', coords.lng);
                   }}
+                  onAddressChange={(address) => {
+                    form.setValue('searchAddress', address);
+                  }}
+                  searchValue={form.getValues('searchAddress') || ''}
                   height={280}
                   className="w-full"
                 />
               </div>
+
+              {/* Current Address Display */}
+              {form.getValues('searchAddress') && (
+                <div className="space-y-1">
+                  <label className="text-xs text-gray-400">Alamat Terpilih</label>
+                  <div className="bg-gray-800 border border-white/10 rounded px-3 py-2 text-white text-sm">
+                    <p className="truncate" title={form.getValues('searchAddress')}>
+                      {form.getValues('searchAddress')}
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* --- Shipping Section --- */}
               {shippingRates.length > 0 && !shippingError && (

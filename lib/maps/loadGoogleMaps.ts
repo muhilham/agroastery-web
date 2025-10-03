@@ -29,7 +29,8 @@ export async function loadGoogleMaps(): Promise<typeof google> {
   // Create and cache the load promise using the new functional API
   loadPromise = Promise.all([
     importLibrary('maps'),
-    importLibrary('marker')
+    importLibrary('marker'),
+    importLibrary('places')
   ]).then(() => window.google);
   
   return loadPromise;
