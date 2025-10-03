@@ -48,11 +48,19 @@ export default function AddressSearch({
         const place = autocomplete.getPlace();
         
         if (place.geometry?.location) {
-          const lat = place.geometry.location.lat();
-          const lng = place.geometry.location.lng();
-          const address = place.formatted_address || place.name || '';
+          // Ensure we get numbers, not Promises
+          const location = place.geometry.location;
+          const lat = typeof location.lat === 'function' ? location.lat() : location.lat;
+          const lng = typeof location.lng === 'function' ? location.lng() : location.lng;
           
-          onPlaceSelected({ lat, lng }, address);
+          // Validate coordinates before passing them
+          if (typeof lat === 'number' && typeof lng === 'number' && 
+              !isNaN(lat) && !isNaN(lng)) {
+            const address = place.formatted_address || place.name || '';
+            onPlaceSelected({ lat, lng }, address);
+          } else {
+            console.warn('Invalid coordinates from place selection:', { lat, lng });
+          }
         }
       });
 
@@ -64,37 +72,46 @@ export default function AddressSearch({
     }
   }, [country, onPlaceSelected]);
 
-  // Handle manual search (fallback)
+  // Handle manual search (fallback) using Geocoder to avoid deprecated PlacesService
   const handleKeyDown = useCallback(async (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && inputRef.current?.value) {
       e.preventDefault();
-      
       try {
         await loadGoogleMaps();
-        
-        const service = new google.maps.places.PlacesService(document.createElement('div'));
-        const request = {
-          query: inputRef.current.value,
-          fields: ['geometry', 'formatted_address', 'name'],
-        };
-
-        service.findPlaceFromQuery(request, (results, status) => {
-          if (status === google.maps.places.PlacesServiceStatus.OK && results?.[0]) {
-            const place = results[0];
-            if (place.geometry?.location) {
-              const lat = place.geometry.location.lat();
-              const lng = place.geometry.location.lng();
-              const address = place.formatted_address || place.name || '';
-              
-              onPlaceSelected({ lat, lng }, address);
+        const geocoder = new google.maps.Geocoder();
+        const countryRestrict = Array.isArray(country) ? country[0] : country;
+        geocoder.geocode(
+          {
+            address: inputRef.current.value,
+            // Narrow results to country if provided
+            componentRestrictions: { country: countryRestrict },
+          },
+          (results, status) => {
+            if (status === 'OK' && results && results[0] && results[0].geometry?.location) {
+              const loc = results[0].geometry.location;
+              const lat = typeof loc.lat === 'function' ? loc.lat() : (loc as any).lat;
+              const lng = typeof loc.lng === 'function' ? loc.lng() : (loc as any).lng;
+              if (
+                typeof lat === 'number' &&
+                typeof lng === 'number' &&
+                !isNaN(lat) &&
+                !isNaN(lng)
+              ) {
+                const address = results[0].formatted_address || inputRef.current!.value;
+                onPlaceSelected({ lat, lng }, address);
+              } else {
+                console.warn('Invalid coordinates from geocoder search:', { lat, lng });
+              }
+            } else if (status !== 'OK') {
+              console.warn('Geocoder search failed:', status);
             }
           }
-        });
+        );
       } catch (err) {
         console.error('Failed to search place:', err);
       }
     }
-  }, [onPlaceSelected]);
+  }, [onPlaceSelected, country]);
 
   // Sync external value prop with internal state
   useEffect(() => {

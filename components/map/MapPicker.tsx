@@ -4,7 +4,6 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { loadGoogleMaps } from '@/lib/maps/loadGoogleMaps';
 import { Button } from '@/components/ui/button';
 import AddressSearch from './AddressSearch';
-import { useDebounce } from '@/lib/hooks/useDebounce';
 
 interface MapPickerProps {
   value?: { lat: number | null; lng: number | null };
@@ -43,45 +42,62 @@ export default function MapPicker({
   const [currentCenter, setCurrentCenter] = useState<{ lat: number; lng: number }>(initialCenter);
   const [searchInputValue, setSearchInputValue] = useState(searchValue);
 
-  // Debounce reverse geocoding to avoid quota spikes
-  const debouncedReverseGeocode = useDebounce(
-    useCallback(async (lat: number, lng: number) => {
-      if (!geocoderRef.current || !onAddressChange) return;
-      
-      // Validate lat/lng values
-      if (typeof lat !== 'number' || typeof lng !== 'number' || 
-          isNaN(lat) || isNaN(lng) || 
-          lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-        console.warn('Invalid coordinates for reverse geocoding:', { lat, lng });
-        return;
-      }
+  // Reverse geocode helper (non-debounced)
+  const reverseGeocode = useCallback(async (lat: number, lng: number) => {
+    if (!geocoderRef.current || !onAddressChange) return;
 
-      try {
-        const response = await new Promise<google.maps.GeocoderResponse>((resolve, reject) => {
-          geocoderRef.current!.geocode(
-            { location: { lat, lng } },
-            (results, status) => {
-              if (status === 'OK') {
-                resolve({ results: results || [] } as google.maps.GeocoderResponse);
-              } else {
-                reject(new Error(`Geocoder failed: ${status}`));
-              }
+    if (
+      typeof lat !== 'number' ||
+      typeof lng !== 'number' ||
+      isNaN(lat) ||
+      isNaN(lng) ||
+      lat < -90 ||
+      lat > 90 ||
+      lng < -180 ||
+      lng > 180
+    ) {
+      console.warn('Invalid coordinates for reverse geocoding:', { lat, lng });
+      return;
+    }
+
+    try {
+      const response = await new Promise<google.maps.GeocoderResponse>((resolve, reject) => {
+        geocoderRef.current!.geocode(
+          { location: { lat, lng } },
+          (results, status) => {
+            if (status === 'OK') {
+              resolve({ results: results || [] } as google.maps.GeocoderResponse);
+            } else {
+              reject(new Error(`Geocoder failed: ${status}`));
             }
-          );
-        });
+          }
+        );
+      });
 
-        if (response.results?.[0]) {
-          const address = response.results[0].formatted_address;
-          onAddressChange(address);
-          setSearchInputValue(address);
-        }
-      } catch (err) {
-        // Gracefully handle geocoding failures
-        console.warn('Reverse geocoding failed:', err);
+      if (response.results?.[0]) {
+        const address = response.results[0].formatted_address;
+        onAddressChange(address);
+        setSearchInputValue(address);
       }
-    }, [onAddressChange]),
-    300
+    } catch (err) {
+      console.warn('Reverse geocoding failed:', err);
+    }
+  }, [onAddressChange]);
+
+  // Debounced caller using a ref to avoid function identity issues
+  const debouncedReverseGeocodeRef = useRef<((lat: number, lng: number) => void) | null>(
+    null
   );
+  useEffect(() => {
+    let t: ReturnType<typeof setTimeout> | null = null;
+    debouncedReverseGeocodeRef.current = (lat: number, lng: number) => {
+      if (t) clearTimeout(t);
+      t = setTimeout(() => reverseGeocode(lat, lng), 300);
+    };
+    return () => {
+      if (t) clearTimeout(t);
+    };
+  }, [reverseGeocode]);
 
   // Get user's current location
   const getCurrentLocation = useCallback(() => {
@@ -113,8 +129,17 @@ export default function MapPicker({
   const handleMapClick = useCallback((event: google.maps.MapMouseEvent) => {
     if (!event.latLng) return;
     
-    const lat = event.latLng.lat();
-    const lng = event.latLng.lng();
+    // Ensure we get numbers, not Promises
+    const latLng = event.latLng;
+    const lat = typeof latLng.lat === 'function' ? latLng.lat() : latLng.lat;
+    const lng = typeof latLng.lng === 'function' ? latLng.lng() : latLng.lng;
+    
+    // Validate coordinates before using them
+    if (typeof lat !== 'number' || typeof lng !== 'number' || 
+        isNaN(lat) || isNaN(lng)) {
+      console.warn('Invalid coordinates from map click:', { lat, lng });
+      return;
+    }
     
     // Update marker position
     if (markerRef.current) {
@@ -125,21 +150,30 @@ export default function MapPicker({
     onChange({ lat, lng });
     
     // Perform reverse geocoding
-    debouncedReverseGeocode(lat, lng);
-  }, [onChange, debouncedReverseGeocode]);
+    debouncedReverseGeocodeRef.current?.(lat, lng);
+  }, [onChange, reverseGeocode]);
 
   // Handle marker drag
   const handleMarkerDrag = useCallback((event: google.maps.MapMouseEvent) => {
     if (!event.latLng) return;
     
-    const lat = event.latLng.lat();
-    const lng = event.latLng.lng();
+    // Ensure we get numbers, not Promises
+    const latLng = event.latLng;
+    const lat = typeof latLng.lat === 'function' ? latLng.lat() : latLng.lat;
+    const lng = typeof latLng.lng === 'function' ? latLng.lng() : latLng.lng;
+    
+    // Validate coordinates before using them
+    if (typeof lat !== 'number' || typeof lng !== 'number' || 
+        isNaN(lat) || isNaN(lng)) {
+      console.warn('Invalid coordinates from marker drag:', { lat, lng });
+      return;
+    }
     
     onChange({ lat, lng });
     
     // Perform reverse geocoding
-    debouncedReverseGeocode(lat, lng);
-  }, [onChange, debouncedReverseGeocode]);
+    debouncedReverseGeocodeRef.current?.(lat, lng);
+  }, [onChange, reverseGeocode]);
 
   // Handle place selection from search
   const handlePlaceSelected = useCallback((coords: { lat: number; lng: number }, address: string) => {
