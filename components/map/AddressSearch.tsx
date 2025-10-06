@@ -4,6 +4,29 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { loadGoogleMaps } from '@/lib/maps/loadGoogleMaps';
 
+// Type-safe helpers to extract coordinates without using `any`
+function hasLatLngMethods(loc: unknown): loc is { lat: () => number; lng: () => number } {
+  if (typeof loc !== 'object' || loc === null) return false;
+  const obj = loc as Record<string, unknown>;
+  return typeof obj.lat === 'function' && typeof obj.lng === 'function';
+}
+
+function hasLatLngProps(loc: unknown): loc is { lat: number; lng: number } {
+  if (typeof loc !== 'object' || loc === null) return false;
+  const obj = loc as Record<string, unknown>;
+  return typeof obj.lat === 'number' && typeof obj.lng === 'number';
+}
+
+function extractLatLng(loc: unknown): { lat: number; lng: number } | null {
+  if (hasLatLngMethods(loc)) {
+    return { lat: loc.lat(), lng: loc.lng() };
+  }
+  if (hasLatLngProps(loc)) {
+    return { lat: loc.lat, lng: loc.lng };
+  }
+  return null;
+}
+
 interface AddressSearchProps {
   value?: string;
   onPlaceSelected: (coords: { lat: number; lng: number }, address: string) => void;
@@ -48,18 +71,12 @@ export default function AddressSearch({
         const place = autocomplete.getPlace();
         
         if (place.geometry?.location) {
-          // Ensure we get numbers, not Promises
-          const location = place.geometry.location;
-          const lat = typeof location.lat === 'function' ? location.lat() : location.lat;
-          const lng = typeof location.lng === 'function' ? location.lng() : location.lng;
-          
-          // Validate coordinates before passing them
-          if (typeof lat === 'number' && typeof lng === 'number' && 
-              !isNaN(lat) && !isNaN(lng)) {
+          const coords = extractLatLng(place.geometry.location);
+          if (coords && !isNaN(coords.lat) && !isNaN(coords.lng)) {
             const address = place.formatted_address || place.name || '';
-            onPlaceSelected({ lat, lng }, address);
+            onPlaceSelected(coords, address);
           } else {
-            console.warn('Invalid coordinates from place selection:', { lat, lng });
+            console.warn('Invalid coordinates from place selection:', place.geometry.location);
           }
         }
       });
@@ -88,19 +105,12 @@ export default function AddressSearch({
           },
           (results, status) => {
             if (status === 'OK' && results && results[0] && results[0].geometry?.location) {
-              const loc = results[0].geometry.location;
-              const lat = typeof loc.lat === 'function' ? loc.lat() : (loc as any).lat;
-              const lng = typeof loc.lng === 'function' ? loc.lng() : (loc as any).lng;
-              if (
-                typeof lat === 'number' &&
-                typeof lng === 'number' &&
-                !isNaN(lat) &&
-                !isNaN(lng)
-              ) {
+              const coords = extractLatLng(results[0].geometry.location);
+              if (coords && !isNaN(coords.lat) && !isNaN(coords.lng)) {
                 const address = results[0].formatted_address || inputRef.current!.value;
-                onPlaceSelected({ lat, lng }, address);
+                onPlaceSelected(coords, address);
               } else {
-                console.warn('Invalid coordinates from geocoder search:', { lat, lng });
+                console.warn('Invalid coordinates from geocoder search:', results[0].geometry.location);
               }
             } else if (status !== 'OK') {
               console.warn('Geocoder search failed:', status);

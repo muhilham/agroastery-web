@@ -151,7 +151,7 @@ export default function MapPicker({
     
     // Perform reverse geocoding
     debouncedReverseGeocodeRef.current?.(lat, lng);
-  }, [onChange, reverseGeocode]);
+  }, [onChange]);
 
   // Handle marker drag
   const handleMarkerDrag = useCallback((event: google.maps.MapMouseEvent) => {
@@ -293,10 +293,7 @@ export default function MapPicker({
     initializeMap();
   }, [initializeMap]);
 
-  // Format coordinates for display
-  const formatCoordinate = (coord: number | null): string => {
-    return coord !== null ? coord.toFixed(6) : '-';
-  };
+  // (removed unused formatCoordinate to satisfy ESLint)
 
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 

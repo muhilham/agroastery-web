@@ -75,9 +75,38 @@ export async function POST(req: Request) {
             destination_postal_code: Number(body.destination_postal_code!),
           }),
     }),
-    // Remove Next.js specific options for edge runtime compatibility
-    signal: AbortSignal.timeout(30000), // 30 second timeout
   });
+
+  if (!res.ok && includeOriginGeo) {
+    // Retry once without origin geo in case Biteship rejects these fields
+    const retryRes = await fetch("https://api.biteship.com/v1/rates/couriers", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.BITESHIP_API_KEY}`,
+      },
+      body: JSON.stringify({
+        origin_postal_code: Number(body.origin_postal_code),
+        couriers: body.couriers,
+        items: body.items,
+        ...(hasGeo
+          ? {
+              destination_latitude: body.destination_latitude,
+              destination_longitude: body.destination_longitude,
+            }
+          : {
+              destination_postal_code: Number(body.destination_postal_code!),
+            }),
+      }),
+    });
+
+    if (!retryRes.ok) {
+      const text = await retryRes.text();
+      return NextResponse.json({ error: "Biteship error", details: text }, { status: 502 });
+    }
+    const retryData = await retryRes.json();
+    return NextResponse.json(retryData, { headers: { "Cache-Control": "no-store" } });
+  }
 
   if (!res.ok) {
     const text = await res.text();
