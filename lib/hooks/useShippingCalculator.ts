@@ -14,17 +14,17 @@ const ensureNonEmpty = (v: string | undefined | null, name: string): string => {
 async function getShippingRates(p: ShippingCalcParams) {
   // DEV guards: catch nulls early
   const origin = Number(p.originPostalCode);
+  const hasGeo = Number.isFinite(p.destinationLatitude ?? NaN) && Number.isFinite(p.destinationLongitude ?? NaN);
   const destination = Number(p.destinationPostalCode);
   if (!Number.isFinite(origin)) throw new Error('originPostalCode must be a number-like value');
-  if (!Number.isFinite(destination)) throw new Error('destinationPostalCode must be a number-like value');
+  if (!hasGeo && !Number.isFinite(destination)) throw new Error('destinationPostalCode must be a number-like value when coordinates are not provided');
   if (!p.weightGrams || p.weightGrams <= 0) throw new Error('weightGrams must be > 0');
   if (!p.quantity || p.quantity <= 0) throw new Error('quantity must be > 0');
   const name = ensureNonEmpty(p.name, 'name');
 
   const couriers = p.couriers ?? process.env.NEXT_PUBLIC_BITESHIP_DEFAULT_COURIERS ?? "anteraja,jne,sicepat";
-  const body = {
+  const body: Record<string, unknown> = {
     origin_postal_code: origin,
-    destination_postal_code: destination,
     couriers,
     items: [
       {
@@ -39,6 +39,12 @@ async function getShippingRates(p: ShippingCalcParams) {
       },
     ],
   };
+  if (hasGeo) {
+    body.destination_latitude = p.destinationLatitude;
+    body.destination_longitude = p.destinationLongitude;
+  } else {
+    body.destination_postal_code = destination;
+  }
 
   const res = await fetch('/api/shipping/rates', { 
     method: "POST", 

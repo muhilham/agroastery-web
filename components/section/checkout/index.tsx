@@ -77,6 +77,8 @@ export default function CheckoutClient({ slug, defaultSize, defaultGrind, defaul
   const watchedPostalCode = useWatch({ control: form.control, name: "postalCode" });
 
   const debouncedPostalCode = useDebounce(watchedPostalCode, 800);
+  const watchedLat = useWatch({ control: form.control, name: "lat" });
+  const watchedLng = useWatch({ control: form.control, name: "lng" });
 
   const handleCalculateShipping = async (postalCode: string) => {
     if (!product) return;
@@ -104,7 +106,38 @@ export default function CheckoutClient({ slug, defaultSize, defaultGrind, defaul
     await calculateShipping(shippingParams);
   };
 
+  const handleCalculateShippingWithGeo = async (lat: number, lng: number) => {
+    if (!product) return;
+
+    const selectedVariant = product.variants.find(v => v.weight === effectiveSize);
+    if (!selectedVariant) return;
+
+    const weightGrams = selectedVariant.shipWeightGrams || 500;
+
+    const shippingParams = {
+      originPostalCode: process.env.NEXT_PUBLIC_ORIGIN_POSTAL_CODE || "12440",
+      destinationLatitude: lat,
+      destinationLongitude: lng,
+      couriers: "anteraja,jne,sicepat",
+      name: product.title,
+      description: product.shortDescription ?? product.title,
+      price: unitPrice,
+      quantity: Math.max(1, qty),
+      weightGrams,
+      length: 20,
+      width: 15,
+      height: 10,
+    };
+
+    await calculateShipping(shippingParams);
+  };
+
   useEffect(() => {
+    // If geo is selected, skip postal fallback
+    const latValid = typeof watchedLat === 'number' && Number.isFinite(watchedLat as number);
+    const lngValid = typeof watchedLng === 'number' && Number.isFinite(watchedLng as number);
+    if (latValid && lngValid) return;
+
     const postalCodeValidation = z.string().length(5).safeParse(debouncedPostalCode);
 
     if (postalCodeValidation.success) {
@@ -113,7 +146,17 @@ export default function CheckoutClient({ slug, defaultSize, defaultGrind, defaul
       resetShipping(); // Clear rates if postal code is invalid
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedPostalCode, qty]); // Re-run on qty change too
+  }, [debouncedPostalCode, qty, watchedLat, watchedLng]); // Re-run on qty change too
+
+  // Recalculate when coordinates change
+  useEffect(() => {
+    const latValid = typeof watchedLat === 'number' && Number.isFinite(watchedLat as number);
+    const lngValid = typeof watchedLng === 'number' && Number.isFinite(watchedLng as number);
+    if (latValid && lngValid) {
+      handleCalculateShippingWithGeo(watchedLat as number, watchedLng as number);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watchedLat, watchedLng, qty]);
 
   if (!product) {
     return <main className="pt-20 px-6">Produk tidak ditemukan.</main>;

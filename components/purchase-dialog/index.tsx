@@ -83,6 +83,8 @@ const PurchaseDialog = ({ slug, size, grind, qty, onQtyChange }: Props) => {
   } = useShippingCalculator();
 
   const watchedPostalCode = useWatch({ control: form.control, name: "postalCode" });
+  const watchedLat = useWatch({ control: form.control, name: "lat" });
+  const watchedLng = useWatch({ control: form.control, name: "lng" });
 
   const debouncedPostalCode = useDebounce(watchedPostalCode, 800);
 
@@ -112,7 +114,38 @@ const PurchaseDialog = ({ slug, size, grind, qty, onQtyChange }: Props) => {
     await calculateShipping(shippingParams);
   };
 
+  const handleCalculateShippingWithGeo = async (lat: number, lng: number) => {
+    if (!product) return;
+
+    const selectedVariant = product.variants.find(v => v.weight === size);
+    if (!selectedVariant) return;
+
+    const weightGrams = selectedVariant.shipWeightGrams || 500;
+
+    const shippingParams = {
+      originPostalCode: process.env.NEXT_PUBLIC_ORIGIN_POSTAL_CODE || "12440",
+      destinationLatitude: lat,
+      destinationLongitude: lng,
+      couriers: "anteraja,jne,sicepat,lalamove,grab,gojek",
+      name: product.title,
+      description: product.shortDescription ?? product.title,
+      price: selectedVariant.price,
+      quantity: Math.max(1, qty),
+      weightGrams,
+      length: 20,
+      width: 15,
+      height: 10,
+    };
+
+    await calculateShipping(shippingParams);
+  };
+
   useEffect(() => {
+    // If geo is selected, skip postal fallback
+    const latValid = typeof watchedLat === 'number' && Number.isFinite(watchedLat as number);
+    const lngValid = typeof watchedLng === 'number' && Number.isFinite(watchedLng as number);
+    if (latValid && lngValid) return;
+
     const postalCodeValidation = z.string().length(5).safeParse(debouncedPostalCode);
 
     if (postalCodeValidation.success) {
@@ -121,7 +154,17 @@ const PurchaseDialog = ({ slug, size, grind, qty, onQtyChange }: Props) => {
       resetShipping();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedPostalCode, qty]);
+  }, [debouncedPostalCode, qty, watchedLat, watchedLng]);
+
+  // Recalculate when coordinates change
+  useEffect(() => {
+    const latValid = typeof watchedLat === 'number' && Number.isFinite(watchedLat as number);
+    const lngValid = typeof watchedLng === 'number' && Number.isFinite(watchedLng as number);
+    if (latValid && lngValid) {
+      handleCalculateShippingWithGeo(watchedLat as number, watchedLng as number);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watchedLat, watchedLng, qty]);
 
   if (!product) return null;
 

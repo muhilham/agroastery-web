@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 export type ShippingCalcParams = {
   originPostalCode: string | number;
-  destinationPostalCode: string | number;
+  destinationPostalCode?: string | number;
   quantity: number;
   price: number; // IDR per unit
   name: string;
@@ -12,6 +12,9 @@ export type ShippingCalcParams = {
   height?: number;
   weightGrams: number; // from variant.shipWeightGrams
   couriers?: string; // comma separated
+  // Optional geolocation for destination; if provided, use these over postal code
+  destinationLatitude?: number | null;
+  destinationLongitude?: number | null;
 };
 
 export type ShippingItem = {
@@ -27,9 +30,11 @@ export type ShippingItem = {
 
 export type ShippingRateRequest = {
   origin_postal_code: number | string;
-  destination_postal_code: number | string;
+  destination_postal_code?: number | string;
   couriers: string;
   items: ShippingItem[];
+  destination_latitude?: number | null;
+  destination_longitude?: number | null;
 };
 
 export const ShippingRequestSchema = z.object({
