@@ -118,7 +118,7 @@ export default function CheckoutClient({ slug, defaultSize, defaultGrind, defaul
       originPostalCode: process.env.NEXT_PUBLIC_ORIGIN_POSTAL_CODE || "12440",
       destinationLatitude: lat,
       destinationLongitude: lng,
-      couriers: "anteraja,jne,sicepat",
+      couriers: "anteraja,jne,sicepat,lalamove,grab,gojek",
       name: product.title,
       description: product.shortDescription ?? product.title,
       price: unitPrice,
