@@ -214,6 +214,7 @@ export const FloatingCheckoutButton = ({
             width={24}
             height={24}
             alt="tokopedia"
+            style={{ height: 'auto' }} // Maintain aspect ratio
           />
         </Button>
         <Button

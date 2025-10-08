@@ -166,6 +166,7 @@ export default function Navigation() {
               width={24}
               height={24}
               className="h-6 w-auto"
+              style={{ height: 'auto' }} // Maintain aspect ratio
             />
           </button>
         )}

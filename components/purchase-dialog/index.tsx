@@ -38,13 +38,17 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useDebounce } from "@/lib/hooks/useDebounce";
 import { useShippingCalculator } from "@/lib/hooks/useShippingCalculator";
 import { LocationDisplay } from "@/components/location-display";
+import MapPicker from "@/components/map/MapPicker";
 
-// Extend the form schema to include postal code for shipping
+// Extend the form schema to include postal code for shipping and coordinates
 const formSchema = z.object({
   fullName: z.string().min(2, "Minimal 2 karakter").max(50),
   phone: z.string().min(6, "Nomor tidak valid").max(20),
   address: z.string().min(10, "Alamat terlalu singkat").max(300),
   postalCode: z.string().length(5, "Kode pos harus 5 digit"),
+  searchAddress: z.string().max(256).optional(), // For address search
+  lat: z.number().min(-90).max(90).optional(),
+  lng: z.number().min(-180).max(180).optional(),
 });
 type TForm = z.infer<typeof formSchema>;
 
@@ -63,7 +67,7 @@ const PurchaseDialog = ({ slug, size, grind, qty, onQtyChange }: Props) => {
 
   const form = useForm<TForm>({
     resolver: zodResolver(formSchema),
-    defaultValues: { fullName: "", phone: "", address: "", postalCode: "" },
+    defaultValues: { fullName: "", phone: "", address: "", postalCode: "", searchAddress: "", lat: undefined, lng: undefined },
     mode: "onChange",
   });
 
@@ -79,6 +83,8 @@ const PurchaseDialog = ({ slug, size, grind, qty, onQtyChange }: Props) => {
   } = useShippingCalculator();
 
   const watchedPostalCode = useWatch({ control: form.control, name: "postalCode" });
+  const watchedLat = useWatch({ control: form.control, name: "lat" });
+  const watchedLng = useWatch({ control: form.control, name: "lng" });
 
   const debouncedPostalCode = useDebounce(watchedPostalCode, 800);
 
@@ -108,7 +114,38 @@ const PurchaseDialog = ({ slug, size, grind, qty, onQtyChange }: Props) => {
     await calculateShipping(shippingParams);
   };
 
+  const handleCalculateShippingWithGeo = async (lat: number, lng: number) => {
+    if (!product) return;
+
+    const selectedVariant = product.variants.find(v => v.weight === size);
+    if (!selectedVariant) return;
+
+    const weightGrams = selectedVariant.shipWeightGrams || 500;
+
+    const shippingParams = {
+      originPostalCode: process.env.NEXT_PUBLIC_ORIGIN_POSTAL_CODE || "12440",
+      destinationLatitude: lat,
+      destinationLongitude: lng,
+      couriers: "anteraja,jne,sicepat,lalamove,grab,gojek",
+      name: product.title,
+      description: product.shortDescription ?? product.title,
+      price: selectedVariant.price,
+      quantity: Math.max(1, qty),
+      weightGrams,
+      length: 20,
+      width: 15,
+      height: 10,
+    };
+
+    await calculateShipping(shippingParams);
+  };
+
   useEffect(() => {
+    // If geo is selected, skip postal fallback
+    const latValid = typeof watchedLat === 'number' && Number.isFinite(watchedLat as number);
+    const lngValid = typeof watchedLng === 'number' && Number.isFinite(watchedLng as number);
+    if (latValid && lngValid) return;
+
     const postalCodeValidation = z.string().length(5).safeParse(debouncedPostalCode);
 
     if (postalCodeValidation.success) {
@@ -117,7 +154,17 @@ const PurchaseDialog = ({ slug, size, grind, qty, onQtyChange }: Props) => {
       resetShipping();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedPostalCode, qty]);
+  }, [debouncedPostalCode, qty, watchedLat, watchedLng]);
+
+  // Recalculate when coordinates change
+  useEffect(() => {
+    const latValid = typeof watchedLat === 'number' && Number.isFinite(watchedLat as number);
+    const lngValid = typeof watchedLng === 'number' && Number.isFinite(watchedLng as number);
+    if (latValid && lngValid) {
+      handleCalculateShippingWithGeo(watchedLat as number, watchedLng as number);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watchedLat, watchedLng, qty]);
 
   if (!product) return null;
 
@@ -319,6 +366,41 @@ const PurchaseDialog = ({ slug, size, grind, qty, onQtyChange }: Props) => {
                 isLoading={isLoadingShipping}
                 error={shippingError}
               />
+
+              {/* Map Picker for Desktop */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-white">
+                  Pilih Lokasi Pengiriman (Opsional)
+                </label>
+                <MapPicker
+                  value={{
+                    lat: form.getValues('lat') || null,
+                    lng: form.getValues('lng') || null,
+                  }}
+                  onChange={(coords) => {
+                    form.setValue('lat', coords.lat);
+                    form.setValue('lng', coords.lng);
+                  }}
+                  onAddressChange={(address) => {
+                    form.setValue('searchAddress', address);
+                  }}
+                  searchValue={form.getValues('searchAddress') || ''}
+                  height={280}
+                  className="w-full"
+                />
+              </div>
+
+              {/* Current Address Display */}
+              {form.getValues('searchAddress') && (
+                <div className="space-y-1">
+                  <label className="text-xs text-gray-400">Alamat Terpilih</label>
+                  <div className="bg-gray-800 border border-white/10 rounded px-3 py-2 text-white text-sm">
+                    <p className="truncate" title={form.getValues('searchAddress')}>
+                      {form.getValues('searchAddress')}
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* --- Shipping Section --- */}
               {shippingRates.length > 0 && !shippingError && (
