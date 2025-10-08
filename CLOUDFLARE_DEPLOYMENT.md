@@ -17,13 +17,14 @@ This guide explains how to deploy the Agroastery web application to Cloudflare P
 3. Connect your GitHub repository
 4. Select the `agroastery-web` repository
 
-### 2. Configure Build Settings
+### 2. Configure Build Settings (Next on Pages)
 
-- **Framework preset**: Next.js
-- **Build command**: `npm run build`
-- **Build output directory**: `.next`
+- **Framework preset**: None
+- **Build command**: `npx @cloudflare/next-on-pages@latest build`
+- **Build output directory**: `.vercel/output/static`
+- **Functions directory**: `.vercel/output/functions`
 - **Root directory**: `/` (leave empty)
-- **Node.js version**: `18` or `20`
+- **Node.js version**: `20`
 
 ### 3. Environment Variables
 

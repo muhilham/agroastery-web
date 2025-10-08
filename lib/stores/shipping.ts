@@ -1,4 +1,4 @@
-import { map } from "nanostores";
+import { map, atom } from "nanostores";
 
 // Defines the structure of a single shipping rate from Biteship
 export type TShippingRate = {
@@ -99,5 +99,38 @@ export function clearShippingState() {
     selectedRate: null,
     isLoading: false,
     error: null,
+  });
+}
+
+// --- Destination geo/place details (for WhatsApp message + shipping geo) ---
+
+export type DestinationGeo = {
+  lat?: number;
+  lng?: number;
+  place_id?: string;
+  formatted_address?: string;
+  place_name?: string; // e.g., venue/store name
+  postal_code?: string;
+};
+
+export const $destinationGeo = atom<DestinationGeo>({});
+
+export function setDestinationGeo(
+  lat?: number,
+  lng?: number,
+  extras?: Partial<Omit<DestinationGeo, 'lat' | 'lng'>>
+) {
+  $destinationGeo.set({
+    ...$destinationGeo.get(),
+    lat,
+    lng,
+    ...extras,
+  });
+}
+
+export function setDestinationPlaceExtras(extras: Partial<DestinationGeo>) {
+  $destinationGeo.set({
+    ...$destinationGeo.get(),
+    ...extras,
   });
 }

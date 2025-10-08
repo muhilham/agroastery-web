@@ -24,6 +24,20 @@ function isWithinPacContainer(target: EventTarget | null): boolean {
   return !!(el && typeof el.closest === 'function' && el.closest('.pac-container'));
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function getEventTarget(e: unknown): EventTarget | null {
+  if (!isRecord(e)) return null;
+  const detail = isRecord(e.detail) ? e.detail : undefined;
+  const originalEvent = isRecord(detail) && detail.originalEvent && isRecord(detail.originalEvent)
+    ? (detail.originalEvent as unknown as Event)
+    : undefined;
+  const t = (e.target as EventTarget | undefined) ?? (originalEvent?.target ?? null);
+  return t ?? null;
+}
+
 const DialogOverlay = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
@@ -53,17 +67,17 @@ const DialogContent = React.forwardRef<
       )}
       {...rest}
       onInteractOutside={(e) => {
-        const t = (e as any)?.target ?? (e as any)?.detail?.originalEvent?.target ?? null;
+        const t = getEventTarget(e as unknown);
         if (isWithinPacContainer(t)) e.preventDefault();
         if (typeof onInteractOutside === 'function') onInteractOutside(e);
       }}
       onPointerDownOutside={(e) => {
-        const t = (e as any)?.target ?? (e as any)?.detail?.originalEvent?.target ?? null;
+        const t = getEventTarget(e as unknown);
         if (isWithinPacContainer(t)) e.preventDefault();
         if (typeof onPointerDownOutside === 'function') onPointerDownOutside(e);
       }}
       onFocusOutside={(e) => {
-        const t = (e as any)?.target ?? (e as any)?.detail?.originalEvent?.target ?? null;
+        const t = getEventTarget(e as unknown);
         if (isWithinPacContainer(t)) e.preventDefault();
         if (typeof onFocusOutside === 'function') onFocusOutside(e);
       }}

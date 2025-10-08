@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { loadGoogleMaps } from '@/lib/maps/loadGoogleMaps';
 import { Button } from '@/components/ui/button';
 import AddressSearch from './AddressSearch';
+import { setDestinationGeo } from '@/lib/stores/shipping';
 
 interface MapPickerProps {
   value?: { lat: number | null; lng: number | null };
@@ -78,6 +79,14 @@ export default function MapPicker({
         const address = response.results[0].formatted_address;
         onAddressChange(address);
         setSearchInputValue(address);
+        // Extract postal code if available (typed) and save to destination store
+        const compList = (response.results[0].address_components as unknown as google.maps.GeocoderAddressComponent[]) || [];
+        const postalComp = compList.find((comp) => Array.isArray(comp.types) && comp.types.includes('postal_code'));
+        const postal_code = postalComp?.long_name;
+        setDestinationGeo(lat, lng, {
+          formatted_address: response.results[0].formatted_address ?? undefined,
+          postal_code,
+        });
       }
     } catch (err) {
       console.warn('Reverse geocoding failed:', err);
@@ -148,6 +157,8 @@ export default function MapPicker({
     
     // Call onChange callback
     onChange({ lat, lng });
+    // Persist destination coords (address will be set by reverse geocode below)
+    setDestinationGeo(lat, lng);
     
     // Perform reverse geocoding
     debouncedReverseGeocodeRef.current?.(lat, lng);
@@ -170,10 +181,12 @@ export default function MapPicker({
     }
     
     onChange({ lat, lng });
+    // Persist destination coords (address will be set by reverse geocode below)
+    setDestinationGeo(lat, lng);
     
     // Perform reverse geocoding
     debouncedReverseGeocodeRef.current?.(lat, lng);
-  }, [onChange, reverseGeocode]);
+  }, [onChange]);
 
   // Handle place selection from search
   const handlePlaceSelected = useCallback((coords: { lat: number; lng: number }, address: string) => {

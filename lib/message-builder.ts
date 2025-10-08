@@ -1,4 +1,5 @@
 import { numberToIdr } from "@/lib/numberToIdr";
+import { $destinationGeo, type DestinationGeo } from "@/lib/stores/shipping";
 
 function normalizePhoneID(phone: string): string {
   const digits = (phone || "").replace(/\D/g, "");
@@ -48,6 +49,29 @@ function createWhatsAppMessage(opts: {
     `${address}`,
     `(${fullName} - ${phone})`,
     "",
+    // Additional Google Maps details (if available)
+    ...((): string[] => {
+      const dest: DestinationGeo = $destinationGeo.get();
+      const { lat, lng, place_id, formatted_address, place_name, postal_code } = dest || {};
+
+      if (lat == null && lng == null && !formatted_address && !place_name && !postal_code) return [] as string[];
+
+      const mapsUrl =
+        lat != null && lng != null
+          ? place_id
+            ? `https://www.google.com/maps/search/?api=1&query=${lat},${lng}&query_place_id=${encodeURIComponent(place_id)}`
+            : `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`
+          : undefined;
+
+      const extra: string[] = [];
+      extra.push("— Detail Lokasi (Google Maps) —");
+      if (place_name) extra.push(`- Lokasi/Nama: ${place_name}`);
+      if (formatted_address) extra.push(`- Alamat (Maps): ${formatted_address}`);
+      if (postal_code) extra.push(`- Kode Pos: ${postal_code}`);
+      if (mapsUrl) extra.push(`- Link: ${mapsUrl}`);
+      extra.push("");
+      return extra;
+    })(),
     "Terima kasih",
   ];
 
