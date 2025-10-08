@@ -139,7 +139,7 @@ export default function AddressSearch({
   }, [initializeAutocomplete]);
 
   return (
-    <div className={`relative ${className}`}>
+    <div className={`relative autocomplete-wrapper pointer-events-auto ${className}`}>
       <Input
         ref={inputRef}
         value={inputValue}
@@ -147,7 +147,8 @@ export default function AddressSearch({
         placeholder={placeholder}
         onKeyDown={handleKeyDown}
         disabled={isLoading}
-        className="w-full bg-white/90 backdrop-blur-sm border-white/20 text-gray-900 placeholder:text-gray-500"
+        autoComplete="off"
+        className="autocomplete-input w-full bg-white/90 backdrop-blur-sm border-white/20 text-gray-900 placeholder:text-gray-500"
       />
       
       {isLoading && (

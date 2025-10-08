@@ -38,3 +38,26 @@
     --background: 0, 0%, 10%;
   }
 }
+
+/* Google Places Autocomplete dropdown fix */
+/* Ensure the legacy .pac-container renders above dialog overlays and accepts clicks */
+.pac-container {
+  z-index: 99999 !important; /* Above Radix Dialog overlay/content (z-50) */
+  pointer-events: auto !important;
+}
+
+.pac-item,
+.pac-item span {
+  pointer-events: auto !important;
+}
+
+/* If rendered within dialog content, prevent clipping */
+[data-radix-dialog-content] .pac-container {
+  position: absolute;
+}
+
+/* Prevent clipping by local wrappers */
+.autocomplete-wrapper,
+.autocomplete-input {
+  overflow: visible !important;
+}
