@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { loadGoogleMaps } from '@/lib/maps/loadGoogleMaps';
+import { setDestinationGeo } from '@/lib/stores/shipping';
 
 // Type-safe helpers to extract coordinates without using `any`
 function hasLatLngMethods(loc: unknown): loc is { lat: () => number; lng: () => number } {
@@ -74,6 +75,19 @@ export default function AddressSearch({
           const coords = extractLatLng(place.geometry.location);
           if (coords && !isNaN(coords.lat) && !isNaN(coords.lng)) {
             const address = place.formatted_address || place.name || '';
+            // Extract postal code if available with proper typing
+            const components: google.maps.GeocoderAddressComponent[] | undefined =
+              (place.address_components as unknown as google.maps.GeocoderAddressComponent[]) || undefined;
+            const postalComponent = components?.find((comp) => Array.isArray(comp.types) && comp.types.includes('postal_code'));
+            const postal_code = postalComponent?.long_name;
+
+            // Save to destination store
+            setDestinationGeo(coords.lat, coords.lng, {
+              formatted_address: place.formatted_address ?? undefined,
+              place_id: (place as google.maps.places.PlaceResult).place_id ?? undefined,
+              place_name: place.name ?? undefined,
+              postal_code,
+            });
             onPlaceSelected(coords, address);
           } else {
             console.warn('Invalid coordinates from place selection:', place.geometry.location);
@@ -108,6 +122,15 @@ export default function AddressSearch({
               const coords = extractLatLng(results[0].geometry.location);
               if (coords && !isNaN(coords.lat) && !isNaN(coords.lng)) {
                 const address = results[0].formatted_address || inputRef.current!.value;
+                // Attempt to extract postal_code from geocoder result (typed)
+                const geocoderComponents: google.maps.GeocoderAddressComponent[] | undefined =
+                  (results[0].address_components as unknown as google.maps.GeocoderAddressComponent[]) || undefined;
+                const postalComp = geocoderComponents?.find((comp) => Array.isArray(comp.types) && comp.types.includes('postal_code'));
+                const postal_code = postalComp?.long_name;
+                setDestinationGeo(coords.lat, coords.lng, {
+                  formatted_address: results[0].formatted_address ?? undefined,
+                  postal_code,
+                });
                 onPlaceSelected(coords, address);
               } else {
                 console.warn('Invalid coordinates from geocoder search:', results[0].geometry.location);
@@ -139,7 +162,7 @@ export default function AddressSearch({
   }, [initializeAutocomplete]);
 
   return (
-    <div className={`relative ${className}`}>
+    <div className={`relative autocomplete-wrapper pointer-events-auto ${className}`}>
       <Input
         ref={inputRef}
         value={inputValue}
@@ -147,7 +170,8 @@ export default function AddressSearch({
         placeholder={placeholder}
         onKeyDown={handleKeyDown}
         disabled={isLoading}
-        className="w-full bg-white/90 backdrop-blur-sm border-white/20 text-gray-900 placeholder:text-gray-500"
+        autoComplete="off"
+        className="autocomplete-input w-full bg-white/90 backdrop-blur-sm border-white/20 text-gray-900 placeholder:text-gray-500"
       />
       
       {isLoading && (

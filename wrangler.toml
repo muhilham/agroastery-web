@@ -4,11 +4,11 @@ compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
 
 [build]
-command = "npm run build"
+command = "pnpm dlx @cloudflare/next-on-pages@latest build"
 cwd = "."
 
 [build.environment_variables]
-NODE_VERSION = "18"
+NODE_VERSION = "20"
 
 # Environment variables for Cloudflare deployment
 [env.production.vars]
