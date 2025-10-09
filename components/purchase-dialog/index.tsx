@@ -39,6 +39,8 @@ import { useDebounce } from "@/lib/hooks/useDebounce";
 import { useShippingCalculator } from "@/lib/hooks/useShippingCalculator";
 import { LocationDisplay } from "@/components/location-display";
 import MapPicker from "@/components/map/MapPicker";
+import { createDraftOrderFromUI } from "@/lib/actions/createDraftOrder";
+import { setSelectedCourier } from "@/lib/stores/shipping";
 
 // Extend the form schema to include postal code for shipping and coordinates
 const formSchema = z.object({
@@ -179,6 +181,64 @@ const PurchaseDialog = ({ slug, size, grind, qty, onQtyChange }: Props) => {
   const total = subtotal + (selectedShipping?.price ?? 0);
 
   const onSubmit = (values: TForm) => {
+    // Create draft order before opening WhatsApp
+    (async () => {
+      try {
+        const selectedVariant = product.variants.find(v => v.weight === effectiveSize);
+        const weightGrams = selectedVariant?.shipWeightGrams || 500;
+
+        const items = [
+          {
+            name: `${product.title}${effectiveSize ? ` - ${effectiveSize}` : ''}`,
+            description: product.shortDescription ?? product.title,
+            category: "coffee",
+            value: unitPrice,
+            quantity: Math.max(1, qty),
+            weight: weightGrams,
+            height: 10,
+            length: 20,
+            width: 15,
+          },
+        ];
+
+        const origin = {
+          origin_contact_name: process.env.NEXT_PUBLIC_ORIGIN_NAME ?? "Agroastery",
+          origin_contact_phone: process.env.NEXT_PUBLIC_ORIGIN_PHONE ?? "000",
+          origin_contact_email: process.env.NEXT_PUBLIC_ORIGIN_EMAIL || undefined,
+          origin_address: process.env.NEXT_PUBLIC_ORIGIN_ADDRESS ?? "Origin Address",
+          origin_postal_code: process.env.NEXT_PUBLIC_ORIGIN_POSTAL_CODE ?? 12440,
+          origin_lat: process.env.NEXT_PUBLIC_ORIGIN_LAT ? Number(process.env.NEXT_PUBLIC_ORIGIN_LAT) : undefined,
+          origin_lng: process.env.NEXT_PUBLIC_ORIGIN_LNG ? Number(process.env.NEXT_PUBLIC_ORIGIN_LNG) : undefined,
+          origin_collection_method: 'pickup' as const,
+        };
+
+        const draft = await createDraftOrderFromUI({
+          origin,
+          customer: {
+            name: values.fullName,
+            phone: normalizePhoneID(values.phone),
+            email: undefined,
+          },
+          deliveryType: 'now',
+          orderNote: undefined,
+          referenceId: undefined,
+          tags: ['web', 'draft', 'desktop'],
+          metadata: { page: 'product-dialog', product_slug: product.slug },
+          items,
+          destinationFallback: { address: values.address, postalCode: values.postalCode },
+        });
+
+        if (draft?.id) {
+          window.alert(`Draft order berhasil dibuat: ${draft.id}`);
+        } else {
+          window.alert('Draft order berhasil dibuat');
+        }
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : 'Gagal membuat draft order';
+        window.alert(msg);
+      }
+    })();
+
     const message = createWhatsAppMessage({
       productTitle: product.title,
       size: effectiveSize,
@@ -414,6 +474,17 @@ const PurchaseDialog = ({ slug, size, grind, qty, onQtyChange }: Props) => {
                             (r) => r.code === value
                           ) || null;
                         setSelectedShipping(rate);
+                        if (rate && rate.raw) {
+                          setSelectedCourier({
+                            company: rate.raw.courier_code,
+                            service_code: rate.raw.courier_service_code,
+                            service_name: rate.raw.courier_service_name,
+                            price: rate.price,
+                            etd: rate.eta,
+                          });
+                        } else {
+                          setSelectedCourier(null);
+                        }
                       }}
                       className="space-y-2"
                     >
