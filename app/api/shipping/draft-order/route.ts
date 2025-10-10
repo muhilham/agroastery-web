@@ -107,16 +107,13 @@ const PayloadSchema = z
 function stripUndefined<T>(obj: T): T {
   if (obj === null || typeof obj !== "object") return obj;
   if (Array.isArray(obj)) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return obj.map((v) => stripUndefined(v)) as unknown as T;
   }
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
     if (v === undefined) continue;
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     out[k] = typeof v === "object" && v !== null ? stripUndefined(v) : v;
   }
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
   return out as T;
 }
 

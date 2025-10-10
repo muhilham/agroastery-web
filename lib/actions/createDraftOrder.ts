@@ -26,6 +26,75 @@ export type OriginInput = {
   origin_collection_method?: 'pickup' | 'drop_off';
 };
 
+type Coordinate = { latitude: number; longitude: number };
+
+type DraftOrderItem = {
+  name: string;
+  description?: string;
+  category?: string;
+  value: number;
+  quantity: number;
+  height?: number;
+  length?: number;
+  width?: number;
+  weight: number;
+};
+
+type DraftOrderPayload = {
+  // ORIGIN
+  origin_contact_name: string;
+  origin_contact_phone: string;
+  origin_contact_email?: string;
+  origin_address: string;
+  origin_postal_code?: number;
+  origin_note?: string;
+  origin_collection_method?: 'pickup' | 'drop_off';
+  origin_coordinate?: Coordinate;
+  origin_area_id?: string;
+
+  // DESTINATION
+  destination_contact_name: string;
+  destination_contact_phone: string;
+  destination_contact_email?: string;
+  destination_address: string;
+  destination_postal_code?: number;
+  destination_note?: string;
+  destination_coordinate?: Coordinate;
+  destination_area_id?: string;
+
+  // COURIER (optional)
+  courier_company?: string;
+  courier_type?: string;
+  courier_insurance?: number;
+
+  // DELIVERY
+  delivery_type: 'now' | 'scheduled';
+  delivery_date?: string;
+  delivery_time?: string;
+  order_note?: string;
+
+  // META
+  metadata?: Record<string, unknown>;
+  reference_id?: string;
+  tags?: string[];
+
+  // ITEMS
+  items: DraftOrderItem[];
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function getErrorMessage(data: unknown): string {
+  if (isRecord(data)) {
+    const details = typeof data.details === 'string' ? data.details : undefined;
+    const error = typeof data.error === 'string' ? data.error : undefined;
+    return details || error || 'Gagal membuat draft order.';
+  }
+  return 'Gagal membuat draft order.';
+}
+
 export async function createDraftOrderFromUI(params: {
   origin: OriginInput;
   customer: { name: string; phone: string; email?: string };
@@ -35,10 +104,10 @@ export async function createDraftOrderFromUI(params: {
   orderNote?: string;
   referenceId?: string;
   tags?: string[];
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   items: CartItemInput[];
   destinationFallback?: { address?: string; postalCode?: string | number; note?: string };
-}) {
+}): Promise<unknown> {
   const {
     origin,
     customer,
@@ -62,7 +131,7 @@ export async function createDraftOrderFromUI(params: {
     throw new Error('Alamat tujuan belum lengkap (butuh postal code atau koordinat).');
   }
 
-  const body: Record<string, any> = {
+  const body: DraftOrderPayload = {
     // ORIGIN
     origin_contact_name: origin.origin_contact_name,
     origin_contact_phone: origin.origin_contact_phone,
@@ -124,13 +193,13 @@ export async function createDraftOrderFromUI(params: {
     body: JSON.stringify(body),
   });
 
-  let data: any = null;
+  let data: unknown = null;
   try {
     data = await res.json();
   } catch {}
 
   if (!res.ok) {
-    throw new Error(data?.details || data?.error || 'Gagal membuat draft order.');
+    throw new Error(getErrorMessage(data));
   }
 
   // Return full Biteship draft order response (id is at top-level)

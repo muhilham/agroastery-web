@@ -212,7 +212,7 @@ const PurchaseDialog = ({ slug, size, grind, qty, onQtyChange }: Props) => {
           origin_collection_method: 'pickup' as const,
         };
 
-        const draft = await createDraftOrderFromUI({
+        await createDraftOrderFromUI({
           origin,
           customer: {
             name: values.fullName,
@@ -227,15 +227,10 @@ const PurchaseDialog = ({ slug, size, grind, qty, onQtyChange }: Props) => {
           items,
           destinationFallback: { address: values.address, postalCode: values.postalCode },
         });
-
-        if (draft?.id) {
-          window.alert(`Draft order berhasil dibuat: ${draft.id}`);
-        } else {
-          window.alert('Draft order berhasil dibuat');
-        }
+        // No UI notification on success
       } catch (e) {
-        const msg = e instanceof Error ? e.message : 'Gagal membuat draft order';
-        window.alert(msg);
+        // Silent fail (no UI). Log to console for debugging.
+        console.error('[createDraftOrderFromUI] failed', e);
       }
     })();
 
