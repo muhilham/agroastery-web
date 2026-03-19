@@ -69,7 +69,11 @@ pnpm add @supabase/supabase-js @supabase/ssr
   - `ecom_order_items` includes: variant_id, denormalized product/variant snapshots, weight
 - **New tables**: `profiles`, `addresses`, `cart_items`
 - **Reuse existing**: `order_number_sequences` table (extend for ecom prefix if needed)
-- RLS policies for public read access
+- **RLS policies** — only on ecom-specific tables (NOT on `products` to avoid any ops risk):
+  - `profiles`, `addresses` — users manage their own
+  - `cart_items` — users manage their own cart
+  - `ecom_orders`, `ecom_order_items` — users view their own orders
+  - `products`, `product_options`, `product_variants` — NO RLS (read server-side via service role key)
 - Indexes for performance
 
 ### 2.2 Product Query Layer
