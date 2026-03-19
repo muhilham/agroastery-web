@@ -34,8 +34,11 @@ Shares a **Supabase (PostgreSQL)** database with the ops admin panel (separate r
 ### Database (Shared Supabase)
 - This app shares the same Supabase project as the ops admin panel
 - Products are read **live from Supabase** (no more static JSON/CDN)
-- New tables are added alongside existing ops tables
-- **Do NOT modify existing ops tables** without coordinating with ops repo
+- New ecom tables are added alongside existing ops tables
+- **You MAY extend the existing `products` table** with new nullable columns (safe for ops)
+- **Do NOT modify or drop existing columns** on any ops table
+- **Do NOT modify** the B2B `orders`, `order_items`, `clients`, or HR tables
+- Ops dashboard uses `SUPABASE_SERVICE_ROLE_KEY` (bypasses RLS) — confirmed safe
 
 ### Product Variants — Flexible N-Level Model
 Products use a Shopify-style option/variant model:
@@ -71,29 +74,47 @@ Products use a Shopify-style option/variant model:
 6. Webhook confirms payment → order status updated
 7. Order visible in user's purchase history (if logged in)
 
-## Database Schema (New Tables)
+## Database Schema
 
-> These tables are designed to coexist with existing ops tables.
-> The ops team will handle migration of the existing product table separately.
+> IMPORTANT: The Supabase database is shared with the ops admin panel.
+> We EXTEND the existing `products` table and CREATE new ecom-specific tables.
+> We do NOT create a separate products table — we reuse the existing one.
 
-### Core Tables
+### Existing `products` Table (DO NOT remove/rename these columns)
 
 ```sql
--- Products (replaces static JSON, designed for ops admin management)
--- NOTE: This is the NEW product table design. The existing ops product table
--- will be migrated by the ops team. Do not modify the existing table.
+-- This table ALREADY EXISTS in Supabase. These columns are used by the ops admin.
 products (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  title TEXT NOT NULL,
-  slug TEXT UNIQUE NOT NULL,
-  description TEXT,             -- HTML content
-  short_description TEXT,
-  category_ids TEXT[],          -- references category slugs
-  images JSONB DEFAULT '[]',   -- [{url, alt, sort_order}]
-  is_active BOOLEAN DEFAULT true,
-  created_at TIMESTAMPTZ DEFAULT now(),
-  updated_at TIMESTAMPTZ DEFAULT now()
+  name TEXT NOT NULL,              -- product name (ops uses this, ecom reads it too)
+  description TEXT,                -- product description
+  unit TEXT,                       -- e.g. "pcs", "kg"
+  sku TEXT,                        -- product-level SKU
+  base_price NUMERIC,              -- base price (ops uses NUMERIC, ecom variants use BIGINT)
+  image_url TEXT,                  -- single image URL (ops uses this)
+  is_active BOOLEAN DEFAULT true,  -- whether product is visible
+  is_global BOOLEAN DEFAULT true,  -- ops-specific flag
+  created_at TIMESTAMPTZ DEFAULT now()
 )
+```
+
+### ALTER TABLE: Add ecom columns to existing `products`
+
+```sql
+-- These columns are ADDED to the existing products table.
+-- All are nullable or have defaults, so existing ops queries are unaffected.
+ALTER TABLE products ADD COLUMN IF NOT EXISTS slug TEXT UNIQUE;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS short_description TEXT;
+ALTER TABLE products ADD COLUMN IF NOT EXISTS category_ids TEXT[] DEFAULT '{}';
+ALTER TABLE products ADD COLUMN IF NOT EXISTS images JSONB DEFAULT '[]';  -- [{url, alt, sort_order}]
+ALTER TABLE products ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT now();
+```
+
+### New Tables
+
+```sql
+-- IMPORTANT: In ecom code, use `products.name` (not `title`) as the product name.
+-- The existing column is called `name`, not `title`.
 
 -- Product option axes (e.g., "Size", "Grind")
 product_options (
@@ -170,10 +191,12 @@ cart_items (
   UNIQUE(user_id, variant_id)
 )
 
--- Orders
-orders (
+-- E-commerce orders (SEPARATE from B2B `orders` table which has client_id NOT NULL)
+-- IMPORTANT: Use `ecom_orders` NOT `orders` for consumer orders.
+-- The existing `orders` table is for B2B and must not be modified.
+ecom_orders (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES profiles(id) ON DELETE SET NULL,  -- nullable for guest
+  user_id UUID REFERENCES profiles(id) ON DELETE SET NULL,  -- nullable for guest checkout
   order_number TEXT UNIQUE NOT NULL,    -- human-readable, e.g. AGR-20260319-XXXX
   status TEXT NOT NULL DEFAULT 'pending_payment',
     -- pending_payment, paid, processing, shipped, delivered, cancelled, refunded
@@ -209,14 +232,14 @@ orders (
   updated_at TIMESTAMPTZ DEFAULT now()
 )
 
--- Order line items
-order_items (
+-- E-commerce order line items (SEPARATE from B2B `order_items`)
+ecom_order_items (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  order_id UUID REFERENCES orders(id) ON DELETE CASCADE,
+  order_id UUID REFERENCES ecom_orders(id) ON DELETE CASCADE,
   variant_id UUID REFERENCES product_variants(id) ON DELETE SET NULL,
 
   -- Denormalized snapshot (so order history survives product changes)
-  product_title TEXT NOT NULL,
+  product_name TEXT NOT NULL,          -- from products.name (NOT "title")
   variant_description TEXT NOT NULL,    -- "150g, Fine Grind"
   unit_price BIGINT NOT NULL,
   quantity INT NOT NULL,
@@ -229,10 +252,14 @@ order_items (
 
 ### Row Level Security (RLS) Policies
 
+> IMPORTANT: Do NOT enable RLS on `products`, `product_options`, `product_option_values`,
+> `product_variants`, or `product_variant_option_values`. These are read server-side
+> using the service role key. Enabling RLS could break the ops dashboard.
+> Only enable RLS on ecom-specific user data tables.
+
 ```sql
--- Products: public read, no write from client
-ALTER TABLE products ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Products are viewable by everyone" ON products FOR SELECT USING (is_active = true);
+-- NO RLS on products/variants — read server-side via service role key
+-- NO RLS on product_options, product_option_values, product_variant_option_values
 
 -- Profiles: users can read/update their own
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
@@ -243,15 +270,15 @@ CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.
 ALTER TABLE cart_items ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can manage own cart" ON cart_items FOR ALL USING (auth.uid() = user_id);
 
--- Orders: users can view their own orders
-ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can view own orders" ON orders FOR SELECT USING (auth.uid() = user_id);
+-- E-commerce orders: users can view their own orders
+ALTER TABLE ecom_orders ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own orders" ON ecom_orders FOR SELECT USING (auth.uid() = user_id);
 
--- Order items: users can view items of their own orders
-ALTER TABLE order_items ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can view own order items" ON order_items
+-- E-commerce order items: users can view items of their own orders
+ALTER TABLE ecom_order_items ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view own order items" ON ecom_order_items
   FOR SELECT USING (
-    order_id IN (SELECT id FROM orders WHERE user_id = auth.uid())
+    order_id IN (SELECT id FROM ecom_orders WHERE user_id = auth.uid())
   );
 
 -- Addresses: users can CRUD their own addresses
@@ -267,10 +294,10 @@ CREATE INDEX idx_products_active ON products(is_active) WHERE is_active = true;
 CREATE INDEX idx_product_variants_product ON product_variants(product_id);
 CREATE INDEX idx_product_variants_sku ON product_variants(sku);
 CREATE INDEX idx_cart_items_user ON cart_items(user_id);
-CREATE INDEX idx_orders_user ON orders(user_id);
-CREATE INDEX idx_orders_number ON orders(order_number);
-CREATE INDEX idx_orders_xendit ON orders(xendit_invoice_id);
-CREATE INDEX idx_order_items_order ON order_items(order_id);
+CREATE INDEX idx_ecom_orders_user ON ecom_orders(user_id);
+CREATE INDEX idx_ecom_orders_number ON ecom_orders(order_number);
+CREATE INDEX idx_ecom_orders_xendit ON ecom_orders(xendit_invoice_id);
+CREATE INDEX idx_ecom_order_items_order ON ecom_order_items(order_id);
 ```
 
 ## Environment Variables
@@ -435,6 +462,127 @@ middleware.ts                        # NEW: Supabase auth session refresh
 
 ### Shared Database with Ops
 - This app reads products but does NOT create/edit them (ops admin does that)
-- Orders table is written by this app, read by ops admin
-- Use Supabase RLS to enforce access control
+- E-commerce orders go to `ecom_orders` table (NOT the B2B `orders` table)
+- RLS only on ecom user data tables (profiles, cart_items, addresses, ecom_orders, ecom_order_items)
+- NO RLS on products or variant tables (to avoid breaking ops dashboard)
 - Service role key used server-side for order creation (bypasses RLS for guest orders)
+- Ops dashboard uses service role key — confirmed safe with our RLS approach
+
+### Existing Ops Tables (DO NOT MODIFY)
+These tables exist in the shared Supabase database. Do NOT alter, drop, or add RLS to them:
+- `orders` — B2B orders (`client_id UUID NOT NULL REFERENCES clients(id)`)
+- `order_items` — B2B order line items (`order_id`, `product_id`, `quantity`, `price`)
+- `order_number_sequences` — auto-increment for order numbers
+- `clients`, `client_products` — B2B client management
+- `employees`, `attendance`, `schedules`, `locations` — HR system
+- `jubelio_*` — ERP integration tables
+- `bonus_policy`, `config_audit_log`, `notification_logs` — ops config
+
+### Column Name Mapping (JSON → Supabase)
+The existing codebase uses static JSON with different field names than the database:
+| Static JSON (`products.json`) | Supabase `products` table | Notes |
+|---|---|---|
+| `title` | `name` | **USE `name` in all Supabase queries** |
+| `description` | `description` | Same |
+| `shortDescription` | `short_description` | New column (added by migration) |
+| `images[].image` | `images` (JSONB) | New column: `[{url, alt, sort_order}]` |
+| `category_ids` | `category_ids` (TEXT[]) | New column |
+| `variants[].price` | `product_variants.price` | Moved to variant table |
+| `variants[].sku` | `product_variants.sku` | Moved to variant table |
+| `variants[].weight` | via `product_option_values.value` | Now an option value |
+| `variants[].shipWeightGrams` | `product_variants.ship_weight_grams` | Moved to variant table |
+| `grindSize` | via `product_options` + `product_option_values` | Now an option axis |
+
+## Code Patterns (Reference for Implementation)
+
+### Supabase Server Client (lib/supabase/server.ts)
+```typescript
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
+
+export async function createSupabaseServerClient() {
+  const cookieStore = await cookies();
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() { return cookieStore.getAll(); },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            cookieStore.set(name, value, options);
+          });
+        },
+      },
+    }
+  );
+}
+
+// For server-side operations that bypass RLS (e.g., guest order creation)
+export function createSupabaseAdminClient() {
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { cookies: { getAll: () => [], setAll: () => {} } }
+  );
+}
+```
+
+### Supabase Browser Client (lib/supabase/client.ts)
+```typescript
+import { createBrowserClient } from "@supabase/ssr";
+
+export function createSupabaseBrowserClient() {
+  return createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+}
+```
+
+### Fetching Products with Variants (lib/supabase/queries/products.ts)
+```typescript
+// Use admin client (service role) — no RLS on products
+export async function getProductBySlug(slug: string) {
+  const supabase = createSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from("products")
+    .select(`
+      *,
+      product_options (
+        id, name, display_order,
+        product_option_values (id, value, display_order)
+      ),
+      product_variants (
+        id, sku, price, compare_at_price, stock_quantity, ship_weight_grams, is_active,
+        product_variant_option_values (option_value_id)
+      )
+    `)
+    .eq("slug", slug)
+    .eq("is_active", true)
+    .single();
+  return { data, error };
+}
+```
+
+### API Route Pattern (app/api/example/route.ts)
+```typescript
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+
+const RequestSchema = z.object({ /* ... */ });
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const parsed = RequestSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Invalid input", code: "VALIDATION_ERROR" }, { status: 400 });
+    }
+    // ... business logic
+    return NextResponse.json({ data: result });
+  } catch (error) {
+    return NextResponse.json({ error: "Internal server error", code: "INTERNAL_ERROR" }, { status: 500 });
+  }
+}
+```
