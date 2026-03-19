@@ -59,7 +59,16 @@ pnpm add @supabase/supabase-js @supabase/ssr
 
 ### 2.1 Database Schema (SQL Migration)
 - Provide complete migration SQL file at `supabase/migrations/001_ecommerce_schema.sql`
-- Tables: `products`, `product_options`, `product_option_values`, `product_variants`, `product_variant_option_values`
+- **Extend existing `products` table** (add nullable columns to avoid breaking ops):
+  - Add: `slug TEXT UNIQUE`, `short_description TEXT`, `category_ids TEXT[]`, `images JSONB DEFAULT '[]'`, `updated_at TIMESTAMPTZ DEFAULT now()`
+  - Existing columns stay untouched: `name`, `description`, `unit`, `sku`, `base_price`, `image_url`, `is_active`, `is_global`
+- **New variant tables**: `product_options`, `product_option_values`, `product_variants`, `product_variant_option_values`
+- **Separate e-commerce order tables**: `ecom_orders`, `ecom_order_items`
+  - Existing `orders` table has `client_id NOT NULL` (B2B), different structure — cannot safely share
+  - `ecom_orders` includes: user_id (nullable for guest), shipping info, Xendit payment fields, customer info
+  - `ecom_order_items` includes: variant_id, denormalized product/variant snapshots, weight
+- **New tables**: `profiles`, `addresses`, `cart_items`
+- **Reuse existing**: `order_number_sequences` table (extend for ecom prefix if needed)
 - RLS policies for public read access
 - Indexes for performance
 
@@ -156,15 +165,15 @@ pnpm add @supabase/supabase-js @supabase/ssr
 ### 4.3 Xendit Invoice Creation
 - `app/api/checkout/route.ts` (POST):
   1. Validate cart items (check stock, prices still match)
-  2. Create `orders` row with status `pending_payment`
-  3. Create `order_items` rows (denormalized snapshot)
+  2. Create `ecom_orders` row with status `pending_payment`
+  3. Create `ecom_order_items` rows (denormalized snapshot)
   4. Call Xendit API to create invoice:
      - Amount = total (subtotal + shipping)
      - Customer info (name, email, phone)
      - Items list for display
      - Success/failure redirect URLs
      - Invoice duration (e.g., 24 hours)
-  5. Update order with `xendit_invoice_id`
+  5. Update `ecom_orders` with `xendit_invoice_id`
   6. Return invoice URL to frontend
 
 ### 4.4 Xendit Popup Widget
@@ -198,8 +207,8 @@ pnpm add xendit-node
 ### 5.1 Xendit Webhook Handler
 - `app/api/webhooks/xendit/route.ts`:
   - Verify webhook signature/token
-  - Handle `invoice.paid` event → update `orders.payment_status = 'paid'`, `orders.status = 'processing'`, `orders.paid_at`
-  - Handle `invoice.expired` event → update `orders.payment_status = 'expired'`, `orders.status = 'cancelled'`
+  - Handle `invoice.paid` event → update `ecom_orders.payment_status = 'paid'`, `ecom_orders.status = 'processing'`, `orders.paid_at`
+  - Handle `invoice.expired` event → update `ecom_orders.payment_status = 'expired'`, `ecom_orders.status = 'cancelled'`
   - Log webhook events for debugging
   - Return 200 OK quickly (process async if needed)
 
@@ -271,13 +280,35 @@ pnpm add xendit-node
 ## Migration SQL File
 
 A complete migration file will be created at `supabase/migrations/001_ecommerce_schema.sql` containing:
-- All table definitions from CLAUDE.md
+
+### Existing Table Modifications
+- **`products`**: ALTER TABLE to add `slug`, `short_description`, `category_ids`, `images`, `updated_at` (all nullable/defaulted — safe for ops)
+
+### New Tables
+- `product_options`, `product_option_values`, `product_variants`, `product_variant_option_values` — variant system
+- `ecom_orders` — consumer orders (replaces CLAUDE.md's `orders` to avoid B2B conflict)
+- `ecom_order_items` — consumer order line items
+- `profiles` — extends auth.users
+- `addresses` — saved shipping addresses
+- `cart_items` — logged-in user carts
+
+### Other
 - RLS policies
 - Indexes
 - Trigger for auto-creating profiles on user signup
 - Trigger for `updated_at` timestamps
+- Backfill: generate slugs from existing product names
 
 This file is for reference / manual execution. The actual migration will be coordinated with the ops team.
+
+### Existing Tables NOT Modified
+- `orders` — B2B orders (client_id NOT NULL, different structure)
+- `order_items` — B2B order line items (references products directly, no variants)
+- `clients`, `client_products` — B2B client management
+- `employees`, `attendance`, `schedules`, etc. — HR system
+- `jubelio_*` — ERP integration
+- `locations` — business locations
+- `notification_logs` — ops notifications
 
 ---
 
@@ -299,9 +330,20 @@ This file is for reference / manual execution. The actual migration will be coor
 
 ## Open Questions / Dependencies
 
-1. **Supabase project access**: Need the Supabase URL + keys for the shared project
+1. ~~**Supabase project access**: Need the Supabase URL + keys for the shared project~~ ✅ Confirmed — shared Supabase project with ops
 2. **Xendit account**: Need API keys (test + production) and webhook URL configured
 3. **Google OAuth**: Need Google Cloud Console project with OAuth credentials, configured in Supabase
-4. **Ops migration**: When will the ops team migrate the existing product table to the new schema?
+4. ~~**Ops migration**: When will the ops team migrate the existing product table to the new schema?~~ ✅ Resolved — we extend existing `products` table with nullable columns, create separate `ecom_orders`/`ecom_order_items`
 5. **Railway setup**: Need Railway project created and environment variables configured
-6. **Product data seeding**: Who will seed the initial product data into the new Supabase tables?
+6. **Product data seeding**: Who will seed the initial product data? Need to backfill `slug`, `images`, `category_ids` on existing product rows, and create variant records
+
+## Existing Database (Confirmed)
+
+The Supabase database contains these ops tables (DO NOT modify structure):
+- `attendance`, `employees`, `schedules`, `locations` — HR/attendance system
+- `orders` (B2B, `client_id NOT NULL`), `order_items`, `order_number_sequences` — B2B order management
+- `products` (flat: name, unit, sku, base_price, is_global) — B2B product catalog (**extending with ecom columns**)
+- `clients`, `client_products` — B2B client management
+- `jubelio_*` — ERP integration
+- `bonus_policy`, `config_audit_log` — ops config
+- Various views: `attendance_*_view`, `attendance_*_secure`, `current_employee`
