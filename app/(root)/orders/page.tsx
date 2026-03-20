@@ -50,10 +50,10 @@ export default async function OrdersPage() {
         </h1>
 
         {!orders || orders.length === 0 ? (
-          <div className="flex flex-col items-center gap-6 py-24 text-center">
-            <Package className="w-16 h-16 text-white/20" />
+          <div className="flex flex-col items-center gap-6 py-20 text-center">
+            <Package className="w-14 h-14 text-white/20" />
             <div>
-              <p className="text-primary text-lg mb-2">Belum ada pesanan</p>
+              <p className="text-primary text-base mb-2">Belum ada pesanan</p>
               <p className="text-secondary text-sm">Pesan sekarang dan lacak di sini</p>
             </div>
             <Link href="/katalog" className="text-primary underline text-sm">
@@ -61,7 +61,7 @@ export default async function OrdersPage() {
             </Link>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {orders.map((order) => {
               const statusLabel = STATUS_LABELS[order.status] ?? order.status;
               const statusColor = STATUS_COLORS[order.status] ?? "text-white/60 bg-white/5";
@@ -69,9 +69,9 @@ export default async function OrdersPage() {
                 <Link
                   key={order.id}
                   href={`/orders/${order.id}`}
-                  className="block p-4 rounded-xl bg-[#1a1a1a] border border-white/10 hover:border-white/20 transition-colors"
+                  className="block p-4 rounded-xl bg-[#1a1a1a] border border-white/10 active:bg-[#222222] transition-colors"
                 >
-                  <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <p className="text-primary font-medium text-sm">{order.order_number}</p>
                       <p className="text-secondary text-xs mt-0.5">
@@ -82,13 +82,13 @@ export default async function OrdersPage() {
                         })}
                       </p>
                     </div>
-                    <span className={`text-xs font-medium px-2 py-1 rounded-full shrink-0 ${statusColor}`}>
+                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full shrink-0 whitespace-nowrap ${statusColor}`}>
                       {statusLabel}
                     </span>
                   </div>
                   <div className="mt-3 flex justify-between items-center">
                     <span className="text-secondary text-sm">Total</span>
-                    <span className="text-primary font-semibold">
+                    <span className="text-primary font-semibold text-sm">
                       {numberToIdr({ nominal: order.total as number })}
                     </span>
                   </div>

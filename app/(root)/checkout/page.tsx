@@ -252,7 +252,7 @@ export default function CheckoutPage() {
       {/* eslint-disable-next-line @next/next/no-sync-scripts */}
       <script src="https://js.xendit.co/v1/xendit.min.js" />
       <Navigation />
-      <main className="bg-background pt-20 tablet:px-10 desktop:px-20 px-4 min-h-screen pb-48">
+      <main className="bg-background pt-20 tablet:px-10 desktop:px-20 px-4 min-h-screen" style={{ paddingBottom: "max(12rem, calc(env(safe-area-inset-bottom) + 12rem))" }}>
         <h1 className="text-xl font-semibold text-primary mb-6 tracking-widest uppercase mt-4">
           Checkout
         </h1>
@@ -401,7 +401,7 @@ export default function CheckoutPage() {
                   form.setValue("lat", coords.lat);
                   form.setValue("lng", coords.lng);
                 }}
-                height={280}
+                height={240}
                 className="w-full"
               />
             </div>
@@ -426,17 +426,17 @@ export default function CheckoutPage() {
                         </FormControl>
                         <FormLabel
                           htmlFor={key}
-                          className={`flex justify-between items-center p-4 rounded-lg border-2 cursor-pointer transition-colors ${
+                          className={`flex items-center justify-between gap-3 p-3 tablet:p-4 rounded-lg border-2 cursor-pointer transition-colors min-h-[3.5rem] ${
                             selectedShipping?.code === rate.code
                               ? "border-primary bg-primary/10"
-                              : "border-transparent hover:bg-white/5"
+                              : "border-transparent bg-white/5 active:bg-white/10"
                           }`}
                         >
-                          <div className="flex flex-col">
-                            <span className="uppercase">{rate.carrier} {rate.service}</span>
-                            <span className="text-sm text-secondary">Estimasi {rate.eta || "N/A"}</span>
+                          <div className="flex flex-col min-w-0">
+                            <span className="uppercase text-sm font-medium truncate">{rate.carrier} {rate.service}</span>
+                            <span className="text-xs text-secondary">Estimasi {rate.eta || "N/A"}</span>
                           </div>
-                          <span className="text-lg">{numberToIdr({ nominal: rate.price })}</span>
+                          <span className="text-sm font-semibold shrink-0">{numberToIdr({ nominal: rate.price })}</span>
                         </FormLabel>
                       </FormItem>
                     );
@@ -474,7 +474,8 @@ export default function CheckoutPage() {
       </main>
 
       {/* Fixed bottom bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-[#141414] border-t border-border/50 px-4 py-4 tablet:px-10 desktop:px-20 z-30">
+      <div className="fixed bottom-0 left-0 right-0 bg-[#141414] border-t border-border/50 px-4 pt-3 tablet:px-10 desktop:px-20 z-30"
+        style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}>
         <div className="flex justify-between text-sm text-secondary mb-1">
           <span>Subtotal</span>
           <span className="text-primary">{numberToIdr({ nominal: cartTotal })}</span>

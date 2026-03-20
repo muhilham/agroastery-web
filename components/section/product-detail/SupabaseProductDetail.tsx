@@ -118,7 +118,7 @@ const SupabaseProductDetail = ({ product }: Props) => {
   return (
     <Fragment>
       <Navigation />
-      <main className="pt-20 mx-auto desktop:pt-32 w-full desktop:px-20 relative desktop:flex desktop:flex-row min-h-screen">
+      <main className="pt-20 mx-auto desktop:pt-32 w-full desktop:px-20 relative desktop:flex desktop:flex-row min-h-screen pb-24 desktop:pb-0">
         <EmblaCarousel
           images={carouselImages}
           options={OPTIONS}
@@ -126,14 +126,14 @@ const SupabaseProductDetail = ({ product }: Props) => {
         />
 
         <section className="flex-1">
-          <div className="px-6 mb-10 flex desktop:flex-col flex-col-reverse gap-1 mt-2">
-            <h1 className="text-primary tablet:text-lg desktop:text-2xl tracking-widest font-normal uppercase">
+          <div className="px-4 tablet:px-6 mb-8 flex flex-col gap-1 mt-2">
+            <div className="text-lg tablet:text-xl desktop:text-2xl font-extrabold text-secondary">
+              {numberToIdr({ nominal: unitPrice })}
+            </div>
+            <h1 className="text-primary text-sm tablet:text-base desktop:text-2xl tracking-widest font-normal uppercase leading-snug">
               {product.name}
               {variantDescription ? ` | ${variantDescription}` : ""}
             </h1>
-            <div className="desktop:text-2xl font-extrabold tablet:text-lg text-secondary mb-2">
-              {numberToIdr({ nominal: unitPrice })}
-            </div>
           </div>
 
           {/* Option selectors */}
@@ -142,8 +142,8 @@ const SupabaseProductDetail = ({ product }: Props) => {
               (a, b) => a.display_order - b.display_order
             );
             return (
-              <div key={opt.id} className="px-6 mb-3">
-                <div className="text-base font-bold text-secondary">
+              <div key={opt.id} className="px-4 tablet:px-6 mb-4">
+                <div className="text-sm tablet:text-base font-bold text-secondary">
                   Pilih {opt.name} :
                 </div>
                 <div className="flex flex-wrap gap-2 items-center mt-2">
@@ -174,7 +174,7 @@ const SupabaseProductDetail = ({ product }: Props) => {
 
           {/* Stock status */}
           {matchedVariant && (
-            <div className="px-6 mb-3">
+            <div className="px-4 tablet:px-6 mb-3">
               <span
                 className={`text-sm ${
                   inStock ? "text-green-400" : "text-red-400"
@@ -185,7 +185,7 @@ const SupabaseProductDetail = ({ product }: Props) => {
             </div>
           )}
           {!matchedVariant && sortedOptions.length > 0 && (
-            <div className="px-6 mb-3">
+            <div className="px-4 tablet:px-6 mb-3">
               <span className="text-sm text-red-400">
                 Kombinasi varian tidak tersedia
               </span>
@@ -193,7 +193,7 @@ const SupabaseProductDetail = ({ product }: Props) => {
           )}
 
           {/* Deskripsi */}
-          <div className="px-6 pb-10">
+          <div className="px-4 tablet:px-6 pb-10">
             <div className="text-base font-bold text-primary mb-2">
               Deskripsi :
             </div>
@@ -294,44 +294,47 @@ const SupabaseProductDetail = ({ product }: Props) => {
         </div>
 
         {/* Mobile floating bar */}
-        <div className="fixed bottom-0 w-full left-0 desktop:hidden bg-black inline-flex gap-3 z-40 px-4 items-center py-3">
+        <div className="fixed bottom-0 w-full left-0 desktop:hidden bg-black/95 backdrop-blur-sm flex gap-2 z-40 px-4 pb-safe-bottom items-center py-3 border-t border-white/10"
+          style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}>
           <Button
             size="icon"
-            className="w-12 h-10 px-3 shrink-0"
+            className="w-11 h-11 shrink-0"
             onClick={() => router.push(TOKOPEDIA)}
+            aria-label="Beli di Tokopedia"
           >
             <Image
               src="/assets/tokopedia.svg"
               width={20}
               height={20}
-              alt="tokopedia"
+              alt="Tokopedia"
               style={{ height: "auto" }}
             />
           </Button>
           <Button
             size="icon"
-            className="w-12 h-10 px-3 shrink-0"
+            className="w-11 h-11 shrink-0"
             onClick={() => router.push(SHOPEE)}
+            aria-label="Beli di Shopee"
           >
             <Image
               src="/assets/shoppe.svg"
               width={20}
               height={20}
-              alt="shopee"
+              alt="Shopee"
               style={{ height: "auto" }}
             />
           </Button>
           <Button
-            className="flex-1 flex items-center gap-2"
+            className="flex-1 h-11 flex items-center gap-1.5 text-sm"
             disabled={!matchedVariant || !inStock}
             onClick={handleAddToCart}
             variant="outline"
           >
-            <ShoppingCart className="w-4 h-4" />
-            {addedToCart ? "Ditambahkan!" : "Keranjang"}
+            <ShoppingCart className="w-4 h-4 shrink-0" />
+            <span className="truncate">{addedToCart ? "Ditambahkan!" : "Keranjang"}</span>
           </Button>
           <Button
-            className="flex-1"
+            className="flex-1 h-11 text-sm"
             disabled={!matchedVariant || !inStock}
             onClick={handleCheckout}
           >

@@ -76,9 +76,9 @@ export default async function OrderDetailPage({ params }: PageProps) {
           Riwayat Pesanan
         </Link>
 
-        <div className="flex items-start justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-xl font-semibold text-primary">
+        <div className="flex items-start justify-between gap-2 mb-6">
+          <div className="min-w-0">
+            <h1 className="text-xl font-semibold text-primary truncate">
               {order.order_number as string}
             </h1>
             <p className="text-secondary text-sm mt-0.5">
@@ -91,7 +91,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
               })}
             </p>
           </div>
-          <span className={`text-xs font-medium px-3 py-1.5 rounded-full shrink-0 ${statusColor}`}>
+          <span className={`text-xs font-medium px-3 py-1.5 rounded-full shrink-0 whitespace-nowrap ${statusColor}`}>
             {statusLabel}
           </span>
         </div>
@@ -101,7 +101,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
           <h2 className="text-primary font-medium mb-3">Produk</h2>
           <div className="space-y-3">
             {(items ?? []).map((item) => (
-              <div key={item.id as string} className="flex justify-between items-start gap-4">
+              <div key={item.id as string} className="flex justify-between items-start gap-2">
                 <div className="flex-1 min-w-0">
                   <p className="text-primary text-sm font-medium line-clamp-1">
                     {item.product_name as string}
@@ -147,7 +147,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
             )}
             {order.tracking_number && (
               <p className="text-secondary text-sm">
-                No. Resi: <span className="text-primary font-mono">{order.tracking_number as string}</span>
+                No. Resi: <span className="text-primary font-mono break-all">{order.tracking_number as string}</span>
               </p>
             )}
           </div>
