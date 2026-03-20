@@ -196,6 +196,7 @@ export async function POST(request: NextRequest) {
 
     // Notify Telegram group (fire-and-forget — never blocks the response)
     sendOrderNotification({
+      orderId: order.id,
       orderNumber,
       customerName: data.customerName,
       customerPhone: data.customerPhone,

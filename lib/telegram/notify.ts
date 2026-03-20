@@ -1,4 +1,9 @@
+import { createSupabaseAdminClient } from "@/lib/supabase/server";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
 type OrderNotificationParams = {
+  orderId: string;
   orderNumber: string;
   customerName: string;
   customerPhone: string;
@@ -7,26 +12,103 @@ type OrderNotificationParams = {
   subtotal: number;
   shippingCost: number;
   total: number;
-  shippingAddress: {
-    address_line: string;
-    postal_code?: string | null;
-  };
+  shippingAddress: { address_line: string; postal_code?: string | null };
   shippingCourier?: string | null;
   shippingService?: string | null;
 };
 
+type PaymentNotificationParams = {
+  orderId: string;
+  orderNumber: string;
+  customerName: string;
+  customerPhone: string;
+  paymentMethod?: string | null;
+  total: number;
+  paidAt: string; // ISO string
+};
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
 function formatIdr(amount: number): string {
-  return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(amount);
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    minimumFractionDigits: 0,
+  }).format(amount);
 }
+
+async function logNotification({
+  type,
+  orderId,
+  orderNumber,
+  message,
+  status,
+  error,
+}: {
+  type: string;
+  orderId: string;
+  orderNumber: string;
+  message: string;
+  status: "sent" | "failed" | "skipped";
+  error?: string;
+}) {
+  try {
+    const supabase = createSupabaseAdminClient();
+    await supabase.from("ecom_notification_logs").insert({
+      type,
+      channel: "telegram",
+      order_id: orderId,
+      order_number: orderNumber,
+      message,
+      status,
+      error: error ?? null,
+    });
+  } catch (err) {
+    console.error("Failed to log notification:", err);
+  }
+}
+
+/** Send text to the configured Telegram group. Returns error string on failure, null on success. */
+async function sendTelegramMessage(text: string): Promise<string | null> {
+  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_CHAT_ID;
+
+  if (!botToken || !chatId) {
+    return "TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID not configured";
+  }
+
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: chatId, text, parse_mode: "Markdown" }),
+    });
+
+    if (!res.ok) {
+      const body = await res.text();
+      return `Telegram API error ${res.status}: ${body}`;
+    }
+
+    return null;
+  } catch (err) {
+    return err instanceof Error ? err.message : String(err);
+  }
+}
+
+// ─── Order created ────────────────────────────────────────────────────────────
 
 export async function sendOrderNotification(params: OrderNotificationParams): Promise<void> {
   const itemLines = params.items
-    .map((i) => `  • ${i.productName} (${i.variantDescription}) ×${i.quantity} — ${formatIdr(i.unitPrice * i.quantity)}`)
+    .map(
+      (i) =>
+        `  • ${i.productName} (${i.variantDescription}) ×${i.quantity} — ${formatIdr(i.unitPrice * i.quantity)}`
+    )
     .join("\n");
 
-  const courier = params.shippingCourier && params.shippingService
-    ? `${params.shippingCourier.toUpperCase()} ${params.shippingService}`
-    : params.shippingCourier?.toUpperCase() ?? "—";
+  const courier =
+    params.shippingCourier && params.shippingService
+      ? `${params.shippingCourier.toUpperCase()} ${params.shippingService}`
+      : params.shippingCourier?.toUpperCase() ?? "—";
 
   const text = [
     `🛍 *Pesanan Baru!*`,
@@ -49,19 +131,24 @@ export async function sendOrderNotification(params: OrderNotificationParams): Pr
     .filter((line) => line !== null)
     .join("\n");
 
-  await sendTelegramMessage(text);
+  const sendError = await sendTelegramMessage(text);
+  const skipped = sendError?.includes("not configured");
+
+  await logNotification({
+    type: "order_created",
+    orderId: params.orderId,
+    orderNumber: params.orderNumber,
+    message: text,
+    status: skipped ? "skipped" : sendError ? "failed" : "sent",
+    error: skipped ? undefined : sendError ?? undefined,
+  });
+
+  if (sendError && !skipped) {
+    console.error("Telegram order notification failed:", sendError);
+  }
 }
 
 // ─── Payment confirmed ────────────────────────────────────────────────────────
-
-type PaymentNotificationParams = {
-  orderNumber: string;
-  customerName: string;
-  customerPhone: string;
-  paymentMethod?: string | null;
-  total: number;
-  paidAt: string; // ISO string
-};
 
 export async function sendPaymentNotification(params: PaymentNotificationParams): Promise<void> {
   const paidDate = new Date(params.paidAt).toLocaleString("id-ID", {
@@ -86,32 +173,19 @@ export async function sendPaymentNotification(params: PaymentNotificationParams)
     .filter((line) => line !== null)
     .join("\n");
 
-  await sendTelegramMessage(text);
-}
+  const sendError = await sendTelegramMessage(text);
+  const skipped = sendError?.includes("not configured");
 
-// ─── Shared HTTP sender ───────────────────────────────────────────────────────
+  await logNotification({
+    type: "payment_confirmed",
+    orderId: params.orderId,
+    orderNumber: params.orderNumber,
+    message: text,
+    status: skipped ? "skipped" : sendError ? "failed" : "sent",
+    error: skipped ? undefined : sendError ?? undefined,
+  });
 
-async function sendTelegramMessage(text: string): Promise<void> {
-  const botToken = process.env.TELEGRAM_BOT_TOKEN;
-  const chatId = process.env.TELEGRAM_CHAT_ID;
-
-  if (!botToken || !chatId) {
-    console.warn("Telegram notification skipped: TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID not configured");
-    return;
-  }
-
-  try {
-    const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chat_id: chatId, text, parse_mode: "Markdown" }),
-    });
-
-    if (!res.ok) {
-      const body = await res.text();
-      console.error(`Telegram notification failed (${res.status}):`, body);
-    }
-  } catch (err) {
-    console.error("Telegram notification error:", err);
+  if (sendError && !skipped) {
+    console.error("Telegram payment notification failed:", sendError);
   }
 }

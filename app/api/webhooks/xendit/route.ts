@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
           xendit_payment_method: paymentMethod,
         })
         .eq("xendit_invoice_id", invoiceId)
-        .select("order_number, customer_name, customer_phone, total")
+        .select("id, order_number, customer_name, customer_phone, total")
         .single();
 
       if (error) {
@@ -43,6 +43,7 @@ export async function POST(request: NextRequest) {
       // Notify Telegram (fire-and-forget)
       if (updatedOrder) {
         sendPaymentNotification({
+          orderId: updatedOrder.id as string,
           orderNumber: updatedOrder.order_number as string,
           customerName: updatedOrder.customer_name as string,
           customerPhone: updatedOrder.customer_phone as string,
