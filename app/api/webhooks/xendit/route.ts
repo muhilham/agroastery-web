@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyXenditWebhook } from "@/lib/xendit/webhook";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
+import { sendPaymentNotification } from "@/lib/telegram/notify";
 
 export async function POST(request: NextRequest) {
   if (!verifyXenditWebhook(request)) {
@@ -19,19 +20,36 @@ export async function POST(request: NextRequest) {
     }
 
     if (status === "PAID") {
-      const { error } = await supabase
+      const paidAt = new Date().toISOString();
+      const paymentMethod = body.payment_method ?? body.payment_channel ?? null;
+
+      const { data: updatedOrder, error } = await supabase
         .from("ecom_orders")
         .update({
           payment_status: "paid",
           status: "processing",
-          paid_at: new Date().toISOString(),
-          xendit_payment_method: body.payment_method ?? body.payment_channel ?? null,
+          paid_at: paidAt,
+          xendit_payment_method: paymentMethod,
         })
-        .eq("xendit_invoice_id", invoiceId);
+        .eq("xendit_invoice_id", invoiceId)
+        .select("order_number, customer_name, customer_phone, total")
+        .single();
 
       if (error) {
         console.error("Webhook: failed to update order for PAID:", error);
         return NextResponse.json({ error: "DB error" }, { status: 500 });
+      }
+
+      // Notify Telegram (fire-and-forget)
+      if (updatedOrder) {
+        sendPaymentNotification({
+          orderNumber: updatedOrder.order_number as string,
+          customerName: updatedOrder.customer_name as string,
+          customerPhone: updatedOrder.customer_phone as string,
+          paymentMethod,
+          total: updatedOrder.total as number,
+          paidAt,
+        });
       }
 
       // Optionally: deduct stock — can be done here or async

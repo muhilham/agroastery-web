@@ -20,14 +20,6 @@ function formatIdr(amount: number): string {
 }
 
 export async function sendOrderNotification(params: OrderNotificationParams): Promise<void> {
-  const botToken = process.env.TELEGRAM_BOT_TOKEN;
-  const chatId = process.env.TELEGRAM_CHAT_ID;
-
-  if (!botToken || !chatId) {
-    console.warn("Telegram notification skipped: TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID not configured");
-    return;
-  }
-
   const itemLines = params.items
     .map((i) => `  • ${i.productName} (${i.variantDescription}) ×${i.quantity} — ${formatIdr(i.unitPrice * i.quantity)}`)
     .join("\n");
@@ -57,15 +49,62 @@ export async function sendOrderNotification(params: OrderNotificationParams): Pr
     .filter((line) => line !== null)
     .join("\n");
 
+  await sendTelegramMessage(text);
+}
+
+// ─── Payment confirmed ────────────────────────────────────────────────────────
+
+type PaymentNotificationParams = {
+  orderNumber: string;
+  customerName: string;
+  customerPhone: string;
+  paymentMethod?: string | null;
+  total: number;
+  paidAt: string; // ISO string
+};
+
+export async function sendPaymentNotification(params: PaymentNotificationParams): Promise<void> {
+  const paidDate = new Date(params.paidAt).toLocaleString("id-ID", {
+    timeZone: "Asia/Jakarta",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  const text = [
+    `✅ *Pembayaran Diterima!*`,
+    ``,
+    `*No. Pesanan:* \`${params.orderNumber}\``,
+    `*Pelanggan:* ${params.customerName}`,
+    `*HP:* ${params.customerPhone}`,
+    params.paymentMethod ? `*Metode:* ${params.paymentMethod}` : null,
+    `*Total:* *${formatIdr(params.total)}*`,
+    `*Waktu:* ${paidDate} WIB`,
+  ]
+    .filter((line) => line !== null)
+    .join("\n");
+
+  await sendTelegramMessage(text);
+}
+
+// ─── Shared HTTP sender ───────────────────────────────────────────────────────
+
+async function sendTelegramMessage(text: string): Promise<void> {
+  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_CHAT_ID;
+
+  if (!botToken || !chatId) {
+    console.warn("Telegram notification skipped: TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID not configured");
+    return;
+  }
+
   try {
     const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text,
-        parse_mode: "Markdown",
-      }),
+      body: JSON.stringify({ chat_id: chatId, text, parse_mode: "Markdown" }),
     });
 
     if (!res.ok) {
@@ -73,7 +112,6 @@ export async function sendOrderNotification(params: OrderNotificationParams): Pr
       console.error(`Telegram notification failed (${res.status}):`, body);
     }
   } catch (err) {
-    // Never let a notification failure break the order flow
     console.error("Telegram notification error:", err);
   }
 }
