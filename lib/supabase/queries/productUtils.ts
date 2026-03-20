@@ -8,6 +8,7 @@ export function findMatchingVariant(
   variants: SupabaseProductVariant[],
   selectedOptionValueIds: string[]
 ): SupabaseProductVariant | null {
+  const selectedSet = new Set(selectedOptionValueIds);
   return (
     variants.find((variant) => {
       const variantValueIds = variant.product_variant_option_values.map(
@@ -15,7 +16,7 @@ export function findMatchingVariant(
       );
       return (
         selectedOptionValueIds.length === variantValueIds.length &&
-        selectedOptionValueIds.every((id) => variantValueIds.includes(id))
+        variantValueIds.every((id) => selectedSet.has(id))
       );
     }) ?? null
   );

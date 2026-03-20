@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import { useCart } from "@/lib/hooks/useCart";
 import { numberToIdr } from "@/lib/numberToIdr";
 import Navigation from "@/components/navigation";
@@ -6,10 +7,35 @@ import { Footer } from "@/components/ui/footer";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
-import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react";
+import { Minus, Plus, Trash2, ShoppingBag, LoaderCircle } from "lucide-react";
+
+function CartImage({ src, alt }: { src: string; alt: string }) {
+  const [imgSrc, setImgSrc] = useState(src);
+  return (
+    <Image
+      src={imgSrc}
+      alt={alt}
+      fill
+      className="object-cover"
+      sizes="(max-width: 768px) 64px, 80px"
+      onError={() => setImgSrc("/assets/placeholder.png")}
+    />
+  );
+}
 
 export default function CartPage() {
-  const { cartItems, cartTotal, cartCount, removeFromCart, updateQuantity } = useCart();
+  const { cartItems, cartTotal, cartCount, removeFromCart, updateQuantity, hydrated } = useCart();
+
+  if (!hydrated) {
+    return (
+      <div className="min-h-svh flex flex-col bg-background">
+        <Navigation />
+        <main className="flex-1 flex items-center justify-center">
+          <LoaderCircle className="animate-spin w-8 h-8 text-primary" />
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-svh flex flex-col bg-background">
@@ -41,16 +67,7 @@ export default function CartPage() {
                 >
                   {/* Image */}
                   <div className="relative w-16 h-16 tablet:w-20 tablet:h-20 shrink-0 rounded-lg overflow-hidden bg-[#2a2a2a]">
-                    <Image
-                      src={item.image}
-                      alt={item.productName}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 768px) 64px, 80px"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = "/assets/placeholder.png";
-                      }}
-                    />
+                    <CartImage src={item.image} alt={item.productName} />
                   </div>
 
                   {/* Info */}
@@ -82,8 +99,9 @@ export default function CartPage() {
                         {item.quantity}
                       </span>
                       <button
-                        className="rounded-full w-8 h-8 flex items-center justify-center border border-white/20 text-primary active:bg-white/10"
+                        className="rounded-full w-8 h-8 flex items-center justify-center border border-white/20 text-primary disabled:opacity-40 active:bg-white/10"
                         onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
+                        disabled={item.quantity >= 100}
                         aria-label="Tambah"
                       >
                         <Plus className="w-3 h-3" />

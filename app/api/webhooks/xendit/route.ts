@@ -20,8 +20,21 @@ export async function POST(request: NextRequest) {
     }
 
     if (status === "PAID") {
-      const paidAt = new Date().toISOString();
+      // Use Xendit's paid_at timestamp if available, otherwise fallback to now
+      const paidAt = body.paid_at ?? new Date().toISOString();
       const paymentMethod = body.payment_method ?? body.payment_channel ?? null;
+
+      // Idempotency: only update if not already paid
+      const { data: existingOrder } = await supabase
+        .from("ecom_orders")
+        .select("id, payment_status")
+        .eq("xendit_invoice_id", invoiceId)
+        .single();
+
+      if (existingOrder?.payment_status === "paid") {
+        // Already processed — return success without re-updating
+        return NextResponse.json({ received: true });
+      }
 
       const { data: updatedOrder, error } = await supabase
         .from("ecom_orders")
@@ -52,20 +65,51 @@ export async function POST(request: NextRequest) {
           paidAt,
         });
       }
-
-      // Optionally: deduct stock — can be done here or async
     } else if (status === "EXPIRED") {
-      const { error } = await supabase
+      // Restore stock for expired orders
+      const { data: expiredOrder } = await supabase
         .from("ecom_orders")
-        .update({
-          payment_status: "expired",
-          status: "cancelled",
-        })
-        .eq("xendit_invoice_id", invoiceId);
+        .select("id, payment_status")
+        .eq("xendit_invoice_id", invoiceId)
+        .single();
 
-      if (error) {
-        console.error("Webhook: failed to update order for EXPIRED:", error);
+      if (expiredOrder && expiredOrder.payment_status !== "expired") {
+        // Restore stock from order items
+        const { data: orderItems } = await supabase
+          .from("ecom_order_items")
+          .select("variant_id, quantity")
+          .eq("order_id", expiredOrder.id);
+
+        if (orderItems) {
+          for (const item of orderItems) {
+            const { data: current } = await supabase
+              .from("product_variants")
+              .select("stock_quantity")
+              .eq("id", item.variant_id)
+              .single();
+            if (current) {
+              await supabase
+                .from("product_variants")
+                .update({ stock_quantity: (current.stock_quantity as number) + (item.quantity as number) })
+                .eq("id", item.variant_id);
+            }
+          }
+        }
+
+        const { error } = await supabase
+          .from("ecom_orders")
+          .update({
+            payment_status: "expired",
+            status: "cancelled",
+          })
+          .eq("xendit_invoice_id", invoiceId);
+
+        if (error) {
+          console.error("Webhook: failed to update order for EXPIRED:", error);
+        }
       }
+    } else {
+      console.log(`Webhook: unhandled Xendit status "${status}" for invoice ${invoiceId}`);
     }
 
     return NextResponse.json({ received: true });

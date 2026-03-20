@@ -1,43 +1,7 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
+import type { SupabaseProduct } from "@/types/product";
+export type { SupabaseProduct, SupabaseProductOption, SupabaseProductVariant, SupabaseOptionValue } from "@/types/product";
 export { findMatchingVariant, getMinPrice, getProductImageUrl } from "./productUtils";
-
-export type SupabaseOptionValue = {
-  id: string;
-  value: string;
-  display_order: number;
-};
-
-export type SupabaseProductOption = {
-  id: string;
-  name: string;
-  display_order: number;
-  product_option_values: SupabaseOptionValue[];
-};
-
-export type SupabaseProductVariant = {
-  id: string;
-  sku: string | null;
-  price: number;
-  compare_at_price: number | null;
-  stock_quantity: number;
-  ship_weight_grams: number;
-  is_active: boolean;
-  product_variant_option_values: { option_value_id: string }[];
-};
-
-export type SupabaseProduct = {
-  id: string;
-  name: string;
-  slug: string;
-  description: string | null;
-  short_description: string | null;
-  category_ids: string[];
-  images: { url: string; alt?: string; sort_order?: number }[];
-  image_url: string | null;
-  is_active: boolean;
-  product_options: SupabaseProductOption[];
-  product_variants: SupabaseProductVariant[];
-};
 
 const PRODUCT_SELECT = `
   id,
@@ -94,4 +58,3 @@ export async function getProductBySlug(slug: string): Promise<SupabaseProduct | 
 
   return data as unknown as SupabaseProduct;
 }
-

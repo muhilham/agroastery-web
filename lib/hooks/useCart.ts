@@ -3,6 +3,7 @@
 import { useStore } from "@nanostores/react";
 import {
   $cartItems,
+  $cartHydrated,
   addToCart as storeAddToCart,
   removeFromCart as storeRemoveFromCart,
   updateQuantity as storeUpdateQuantity,
@@ -14,12 +15,14 @@ import {
 
 export function useCart() {
   const cartItems = useStore($cartItems);
+  const hydrated = useStore($cartHydrated);
 
   return {
     cartItems,
     cartCount: getCartCount(cartItems),
     cartTotal: getCartTotal(cartItems),
     totalWeight: getTotalWeight(cartItems),
+    hydrated,
     addToCart: storeAddToCart,
     removeFromCart: storeRemoveFromCart,
     updateQuantity: storeUpdateQuantity,

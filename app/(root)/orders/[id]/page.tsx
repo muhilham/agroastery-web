@@ -1,4 +1,4 @@
-import { createSupabaseServerClient, createSupabaseAdminClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { notFound, redirect } from "next/navigation";
 import Navigation from "@/components/navigation";
 import { Footer } from "@/components/ui/footer";
@@ -39,22 +39,19 @@ export default async function OrderDetailPage({ params }: PageProps) {
     redirect("/login?next=/orders");
   }
 
-  const admin = createSupabaseAdminClient();
-
-  // Fetch order
-  const { data: order } = await admin
+  // Fetch order (RLS ensures user can only see their own orders)
+  const { data: order } = await supabase
     .from("ecom_orders")
     .select("*")
     .eq("id", id)
-    .eq("user_id", user.id)
     .single();
 
   if (!order) {
     notFound();
   }
 
-  // Fetch order items
-  const { data: items } = await admin
+  // Fetch order items (RLS ensures user can only see items of their own orders)
+  const { data: items } = await supabase
     .from("ecom_order_items")
     .select("*")
     .eq("order_id", id);

@@ -1,4 +1,4 @@
-import { createSupabaseServerClient, createSupabaseAdminClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Navigation from "@/components/navigation";
 import { Footer } from "@/components/ui/footer";
@@ -34,8 +34,7 @@ export default async function OrdersPage() {
     redirect("/login?next=/orders");
   }
 
-  const admin = createSupabaseAdminClient();
-  const { data: orders } = await admin
+  const { data: orders } = await supabase
     .from("ecom_orders")
     .select("id, order_number, status, total, created_at, subtotal, shipping_cost")
     .eq("user_id", user.id)

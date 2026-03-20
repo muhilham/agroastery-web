@@ -206,12 +206,9 @@ const SupabaseProductDetail = ({ product }: Props) => {
             <div className="text-base font-bold text-primary mb-2">
               Deskripsi :
             </div>
-            <div
-              className="text-secondary text-base tracking-wide"
-              dangerouslySetInnerHTML={{
-                __html: product.description ?? "",
-              }}
-            />
+            <div className="text-secondary text-base tracking-wide whitespace-pre-line">
+              {product.description ?? ""}
+            </div>
           </div>
         </section>
 
@@ -234,8 +231,9 @@ const SupabaseProductDetail = ({ product }: Props) => {
               {qty}
             </div>
             <button
-              className="rounded-full p-1 flex flex-col items-center border border-primary w-8 h-8 text-secondary font-extrabold"
+              className="rounded-full p-1 flex flex-col items-center border border-primary w-8 h-8 text-secondary font-extrabold disabled:opacity-40"
               onClick={() => setQty((q) => q + 1)}
+              disabled={matchedVariant ? qty >= matchedVariant.stock_quantity : false}
               aria-label="Tambah jumlah"
             >
               <Plus />
@@ -255,7 +253,7 @@ const SupabaseProductDetail = ({ product }: Props) => {
               variant="outline"
               size="icon"
               className="w-full h-10 px-4"
-              onClick={() => router.push(TOKOPEDIA)}
+              onClick={() => window.open(TOKOPEDIA, "_blank", "noopener,noreferrer")}
             >
               <Image
                 src="/assets/tokopedia.svg"
@@ -269,7 +267,7 @@ const SupabaseProductDetail = ({ product }: Props) => {
               variant="outline"
               size="icon"
               className="w-full h-10 px-4"
-              onClick={() => router.push(SHOPEE)}
+              onClick={() => window.open(SHOPEE, "_blank", "noopener,noreferrer")}
             >
               <Image
                 src="/assets/shoppe.svg"
@@ -308,7 +306,7 @@ const SupabaseProductDetail = ({ product }: Props) => {
           <Button
             size="icon"
             className="w-11 h-11 shrink-0"
-            onClick={() => router.push(TOKOPEDIA)}
+            onClick={() => window.open(TOKOPEDIA, "_blank", "noopener,noreferrer")}
             aria-label="Beli di Tokopedia"
           >
             <Image
@@ -322,7 +320,7 @@ const SupabaseProductDetail = ({ product }: Props) => {
           <Button
             size="icon"
             className="w-11 h-11 shrink-0"
-            onClick={() => router.push(SHOPEE)}
+            onClick={() => window.open(SHOPEE, "_blank", "noopener,noreferrer")}
             aria-label="Beli di Shopee"
           >
             <Image

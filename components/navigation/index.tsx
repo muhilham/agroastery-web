@@ -15,7 +15,6 @@ import {
   setSearchQuery,
   clearSearch,
 } from "@/lib/stores/search";
-import { selectProductBySlug } from "@/lib/stores/product";
 import { numberToIdr } from "@/lib/numberToIdr";
 import { SHOPEE, TOKOPEDIA } from "@/constant/resource-and-link";
 import { ShoppingCart, User, LogOut } from "lucide-react";
@@ -49,7 +48,6 @@ export default function Navigation() {
   }, [isMenuOpen]);
 
   const goToProduct = (slug: string) => {
-    selectProductBySlug(slug);
     setIsSearchOpen(false);
     clearSearch();
     router.push(`/product/${slug}`);
@@ -114,25 +112,23 @@ export default function Navigation() {
                 >
                   <div className="thin-border-rounded aspect-video p-2 border-primary rounded-xl shrink-0">
                     <Image
-                      src={
-                        p.images?.[0]?.image ?? "/assets/coffe/blend-gayo.png"
-                      }
+                      src={p.imageUrl}
                       width={64}
                       height={64}
                       className="size-16"
-                      alt={p.title}
+                      alt={p.name}
                       loading="lazy"
                     />
                   </div>
                   <div className="flex flex-col gap-2">
                     <h1 className="text-base text-primary uppercase">
-                      {p.title}
+                      {p.name}
                     </h1>
                     <p className="text-sm text-secondary line-clamp-2">
                       {p.shortDescription}
                     </p>
                     <div className="text-primary text-sm">
-                      {numberToIdr({ nominal: p.price })}
+                      {numberToIdr({ nominal: p.minPrice })}
                     </div>
                   </div>
                 </button>

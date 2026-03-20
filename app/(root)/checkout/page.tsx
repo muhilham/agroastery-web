@@ -1,5 +1,5 @@
 "use client";
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import Navigation from "@/components/navigation";
 import { Footer } from "@/components/ui/footer";
 import { z } from "zod";
@@ -37,6 +37,20 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Script from "next/script";
 
+function CheckoutImage({ src, alt }: { src: string; alt: string }) {
+  const [imgSrc, setImgSrc] = useState(src);
+  return (
+    <Image
+      src={imgSrc}
+      alt={alt}
+      fill
+      className="object-cover"
+      sizes="48px"
+      onError={() => setImgSrc("/assets/placeholder.png")}
+    />
+  );
+}
+
 declare global {
   interface Window {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -58,7 +72,7 @@ type TForm = z.infer<typeof formSchema>;
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { cartItems, cartTotal, cartCount, clearCart, totalWeight } = useCart();
+  const { cartItems, cartTotal, cartCount, clearCart, totalWeight, hydrated } = useCart();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [showMap, setShowMap] = useState(false);
@@ -96,7 +110,7 @@ export default function CheckoutPage() {
 
   const shippingWeight = useMemo(() => Math.max(totalWeight, 100), [totalWeight]);
 
-  const handleCalculateShippingByPostal = async (postalCode: string) => {
+  const handleCalculateShippingByPostal = useCallback(async (postalCode: string) => {
     if (cartItems.length === 0) return;
     await calculateShipping({
       originPostalCode: process.env.NEXT_PUBLIC_ORIGIN_POSTAL_CODE || "12440",
@@ -111,9 +125,9 @@ export default function CheckoutPage() {
       width: 20,
       height: 20,
     });
-  };
+  }, [cartItems, cartTotal, cartCount, shippingWeight, calculateShipping]);
 
-  const handleCalculateShippingByGeo = async (lat: number, lng: number) => {
+  const handleCalculateShippingByGeo = useCallback(async (lat: number, lng: number) => {
     if (cartItems.length === 0) return;
     await calculateShipping({
       originPostalCode: process.env.NEXT_PUBLIC_ORIGIN_POSTAL_CODE || "12440",
@@ -129,7 +143,7 @@ export default function CheckoutPage() {
       width: 20,
       height: 20,
     });
-  };
+  }, [cartItems, cartTotal, cartCount, shippingWeight, calculateShipping]);
 
   useEffect(() => {
     const latValid = typeof watchedLat === "number" && Number.isFinite(watchedLat);
@@ -159,6 +173,10 @@ export default function CheckoutPage() {
 
   const onSubmit = async (values: TForm) => {
     if (cartItems.length === 0) return;
+    if (!selectedShipping) {
+      setSubmitError("Pilih opsi pengiriman terlebih dahulu");
+      return;
+    }
     setIsSubmitting(true);
     setSubmitError(null);
 
@@ -224,10 +242,9 @@ export default function CheckoutPage() {
           },
         });
       } else {
-        // Fallback: redirect to invoice URL
+        // Fallback: redirect to invoice URL directly (user must complete payment there)
         clearCart();
-        window.open(invoiceUrl, "_blank");
-        router.push(`/checkout/success?order=${orderId}`);
+        window.location.href = invoiceUrl;
       }
     } catch (err) {
       console.error("Checkout error:", err);
@@ -235,6 +252,18 @@ export default function CheckoutPage() {
       setIsSubmitting(false);
     }
   };
+
+  // Loading state during cart hydration
+  if (!hydrated) {
+    return (
+      <div className="min-h-svh flex flex-col bg-background">
+        <Navigation />
+        <main className="flex-1 flex items-center justify-center">
+          <LoaderCircle className="animate-spin w-8 h-8 text-primary" />
+        </main>
+      </div>
+    );
+  }
 
   // Empty cart state
   if (cartCount === 0) {
@@ -273,16 +302,7 @@ export default function CheckoutPage() {
             {cartItems.map((item) => (
               <div key={item.variantId} className="flex gap-3 items-center">
                 <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-[#2a2a2a] shrink-0">
-                  <Image
-                    src={item.image}
-                    alt={item.productName}
-                    fill
-                    className="object-cover"
-                    sizes="48px"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = "/assets/placeholder.png";
-                    }}
-                  />
+                  <CheckoutImage src={item.image} alt={item.productName} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-primary text-sm font-medium line-clamp-1">{item.productName}</p>

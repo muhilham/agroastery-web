@@ -12,6 +12,7 @@ export type CartItem = {
 };
 
 export const $cartItems = atom<CartItem[]>([]);
+export const $cartHydrated = atom<boolean>(false);
 
 // Load from localStorage on mount and subscribe to save changes
 onMount($cartItems, () => {
@@ -26,7 +27,15 @@ onMount($cartItems, () => {
     // ignore parse errors
   }
 
+  $cartHydrated.set(true);
+
+  // Skip the initial subscribe callback (which fires immediately with current value)
+  let initialized = false;
   const unsub = $cartItems.subscribe((items) => {
+    if (!initialized) {
+      initialized = true;
+      return;
+    }
     try {
       localStorage.setItem("agroastery_cart", JSON.stringify(items));
     } catch {
@@ -63,9 +72,10 @@ export function updateQuantity(variantId: string, qty: number) {
     removeFromCart(variantId);
     return;
   }
+  const maxQty = Math.min(qty, 100);
   $cartItems.set(
     $cartItems.get().map((i) =>
-      i.variantId === variantId ? { ...i, quantity: qty } : i
+      i.variantId === variantId ? { ...i, quantity: maxQty } : i
     )
   );
 }

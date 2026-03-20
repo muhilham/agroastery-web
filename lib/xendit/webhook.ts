@@ -1,8 +1,10 @@
 import { NextRequest } from "next/server";
+import { timingSafeEqual } from "crypto";
 
 /**
  * Verify Xendit webhook token from request header.
  * Xendit sends x-callback-token header with a static token.
+ * Uses timing-safe comparison to prevent timing attacks.
  */
 export function verifyXenditWebhook(request: NextRequest): boolean {
   const token = request.headers.get("x-callback-token");
@@ -13,5 +15,13 @@ export function verifyXenditWebhook(request: NextRequest): boolean {
     return false;
   }
 
-  return token === expectedToken;
+  if (!token) return false;
+
+  try {
+    const a = Buffer.from(token);
+    const b = Buffer.from(expectedToken);
+    return a.length === b.length && timingSafeEqual(a, b);
+  } catch {
+    return false;
+  }
 }
