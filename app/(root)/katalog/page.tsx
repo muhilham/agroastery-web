@@ -3,8 +3,13 @@ import Navigation from "@/components/navigation";
 import ProductGrid from "@/components/product-grid";
 import { Aside } from "@/components/ui/aside";
 import { Footer } from "@/components/ui/footer";
+import { getProducts } from "@/lib/supabase/queries/products";
 
-export default function Page() {
+export const dynamic = "force-dynamic";
+
+export default async function Page() {
+  const products = await getProducts();
+
   return (
     <div className="min-h-svh flex flex-col bg-background">
       <Navigation />
@@ -12,7 +17,7 @@ export default function Page() {
         <Categories />
         <div className="flex justify-between w-full">
           <Aside />
-          <ProductGrid />
+          <ProductGrid supabaseProducts={products} />
         </div>
       </main>
       <Footer />

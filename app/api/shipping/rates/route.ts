@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
 
 // We proxy Biteship as-is and do not transform the response shape.

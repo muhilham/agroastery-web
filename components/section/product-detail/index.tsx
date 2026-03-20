@@ -12,7 +12,6 @@ import { $productDetailStore, selectProductBySlug } from "@/lib/stores/product";
 import { numberToIdr } from "@/lib/numberToIdr";
 import Navigation from "@/components/navigation";
 import { FloatingCheckoutButton } from "@/components/mobile-checkout-form";
-import PurchaseDialog from "@/components/purchase-dialog";
 import { useRouter } from "next/navigation";
 import { SHOPEE, TOKOPEDIA } from "@/constant/resource-and-link";
 const ProductDetailPage = ({ slug }: { slug: string }) => {
@@ -217,13 +216,7 @@ const ProductDetailPage = ({ slug }: { slug: string }) => {
             </Button>
           </div>
 
-          <PurchaseDialog
-            slug={product.slug}
-            size={selectedSize || product.size?.[0] || ""}
-            grind={selectedGrind || product.grindSize?.[0] || ""}
-            qty={qty}
-            onQtyChange={setQty}
-          />
+          {/* Purchase dialog removed — use cart flow */}
         </div>
 
         {/* Mobile floating checkout (passes dynamic pricing + options) */}

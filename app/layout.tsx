@@ -1,13 +1,6 @@
 import type { Metadata } from "next";
-import { Montserrat } from "next/font/google";
 import "./globals.css";
 import "../style/embla.css";
-
-const montserrat = Montserrat({
-  variable: "--font-montserrat",
-  subsets: ["latin"],
-  weight: ["100", "200", "300", "400", "500", "600", "700", "800"],
-});
 
 export const metadata: Metadata = {
   title: "Agroastery",
@@ -43,7 +36,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${montserrat.variable} bg-background `}>
+      <body className="bg-background" style={{ fontFamily: "Montserrat, system-ui, sans-serif" }}>
         {children}
       </body>
     </html>

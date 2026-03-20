@@ -6,6 +6,7 @@ import { menuItems } from "@/constant/menu-list";
 import { IoMdArrowBack } from "react-icons/io";
 import { usePathname, useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
+import Link from "next/link";
 
 import { useStore } from "@nanostores/react";
 import {
@@ -17,6 +18,9 @@ import {
 import { selectProductBySlug } from "@/lib/stores/product";
 import { numberToIdr } from "@/lib/numberToIdr";
 import { SHOPEE, TOKOPEDIA } from "@/constant/resource-and-link";
+import { ShoppingCart, User, LogOut } from "lucide-react";
+import { useCart } from "@/lib/hooks/useCart";
+import { useAuth } from "@/lib/hooks/useAuth";
 
 export default function Navigation() {
   const pathname = usePathname();
@@ -32,6 +36,8 @@ export default function Navigation() {
 
   const searchQuery = useStore($searchQuery);
   const results = useStore($searchResults);
+  const { cartCount } = useCart();
+  const { user, signIn, signOut } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -166,12 +172,12 @@ export default function Navigation() {
               width={24}
               height={24}
               className="h-6 w-auto"
-              style={{ height: 'auto' }} // Maintain aspect ratio
+              style={{ height: "auto" }}
             />
           </button>
         )}
 
-        <ul className="hidden desktop:flex text-primary font-normal py-16 space-x-4 text-base">
+        <ul className="hidden desktop:flex text-primary font-normal py-16 space-x-4 text-base items-center">
           <li>
             <a href={TOKOPEDIA} target="_blank" className="hover:underline">
               Tokopedia
@@ -187,12 +193,60 @@ export default function Navigation() {
               Buy now
             </a>
           </li>
+          {/* Cart icon — desktop */}
+          <li>
+            <Link href="/cart" className="relative inline-flex items-center">
+              <ShoppingCart className="w-5 h-5 text-primary" />
+              {cartCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-[#f5ebc9] text-black text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
+                  {cartCount > 9 ? "9+" : cartCount}
+                </span>
+              )}
+            </Link>
+          </li>
+          {/* Auth — desktop */}
+          <li>
+            {user ? (
+              <div className="inline-flex items-center gap-2">
+                <Link href="/orders" className="hover:underline flex items-center gap-1">
+                  <User className="w-4 h-4" />
+                  <span className="text-sm">{user.user_metadata?.full_name?.split(" ")[0] ?? "Akun"}</span>
+                </Link>
+                <button
+                  onClick={signOut}
+                  className="text-white/40 hover:text-white/70"
+                  aria-label="Sign out"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={signIn}
+                className="text-primary hover:underline text-sm"
+              >
+                Masuk
+              </button>
+            )}
+          </li>
         </ul>
-        <div className="inline-flex items-center gap-2 desktop:hidden">
+
+        {/* Mobile right side icons */}
+        <div className="inline-flex items-center gap-3 desktop:hidden">
+          {/* Cart icon — mobile */}
+          <Link href="/cart" className="relative inline-flex items-center">
+            <ShoppingCart className="w-5 h-5 text-primary" />
+            {cartCount > 0 && (
+              <span className="absolute -top-2 -right-2 bg-[#f5ebc9] text-black text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
+                {cartCount > 9 ? "9+" : cartCount}
+              </span>
+            )}
+          </Link>
+
           <button
             className="text-primary z-50 relative w-6 flex items-center justify-center"
             onClick={() => setIsSearchOpen(!isSearchOpen)}
-            aria-label="Toggle menu"
+            aria-label="Toggle search"
           >
             <div className="relative w-6 h-6">
               <svg
@@ -232,7 +286,6 @@ export default function Navigation() {
                   d="M6 18 18 6M6 6l12 12"
                 />
               </svg>
-              {/* Menu icon */}
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
@@ -253,6 +306,8 @@ export default function Navigation() {
           </button>
         </div>
       </nav>
+
+      {/* Mobile menu overlay */}
       <div
         className={`fixed inset-0 z-30 transition-all duration-300 md:hidden ${
           isMenuOpen ? "opacity-100" : "opacity-0 pointer-events-none"
@@ -263,7 +318,7 @@ export default function Navigation() {
             {menuItems.map((item, index) => (
               <li
                 key={index}
-                className=" h-14 flex flex-col justify-center thin-border"
+                className="h-14 flex flex-col justify-center thin-border"
               >
                 <a
                   href={item.link}
@@ -274,6 +329,46 @@ export default function Navigation() {
                 </a>
               </li>
             ))}
+            {/* Cart link in mobile menu */}
+            <li className="h-14 flex flex-col justify-center thin-border">
+              <Link
+                href="/cart"
+                className="text-primary font-normal text-sm inline-flex items-center gap-2"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <ShoppingCart className="w-4 h-4" />
+                Keranjang {cartCount > 0 && `(${cartCount})`}
+              </Link>
+            </li>
+            {/* Auth in mobile menu */}
+            <li className="h-14 flex flex-col justify-center thin-border">
+              {user ? (
+                <div className="flex items-center justify-between">
+                  <Link
+                    href="/orders"
+                    className="text-primary font-normal text-sm inline-flex items-center gap-2"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <User className="w-4 h-4" />
+                    {user.user_metadata?.full_name?.split(" ")[0] ?? "Akun saya"}
+                  </Link>
+                  <button
+                    onClick={() => { signOut(); setIsMenuOpen(false); }}
+                    className="text-white/40 text-sm"
+                  >
+                    Keluar
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => { signIn(); setIsMenuOpen(false); }}
+                  className="text-primary font-normal text-sm text-left inline-flex items-center gap-2"
+                >
+                  <User className="w-4 h-4" />
+                  Masuk
+                </button>
+              )}
+            </li>
           </ul>
         </div>
       </div>

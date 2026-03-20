@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   images: {
     remotePatterns: [
       {
@@ -10,10 +11,12 @@ const nextConfig: NextConfig = {
         pathname: "/produk/**",
         search: "",
       },
+      {
+        protocol: "https",
+        hostname: "**",
+      },
     ],
   },
-  // Cloudflare Pages compatibility - Note: output: 'export' disables API routes
-  // Remove output: 'export' to keep API routes working
   trailingSlash: true,
   skipTrailingSlashRedirect: true,
 };
