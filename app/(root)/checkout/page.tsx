@@ -22,11 +22,20 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useDebounce } from "@/lib/hooks/useDebounce";
 import { useShippingCalculator } from "@/lib/hooks/useShippingCalculator";
 import { LocationDisplay } from "@/components/location-display";
-import MapPicker from "@/components/map/MapPicker";
+import dynamic from "next/dynamic";
+const MapPicker = dynamic(() => import("@/components/map/MapPicker"), {
+  loading: () => (
+    <div className="h-[240px] rounded-lg bg-gray-900 border border-white/10 flex items-center justify-center">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+    </div>
+  ),
+  ssr: false,
+});
 import { useCart } from "@/lib/hooks/useCart";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import Script from "next/script";
 
 declare global {
   interface Window {
@@ -52,6 +61,7 @@ export default function CheckoutPage() {
   const { cartItems, cartTotal, cartCount, clearCart, totalWeight } = useCart();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [showMap, setShowMap] = useState(false);
 
   const form = useForm<TForm>({
     resolver: zodResolver(formSchema),
@@ -248,9 +258,8 @@ export default function CheckoutPage() {
 
   return (
     <Fragment>
-      {/* Load Xendit.js */}
-      {/* eslint-disable-next-line @next/next/no-sync-scripts */}
-      <script src="https://js.xendit.co/v1/xendit.min.js" />
+      {/* Load Xendit.js non-blocking */}
+      <Script src="https://js.xendit.co/v1/xendit.min.js" strategy="afterInteractive" />
       <Navigation />
       <main className="bg-background pt-20 tablet:px-10 desktop:px-20 px-4 min-h-screen" style={{ paddingBottom: "max(12rem, calc(env(safe-area-inset-bottom) + 12rem))" }}>
         <h1 className="text-xl font-semibold text-primary mb-6 tracking-widest uppercase mt-4">
@@ -269,6 +278,7 @@ export default function CheckoutPage() {
                     alt={item.productName}
                     fill
                     className="object-cover"
+                    sizes="48px"
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = "/assets/placeholder.png";
                     }}
@@ -392,18 +402,28 @@ export default function CheckoutPage() {
               <label className="text-sm font-medium text-white">
                 Pilih Lokasi (Opsional)
               </label>
-              <MapPicker
-                value={{
-                  lat: form.getValues("lat") || null,
-                  lng: form.getValues("lng") || null,
-                }}
-                onChange={(coords) => {
-                  form.setValue("lat", coords.lat);
-                  form.setValue("lng", coords.lng);
-                }}
-                height={240}
-                className="w-full"
-              />
+              {showMap ? (
+                <MapPicker
+                  value={{
+                    lat: form.getValues("lat") || null,
+                    lng: form.getValues("lng") || null,
+                  }}
+                  onChange={(coords) => {
+                    form.setValue("lat", coords.lat);
+                    form.setValue("lng", coords.lng);
+                  }}
+                  height={240}
+                  className="w-full"
+                />
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setShowMap(true)}
+                  className="w-full h-[60px] rounded-lg border border-white/10 bg-white/5 text-secondary text-sm hover:bg-white/10 active:bg-white/15 transition-colors"
+                >
+                  Buka Peta untuk Pilih Lokasi
+                </button>
+              )}
             </div>
 
             {/* Shipping options */}

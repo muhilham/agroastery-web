@@ -46,6 +46,7 @@ export default function CartPage() {
                       alt={item.productName}
                       fill
                       className="object-cover"
+                      sizes="(max-width: 768px) 64px, 80px"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = "/assets/placeholder.png";
                       }}

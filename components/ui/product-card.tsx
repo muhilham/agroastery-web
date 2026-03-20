@@ -51,6 +51,7 @@ export function ProductCard({
             alt={productTitle}
             fill
             className="object-cover"
+            sizes="(max-width: 768px) 50vw, (max-width: 1280px) 33vw, 25vw"
           />
         </div>
         <CardHeader>

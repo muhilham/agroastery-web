@@ -121,6 +121,7 @@ export default function Navigation() {
                       height={64}
                       className="size-16"
                       alt={p.title}
+                      loading="lazy"
                     />
                   </div>
                   <div className="flex flex-col gap-2">
