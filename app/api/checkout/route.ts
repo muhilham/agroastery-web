@@ -66,12 +66,42 @@ export async function POST(request: NextRequest) {
       // Guest checkout — no auth
     }
 
-    // Calculate totals
-    const subtotal = data.items.reduce(
-      (sum, item) => sum + item.unitPrice * item.quantity,
-      0
-    );
+    // Validate prices server-side — never trust client-sent prices
+    const variantIds = data.items.map((i) => i.variantId);
+    const { data: dbVariants, error: variantsError } = await admin
+      .from("product_variants")
+      .select("id, price, ship_weight_grams, stock_quantity, is_active")
+      .in("id", variantIds);
+
+    if (variantsError || !dbVariants) {
+      return NextResponse.json({ error: "Failed to validate products", code: "DB_ERROR" }, { status: 500 });
+    }
+
+    const variantMap = new Map(dbVariants.map((v) => [v.id, v]));
+
+    // Ensure every requested variant exists, is active, and has stock
+    for (const item of data.items) {
+      const dbVariant = variantMap.get(item.variantId);
+      if (!dbVariant || !dbVariant.is_active) {
+        return NextResponse.json({ error: `Produk tidak tersedia`, code: "VARIANT_UNAVAILABLE" }, { status: 400 });
+      }
+      if (dbVariant.stock_quantity < item.quantity) {
+        return NextResponse.json({ error: `Stok tidak cukup`, code: "INSUFFICIENT_STOCK" }, { status: 400 });
+      }
+    }
+
+    // Calculate totals using server-side prices
+    const subtotal = data.items.reduce((sum, item) => {
+      const dbVariant = variantMap.get(item.variantId)!;
+      return sum + dbVariant.price * item.quantity;
+    }, 0);
     const total = subtotal + data.shippingCost;
+
+    // Build items with server-side prices (override client-sent unitPrice/shipWeightGrams)
+    const verifiedItems = data.items.map((item) => {
+      const dbVariant = variantMap.get(item.variantId)!;
+      return { ...item, unitPrice: dbVariant.price, shipWeightGrams: dbVariant.ship_weight_grams };
+    });
 
     // Generate order number
     const orderNumber = generateOrderNumber();
@@ -114,8 +144,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create ecom_order_items
-    const orderItems = data.items.map((item) => ({
+    // Create ecom_order_items using server-verified prices
+    const orderItems = verifiedItems.map((item) => ({
       order_id: order.id,
       variant_id: item.variantId,
       product_name: item.productName,
@@ -132,7 +162,9 @@ export async function POST(request: NextRequest) {
 
     if (itemsError) {
       console.error("Order items error:", itemsError);
-      // Order was created but items failed — still try Xendit
+      // Roll back: delete the order so we don't have an order with no items
+      await admin.from("ecom_orders").delete().eq("id", order.id);
+      return NextResponse.json({ error: "Failed to create order items", code: "DB_ERROR" }, { status: 500 });
     }
 
     // Create Xendit invoice
@@ -146,7 +178,7 @@ export async function POST(request: NextRequest) {
       customerPhone: data.customerPhone,
       successRedirectUrl: `${appUrl}/checkout/success?order=${order.id}`,
       failureRedirectUrl: `${appUrl}/checkout?error=payment_failed`,
-      items: data.items.map((item) => ({
+      items: verifiedItems.map((item) => ({
         name: `${item.productName} - ${item.variantDescription}`,
         quantity: item.quantity,
         price: item.unitPrice,

@@ -2,7 +2,7 @@
 import EmblaCarousel from "@/components/carousel";
 import { Footer } from "@/components/ui/footer";
 import { EmblaOptionsType } from "embla-carousel";
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Minus, Plus, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -45,6 +45,14 @@ const SupabaseProductDetail = ({ product }: Props) => {
 
   const [qty, setQty] = useState<number>(1);
   const [addedToCart, setAddedToCart] = useState(false);
+  const addedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Clear addedToCart timer on unmount
+  useEffect(() => {
+    return () => {
+      if (addedTimerRef.current) clearTimeout(addedTimerRef.current);
+    };
+  }, []);
 
   // Reset on product change
   useEffect(() => {
@@ -107,7 +115,8 @@ const SupabaseProductDetail = ({ product }: Props) => {
       image: imageUrl,
     });
     setAddedToCart(true);
-    setTimeout(() => setAddedToCart(false), 2000);
+    if (addedTimerRef.current) clearTimeout(addedTimerRef.current);
+    addedTimerRef.current = setTimeout(() => setAddedToCart(false), 2000);
   }
 
   function handleCheckout() {

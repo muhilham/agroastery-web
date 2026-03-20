@@ -92,10 +92,12 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized", code: "UNAUTHORIZED" }, { status: 401 });
     }
 
-    const { variantId } = await request.json();
-    if (!variantId) {
-      return NextResponse.json({ error: "variantId required", code: "VALIDATION_ERROR" }, { status: 400 });
+    const body = await request.json();
+    const parsed = z.object({ variantId: z.string().uuid() }).safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "variantId must be a valid UUID", code: "VALIDATION_ERROR" }, { status: 400 });
     }
+    const { variantId } = parsed.data;
 
     const admin = createSupabaseAdminClient();
     const { error } = await admin
