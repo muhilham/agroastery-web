@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
 import { createXenditInvoice } from "@/lib/xendit/client";
+import { sendOrderNotification } from "@/lib/telegram/notify";
 
 const CheckoutItemSchema = z.object({
   variantId: z.string().uuid(),
@@ -192,6 +193,29 @@ export async function POST(request: NextRequest) {
       .from("ecom_orders")
       .update({ xendit_invoice_id: xenditInvoice.id })
       .eq("id", order.id);
+
+    // Notify Telegram group (fire-and-forget — never blocks the response)
+    sendOrderNotification({
+      orderNumber,
+      customerName: data.customerName,
+      customerPhone: data.customerPhone,
+      customerEmail: data.customerEmail || null,
+      items: verifiedItems.map((item) => ({
+        productName: item.productName,
+        variantDescription: item.variantDescription,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+      })),
+      subtotal,
+      shippingCost: data.shippingCost,
+      total,
+      shippingAddress: {
+        address_line: data.shippingAddress.addressLine,
+        postal_code: data.shippingAddress.postalCode ?? null,
+      },
+      shippingCourier: data.shippingCourier ?? null,
+      shippingService: data.shippingService ?? null,
+    });
 
     return NextResponse.json({
       orderId: order.id,
