@@ -7,7 +7,6 @@ import { sendOrderNotification } from "@/lib/telegram/notify";
 const CheckoutItemSchema = z.object({
   variantId: z.string().uuid(),
   quantity: z.number().int().positive().max(100),
-  shipWeightGrams: z.number().int().positive(),
 });
 
 const ShippingAddressSchema = z.object({
@@ -85,13 +84,13 @@ export async function POST(request: NextRequest) {
       if (!dbVariant || !dbVariant.is_active) {
         return NextResponse.json({ error: `Produk tidak tersedia`, code: "VARIANT_UNAVAILABLE" }, { status: 400 });
       }
-      if (dbVariant.stock_quantity < item.quantity) {
+      if ((dbVariant.stock_quantity ?? 0) < item.quantity) {
         return NextResponse.json({ error: `Stok tidak cukup`, code: "INSUFFICIENT_STOCK" }, { status: 400 });
       }
     }
 
     // Fetch product names from DB to avoid trusting client-sent names
-    const productIds = [...new Set(dbVariants.map((v) => v.product_id))];
+    const productIds = [...new Set(dbVariants.map((v) => v.product_id).filter((id): id is string => id !== null))];
     const { data: dbProducts } = await admin
       .from("products")
       .select("id, name")
@@ -168,7 +167,7 @@ export async function POST(request: NextRequest) {
         // Function not found — use conditional UPDATE as fallback
         const { data: updateResult, error: updateError } = await admin
           .from("product_variants")
-          .update({ stock_quantity: variantMap.get(item.variantId)!.stock_quantity - item.quantity })
+          .update({ stock_quantity: (variantMap.get(item.variantId)!.stock_quantity ?? 0) - item.quantity })
           .eq("id", item.variantId)
           .gte("stock_quantity", item.quantity)
           .select("id")
@@ -363,25 +362,17 @@ export async function POST(request: NextRequest) {
   }
 }
 
-/** Restore stock for all items (best-effort, used during rollback) */
+/** Restore stock for all items atomically (best-effort, used during rollback) */
 async function restoreStock(
   admin: ReturnType<typeof createSupabaseAdminClient>,
   items: { variantId: string; quantity: number }[]
 ) {
   for (const item of items) {
     try {
-      // Use raw SQL via rpc if available, otherwise increment manually
-      const { data: current } = await admin
-        .from("product_variants")
-        .select("stock_quantity")
-        .eq("id", item.variantId)
-        .single();
-      if (current) {
-        await admin
-          .from("product_variants")
-          .update({ stock_quantity: (current.stock_quantity as number) + item.quantity })
-          .eq("id", item.variantId);
-      }
+      await admin.rpc("ecom_restore_stock", {
+        p_variant_id: item.variantId,
+        p_quantity: item.quantity,
+      });
     } catch (e) {
       console.error("Failed to restore stock for variant:", item.variantId, e);
     }

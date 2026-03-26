@@ -31,8 +31,18 @@ type XenditInvoice = {
 
 export async function createXenditInvoice(params: CreateInvoiceParams): Promise<XenditInvoice> {
   const apiKey = process.env.XENDIT_SECRET_KEY;
-  if (!apiKey) {
-    throw new Error("XENDIT_SECRET_KEY not configured");
+
+  if (!apiKey || process.env.XENDIT_MOCK === "true") {
+    console.warn("[Xendit] Running in MOCK mode — no real invoice created");
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+    return {
+      id: `mock_${params.externalId}`,
+      external_id: params.externalId,
+      invoice_url: `${appUrl}/checkout/success?order=${params.externalId}&mock=true`,
+      status: "PENDING",
+      amount: params.amount,
+      expiry_date: new Date(Date.now() + 86400_000).toISOString(),
+    };
   }
 
   const credentials = Buffer.from(`${apiKey}:`).toString("base64");

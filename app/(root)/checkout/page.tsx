@@ -187,11 +187,7 @@ export default function CheckoutPage() {
         body: JSON.stringify({
           items: cartItems.map((item) => ({
             variantId: item.variantId,
-            productName: item.productName,
-            variantDescription: item.variantDescription,
-            unitPrice: item.unitPrice,
             quantity: item.quantity,
-            shipWeightGrams: item.shipWeightGrams,
           })),
           customerName: values.fullName,
           customerEmail: values.email || undefined,

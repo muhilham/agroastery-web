@@ -37,7 +37,9 @@ export async function getProducts(): Promise<SupabaseProduct[]> {
     return [];
   }
 
-  return (data ?? []) as unknown as SupabaseProduct[];
+  // Filter out products without any active variants (can't be purchased)
+  const products = (data ?? []) as unknown as SupabaseProduct[];
+  return products.filter((p) => p.product_variants?.some((v) => v.is_active));
 }
 
 export async function getProductBySlug(slug: string): Promise<SupabaseProduct | null> {

@@ -66,46 +66,43 @@ export async function POST(request: NextRequest) {
         });
       }
     } else if (status === "EXPIRED") {
-      // Restore stock for expired orders
-      const { data: expiredOrder } = await supabase
+      // Idempotency: mark order as expired FIRST (acts as lock), then restore stock
+      const { data: updatedExpired, error: expiredError } = await supabase
         .from("ecom_orders")
-        .select("id, payment_status")
+        .update({
+          payment_status: "expired",
+          status: "cancelled",
+        })
         .eq("xendit_invoice_id", invoiceId)
+        .neq("payment_status", "expired")
+        .select("id")
         .single();
 
-      if (expiredOrder && expiredOrder.payment_status !== "expired") {
-        // Restore stock from order items
+      if (expiredError?.code === "PGRST116") {
+        // No rows matched — already expired or not found, skip
+        return NextResponse.json({ received: true });
+      }
+      if (expiredError) {
+        console.error("Webhook: failed to update order for EXPIRED:", expiredError);
+        return NextResponse.json({ error: "DB error" }, { status: 500 });
+      }
+
+      // Restore stock atomically via RPC
+      if (updatedExpired) {
         const { data: orderItems } = await supabase
           .from("ecom_order_items")
           .select("variant_id, quantity")
-          .eq("order_id", expiredOrder.id);
+          .eq("order_id", updatedExpired.id);
 
         if (orderItems) {
           for (const item of orderItems) {
-            const { data: current } = await supabase
-              .from("product_variants")
-              .select("stock_quantity")
-              .eq("id", item.variant_id)
-              .single();
-            if (current) {
-              await supabase
-                .from("product_variants")
-                .update({ stock_quantity: (current.stock_quantity as number) + (item.quantity as number) })
-                .eq("id", item.variant_id);
+            if (item.variant_id) {
+              await supabase.rpc("ecom_restore_stock", {
+                p_variant_id: item.variant_id,
+                p_quantity: item.quantity,
+              });
             }
           }
-        }
-
-        const { error } = await supabase
-          .from("ecom_orders")
-          .update({
-            payment_status: "expired",
-            status: "cancelled",
-          })
-          .eq("xendit_invoice_id", invoiceId);
-
-        if (error) {
-          console.error("Webhook: failed to update order for EXPIRED:", error);
         }
       }
     } else {
