@@ -2,6 +2,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import type { SupabaseProduct } from "@/types/product";
 import { CATEGORY } from "@/constant/category";
 import type { TCategory } from "@/types/categories";
+
 export type { SupabaseProduct, SupabaseProductOption, SupabaseProductVariant, SupabaseOptionValue } from "@/types/product";
 export { findMatchingVariant, getMinPrice, getProductImageUrl } from "./productUtils";
 

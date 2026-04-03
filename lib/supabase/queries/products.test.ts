@@ -60,4 +60,14 @@ describe('deriveCategoriesFromProducts', () => {
     const result = deriveCategoriesFromProducts(products, ALL_CATEGORIES);
     expect(result).toEqual([]);
   });
+
+  it('uses CATEGORY constant as default when allCategories is not provided', () => {
+    // CATEGORY contains real category IDs like '1', '2', etc. from data/categories.json
+    // A product with category_id '1' should return a category from the default list
+    const products = [makeProduct(['1'])];
+    const result = deriveCategoriesFromProducts(products);
+    expect(result).toHaveLength(1);
+    expect(result[0].category_id).toBe('1');
+    expect(result[0].category_name).toBeTruthy();
+  });
 });
