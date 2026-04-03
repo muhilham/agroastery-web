@@ -1,5 +1,7 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import type { SupabaseProduct } from "@/types/product";
+import { CATEGORY } from "@/constant/category";
+import type { TCategory } from "@/types/categories";
 export type { SupabaseProduct, SupabaseProductOption, SupabaseProductVariant, SupabaseOptionValue } from "@/types/product";
 export { findMatchingVariant, getMinPrice, getProductImageUrl } from "./productUtils";
 
@@ -59,4 +61,17 @@ export async function getProductBySlug(slug: string): Promise<SupabaseProduct | 
   }
 
   return data as unknown as SupabaseProduct;
+}
+
+export function deriveCategoriesFromProducts(
+  products: SupabaseProduct[],
+  allCategories: TCategory[] = CATEGORY
+): TCategory[] {
+  const seenIds = new Set<string>();
+  for (const p of products) {
+    for (const id of p.category_ids) {
+      seenIds.add(id);
+    }
+  }
+  return allCategories.filter((c) => seenIds.has(c.category_id));
 }
