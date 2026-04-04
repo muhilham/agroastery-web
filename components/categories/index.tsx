@@ -8,36 +8,27 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Check } from "lucide-react";
-import { $categories, $selectedCategoryId } from "@/lib/stores/category";
-import { useStore } from "@nanostores/react";
-import { useCallback, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import type { TCategory } from "@/types/categories";
 
-const Categories = () => {
-  const categories = useStore($categories);
-  const selectedCategoryId = useStore($selectedCategoryId);
+interface CategoriesProps {
+  categories: TCategory[];
+  activeCategoryId: string | null;
+}
+
+const Categories = ({ categories, activeCategoryId }: CategoriesProps) => {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
 
   const selectedCategory = categories.find(
-    (c) => c.category_id === selectedCategoryId,
+    (c) => c.category_id === activeCategoryId,
   );
 
-  const handleSelect = useCallback(
-    (categoryId: string | null) => {
-      if (categoryId === null) {
-        $selectedCategoryId.set(null);
-        setOpen(false);
-        return;
-      }
-
-      if (selectedCategoryId === categoryId) {
-        $selectedCategoryId.set(null);
-      } else {
-        $selectedCategoryId.set(categoryId);
-      }
-      setOpen(false);
-    },
-    [selectedCategoryId],
-  );
+  const handleSelect = (categoryId: string | null) => {
+    router.push(categoryId ? `/katalog?category=${categoryId}` : "/katalog");
+    setOpen(false);
+  };
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -57,22 +48,20 @@ const Categories = () => {
           <SheetTitle>Kategori</SheetTitle>
         </SheetHeader>
 
-        {/* All categories (clear) */}
         <button
           type="button"
           onClick={() => handleSelect(null)}
           className={`text-secondary inline-flex justify-between w-full border-b py-2 text-base mb-2 cursor-pointer ${
-            selectedCategoryId === null ? "font-semibold" : "font-normal"
+            activeCategoryId === null ? "font-semibold" : "font-normal"
           }`}
-          aria-pressed={selectedCategoryId === null}
+          aria-pressed={activeCategoryId === null}
         >
           <span>Semua Kategori</span>
-          {selectedCategoryId === null && <Check aria-hidden="true" />}
+          {activeCategoryId === null && <Check aria-hidden="true" />}
         </button>
 
-        {/* Actual categories */}
         {categories.map((category) => {
-          const active = selectedCategoryId === category.category_id;
+          const active = activeCategoryId === category.category_id;
           return (
             <button
               key={category.category_id}
