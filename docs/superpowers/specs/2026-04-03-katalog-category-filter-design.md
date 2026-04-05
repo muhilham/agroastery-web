@@ -52,13 +52,13 @@ No changes to `getProducts()` — all filtering is JS on the server.
 
 ### `lib/supabase/queries/products.ts`
 - Add `deriveCategoriesFromProducts(products: SupabaseProduct[]): TCategory[]`.
-- Collects all `category_ids` from all products, deduplicates, maps to `TCategory` via `CATEGORY_BY_ID`, preserves order from `data/categories.json`.
+- Collects all `category_ids` from all products, deduplicates, maps to `TCategory` via `CATEGORY_BY_ID`, and preserves the original display order defined in `data/categories.json` (i.e. sort by the index of each entry in the `CATEGORY` array, not by first-seen order in products).
 
 ### `components/ui/aside.tsx`
 - Remove `useStore($categories)` and `useStore($selectedCategoryId)`.
 - Accept props: `categories: TCategory[]`, `activeCategoryId: string | null`.
 - Each list item becomes a `<Link href="/katalog?category=X">` (or `href="/katalog"` for "Semua Produk").
-- Can be converted to a server component (no client interactivity needed).
+- Convert to a server component — no interactivity needed, `<Link>` handles navigation, active state is computed from props.
 
 ### `components/categories/index.tsx` (mobile sheet)
 - Remove nanostore reads.
