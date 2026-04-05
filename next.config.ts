@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "cdn.agroastery.com",
         port: "",
-        pathname: "/produk/**",
+        pathname: "/**",
         search: "",
       },
       {
