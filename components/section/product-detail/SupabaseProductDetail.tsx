@@ -206,9 +206,10 @@ const SupabaseProductDetail = ({ product }: Props) => {
             <div className="text-base font-bold text-primary mb-2">
               Deskripsi :
             </div>
-            <div className="text-secondary text-base tracking-wide whitespace-pre-line">
-              {product.description ?? ""}
-            </div>
+            <div
+              className="rich-text text-secondary text-base tracking-wide"
+              dangerouslySetInnerHTML={{ __html: product.description ?? "" }}
+            />
           </div>
         </section>
 
