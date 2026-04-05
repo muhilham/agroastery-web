@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "notion": {
+      "type": "http",
+      "url": "https://mcp.notion.com/mcp",
+      "headers": {
+        "Authorization": "Bearer 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"
+      }
+    },
+    "supabase": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp",
+      "headers": {
+        "Authorization": "Bearer sbp_c42cd37abdaeff54b9ec924a975adf96ee320ac1"
+      }
+    }
+  }
+}
