@@ -205,9 +205,12 @@ export default function Navigation() {
           <li>
             {user ? (
               <div className="inline-flex items-center gap-2">
-                <Link href="/orders" className="hover:underline flex items-center gap-1">
+                <Link href="/account" className="hover:underline flex items-center gap-1">
                   <User className="w-4 h-4" />
-                  <span className="text-sm">{user.user_metadata?.full_name?.split(" ")[0] ?? "Akun"}</span>
+                  <span className="text-sm">{user.user_metadata?.full_name?.split(" ")[0] ?? "Account"}</span>
+                </Link>
+                <Link href="/orders" className="text-white/60 hover:text-white text-sm">
+                  Orders
                 </Link>
                 <button
                   onClick={signOut}
@@ -341,14 +344,23 @@ export default function Navigation() {
             <li className="h-14 flex flex-col justify-center thin-border">
               {user ? (
                 <div className="flex items-center justify-between">
-                  <Link
-                    href="/orders"
-                    className="text-primary font-normal text-sm inline-flex items-center gap-2"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <User className="w-4 h-4" />
-                    {user.user_metadata?.full_name?.split(" ")[0] ?? "Akun saya"}
-                  </Link>
+                  <div className="flex items-center gap-3">
+                    <Link
+                      href="/account"
+                      className="text-primary font-normal text-sm inline-flex items-center gap-2"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <User className="w-4 h-4" />
+                      Account
+                    </Link>
+                    <Link
+                      href="/orders"
+                      className="text-primary/70 font-normal text-sm"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Orders
+                    </Link>
+                  </div>
                   <button
                     onClick={() => { signOut(); setIsMenuOpen(false); }}
                     className="text-white/40 text-sm"
