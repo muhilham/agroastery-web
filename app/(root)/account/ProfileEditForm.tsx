@@ -18,7 +18,7 @@ import { LoaderCircle } from "lucide-react";
 
 const profileSchema = z.object({
   full_name: z.string().min(2, "Minimal 2 karakter").max(100),
-  phone: z.string().min(6, "Nomor tidak valid").max(20),
+  phone: z.string().min(6, "Nomor tidak valid").max(20).optional().or(z.literal("")),
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
