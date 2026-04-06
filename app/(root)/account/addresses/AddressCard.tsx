@@ -14,15 +14,21 @@ export default function AddressCard({ address }: AddressCardProps) {
   const router = useRouter();
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSettingDefault, setIsSettingDefault] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const handleDelete = async () => {
     if (!confirm("Hapus alamat ini?")) return;
     setIsDeleting(true);
+    setActionError(null);
     try {
       const res = await fetch(`/api/account/addresses/${address.id}`, {
         method: "DELETE",
       });
-      if (res.ok) router.refresh();
+      if (res.ok) {
+        router.refresh();
+      } else {
+        setActionError("Gagal menghapus alamat");
+      }
     } finally {
       setIsDeleting(false);
     }
@@ -30,11 +36,16 @@ export default function AddressCard({ address }: AddressCardProps) {
 
   const handleSetDefault = async () => {
     setIsSettingDefault(true);
+    setActionError(null);
     try {
       const res = await fetch(`/api/account/addresses/${address.id}/default`, {
         method: "PATCH",
       });
-      if (res.ok) router.refresh();
+      if (res.ok) {
+        router.refresh();
+      } else {
+        setActionError("Gagal mengubah alamat default");
+      }
     } finally {
       setIsSettingDefault(false);
     }
@@ -96,6 +107,10 @@ export default function AddressCard({ address }: AddressCardProps) {
           Hapus
         </button>
       </div>
+
+      {actionError && (
+        <p className="text-xs text-destructive">{actionError}</p>
+      )}
     </div>
   );
 }

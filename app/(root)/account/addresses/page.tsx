@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAddresses } from "@/lib/supabase/queries/addresses";
+import type { Address } from "@/lib/supabase/queries/addresses";
 import Navigation from "@/components/navigation";
 import { Footer } from "@/components/ui/footer";
 import AddressCard from "./AddressCard";
@@ -16,7 +17,13 @@ export default async function AddressesPage() {
     redirect("/login?next=/account/addresses");
   }
 
-  const addresses = await getAddresses(supabase, user.id);
+  let addresses: Address[] = [];
+  let fetchError: string | null = null;
+  try {
+    addresses = await getAddresses(supabase, user.id);
+  } catch {
+    fetchError = "Gagal memuat alamat. Silakan coba lagi.";
+  }
 
   return (
     <div className="min-h-svh flex flex-col bg-background">
@@ -30,7 +37,9 @@ export default async function AddressesPage() {
             <h1 className="text-xl font-semibold text-primary">Saved Addresses</h1>
           </div>
 
-          {addresses.length === 0 ? (
+          {fetchError ? (
+            <p className="text-sm text-destructive text-center py-12">{fetchError}</p>
+          ) : addresses.length === 0 ? (
             <p className="text-sm text-white/60 text-center py-12">
               No saved addresses yet.
             </p>
