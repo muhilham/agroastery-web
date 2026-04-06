@@ -1,13 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/lib/supabase/types';
 
-export type Profile = {
-  id: string;
-  full_name: string | null;
-  phone: string | null;
-  default_address_id: string | null;
-  created_at: string;
-  updated_at: string;
-};
+export type Profile = Database['public']['Tables']['profiles']['Row'];
 
 export async function getProfile(
   supabase: SupabaseClient,
@@ -28,7 +22,8 @@ export async function upsertProfile(
   userId: string,
   data: { full_name?: string; phone?: string }
 ): Promise<void> {
-  await supabase
+  const { error } = await supabase
     .from('profiles')
     .upsert({ id: userId, ...data, updated_at: new Date().toISOString() });
+  if (error) throw new Error(error.message);
 }

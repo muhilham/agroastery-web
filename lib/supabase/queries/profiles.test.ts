@@ -45,6 +45,16 @@ describe('upsertProfile', () => {
       expect.objectContaining({ id: 'user-1', full_name: 'Budi', phone: '081234' })
     );
   });
+
+  it('throws when Supabase returns an error', async () => {
+    const upsertFn = vi.fn().mockResolvedValue({ error: { message: 'DB error' } });
+    const from = { upsert: upsertFn };
+    const supabase = { from: vi.fn().mockReturnValue(from) };
+
+    await expect(
+      upsertProfile(supabase as any, 'user-1', { full_name: 'Budi' })
+    ).rejects.toThrow('DB error');
+  });
 });
 
 // ─── getAddresses ─────────────────────────────────────────────────────────────

@@ -1,18 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/lib/supabase/types';
 
-export type Address = {
-  id: string;
-  user_id: string;
-  label: string | null;
-  recipient_name: string;
-  phone: string;
-  address_line: string;
-  postal_code: string | null;
-  latitude: number | null;
-  longitude: number | null;
-  is_default: boolean;
-  created_at: string;
-};
+export type Address = Database['public']['Tables']['addresses']['Row'];
 
 export async function getAddresses(
   supabase: SupabaseClient,
