@@ -35,7 +35,8 @@ export const addressFormSchema = z.object({
     .string()
     .length(5, "Kode pos harus 5 digit")
     .optional()
-    .or(z.literal("")),
+    .or(z.literal(""))
+    .transform((v) => (v === "" ? undefined : v)),
   lat: z.number().min(-90).max(90).optional(),
   lng: z.number().min(-180).max(180).optional(),
 });
@@ -146,7 +147,7 @@ export default function AddressForm({
             <FormItem>
               <FormLabel>Kode Pos</FormLabel>
               <FormControl>
-                <Input placeholder="12345" maxLength={5} {...field} />
+                <Input placeholder="12345" maxLength={5} inputMode="numeric" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -158,16 +159,16 @@ export default function AddressForm({
           <MapPicker
             value={
               lat !== undefined && lng !== undefined
-                ? { lat: lat ?? null, lng: lng ?? null }
+                ? { lat, lng }
                 : undefined
             }
             onChange={({ lat, lng }) => {
-              form.setValue("lat", lat);
-              form.setValue("lng", lng);
+              form.setValue("lat", lat, { shouldDirty: true });
+              form.setValue("lng", lng, { shouldDirty: true });
             }}
             onAddressChange={(address) => {
               if (!form.getValues("address_line")) {
-                form.setValue("address_line", address);
+                form.setValue("address_line", address, { shouldValidate: true, shouldDirty: true });
               }
             }}
             height={240}
