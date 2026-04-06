@@ -80,7 +80,7 @@ describe('getAddresses', () => {
     expect(finalOrder).toHaveBeenCalledWith('created_at', { ascending: true });
   });
 
-  it('returns empty array on Supabase error', async () => {
+  it('throws on Supabase error', async () => {
     const finalOrder = vi.fn().mockResolvedValue({ data: null, error: { message: 'DB error' } });
     const firstOrder = { order: finalOrder };
     const eq = { order: vi.fn().mockReturnValue(firstOrder) };
@@ -88,8 +88,7 @@ describe('getAddresses', () => {
     const from = { select: vi.fn().mockReturnValue(select) };
     const supabase = { from: vi.fn().mockReturnValue(from) };
 
-    const result = await getAddresses(supabase as any, 'user-1');
-    expect(result).toEqual([]);
+    await expect(getAddresses(supabase as any, 'user-1')).rejects.toThrow('DB error');
   });
 });
 

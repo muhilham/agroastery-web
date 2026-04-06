@@ -28,23 +28,41 @@ export async function PATCH(
     }
 
     // Clear is_default from all user addresses
-    await supabase
+    const { error: clearError } = await supabase
       .from('addresses')
       .update({ is_default: false })
       .eq('user_id', user.id);
+    if (clearError) {
+      return NextResponse.json(
+        { error: 'Failed to update default', code: 'DB_ERROR' },
+        { status: 500 }
+      );
+    }
 
     // Set this address as default
-    await supabase
+    const { error: setError } = await supabase
       .from('addresses')
       .update({ is_default: true })
       .eq('id', id)
       .eq('user_id', user.id);
+    if (setError) {
+      return NextResponse.json(
+        { error: 'Failed to update default', code: 'DB_ERROR' },
+        { status: 500 }
+      );
+    }
 
     // Update profile default_address_id
-    await supabase
+    const { error: profileError } = await supabase
       .from('profiles')
       .update({ default_address_id: id })
       .eq('id', user.id);
+    if (profileError) {
+      return NextResponse.json(
+        { error: 'Failed to update default', code: 'DB_ERROR' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({ success: true });
   } catch {

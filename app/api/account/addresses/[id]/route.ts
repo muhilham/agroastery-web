@@ -88,6 +88,14 @@ export async function DELETE(
       );
     }
 
+    const existing = await getAddressById(supabase, id, user.id);
+    if (!existing) {
+      return NextResponse.json(
+        { error: 'Not found', code: 'NOT_FOUND' },
+        { status: 404 }
+      );
+    }
+
     // Unset default_address_id in profiles if this address was the default
     await supabase
       .from('profiles')

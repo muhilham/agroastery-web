@@ -14,7 +14,7 @@ export async function getAddresses(
     .order('is_default', { ascending: false })
     .order('created_at', { ascending: true });
 
-  if (error) return [];
+  if (error) throw new Error(error.message);
   return (data ?? []) as Address[];
 }
 
