@@ -79,7 +79,7 @@ export default function CheckoutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [showMap, setShowMap] = useState(false);
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { addresses, isLoading: isLoadingAddresses } = useAddresses();
   const [selectedAddressId, setSelectedAddressId] = useState<string | "new" | null>(null);
 
@@ -161,7 +161,7 @@ export default function CheckoutPage() {
   }, [form]);
 
   useEffect(() => {
-    if (!user || isLoadingAddresses) return;
+    if (!user || isLoadingAddresses || authLoading) return;
     if (selectedAddressId !== null) return;
     if (addresses.length === 0) {
       setSelectedAddressId("new");
@@ -207,6 +207,8 @@ export default function CheckoutPage() {
   const handleAddressSelect = useCallback((id: string) => {
     setSelectedAddressId(id);
     if (id === "new") {
+      form.setValue("fullName", "");
+      form.setValue("phone", "");
       form.setValue("address", "");
       form.setValue("postalCode", "");
       form.setValue("lat", undefined);
