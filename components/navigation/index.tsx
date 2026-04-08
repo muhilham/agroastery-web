@@ -32,11 +32,14 @@ export default function Navigation() {
   const [isScrolled, setIsScrolled] = useState<boolean>(false);
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
+  const [mounted, setMounted] = useState(false);
 
   const searchQuery = useStore($searchQuery);
   const results = useStore($searchResults);
   const { cartCount } = useCart();
   const { user, signIn, signOut } = useAuth();
+
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -194,7 +197,7 @@ export default function Navigation() {
           <li>
             <Link href="/cart" className="relative inline-flex items-center">
               <ShoppingCart className="w-5 h-5 text-primary" />
-              {cartCount > 0 && (
+              {mounted && cartCount > 0 && (
                 <span className="absolute -top-2 -right-2 bg-[#f5ebc9] text-black text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
                   {cartCount > 9 ? "9+" : cartCount}
                 </span>
@@ -208,9 +211,6 @@ export default function Navigation() {
                 <Link href="/account" className="hover:underline flex items-center gap-1">
                   <User className="w-4 h-4" />
                   <span className="text-sm">{user.user_metadata?.full_name?.split(" ")[0] ?? "Account"}</span>
-                </Link>
-                <Link href="/orders" className="text-white/60 hover:text-white text-sm">
-                  Orders
                 </Link>
                 <button
                   onClick={signOut}
@@ -236,7 +236,7 @@ export default function Navigation() {
           {/* Cart icon — mobile */}
           <Link href="/cart" className="relative inline-flex items-center">
             <ShoppingCart className="w-5 h-5 text-primary" />
-            {cartCount > 0 && (
+            {mounted && cartCount > 0 && (
               <span className="absolute -top-2 -right-2 bg-[#f5ebc9] text-black text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
                 {cartCount > 9 ? "9+" : cartCount}
               </span>
@@ -337,7 +337,7 @@ export default function Navigation() {
                 onClick={() => setIsMenuOpen(false)}
               >
                 <ShoppingCart className="w-4 h-4" />
-                Keranjang {cartCount > 0 && `(${cartCount})`}
+                Keranjang {mounted && cartCount > 0 && `(${cartCount})`}
               </Link>
             </li>
             {/* Auth in mobile menu */}

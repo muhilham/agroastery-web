@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCart } from "@/lib/hooks/useCart";
 import { numberToIdr } from "@/lib/numberToIdr";
 import Navigation from "@/components/navigation";
@@ -24,9 +24,11 @@ function CartImage({ src, alt }: { src: string; alt: string }) {
 }
 
 export default function CartPage() {
-  const { cartItems, cartTotal, cartCount, removeFromCart, updateQuantity, hydrated } = useCart();
+  const { cartItems, cartTotal, cartCount, removeFromCart, updateQuantity } = useCart();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
 
-  if (!hydrated) {
+  if (!mounted) {
     return (
       <div className="min-h-svh flex flex-col bg-background">
         <Navigation />

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { getAddresses } from '@/lib/supabase/queries/addresses';
+import { upsertProfile } from '@/lib/supabase/queries/profiles';
 
 const AddressCreateSchema = z.object({
   label: z.string().max(50).optional(),
@@ -58,6 +59,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Ensure profile exists (handles users created before migration trigger)
+    await upsertProfile(supabase, user.id, {
+      full_name: user.user_metadata?.full_name,
+    });
+
     const { data, error } = await supabase
       .from('addresses')
       .insert({
@@ -74,6 +80,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
+      console.error('Address insert error:', error);
       return NextResponse.json(
         { error: 'Failed to create address', code: 'DB_ERROR' },
         { status: 500 }
