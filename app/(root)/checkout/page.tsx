@@ -36,6 +36,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Script from "next/script";
+import { useAuth } from "@/lib/hooks/useAuth";
+import { useAddresses } from "@/lib/hooks/useAddresses";
+import type { Address } from "@/lib/hooks/useAddresses";
 
 function CheckoutImage({ src, alt }: { src: string; alt: string }) {
   const [imgSrc, setImgSrc] = useState(src);
@@ -76,6 +79,9 @@ export default function CheckoutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [showMap, setShowMap] = useState(false);
+  const { user } = useAuth();
+  const { addresses, isLoading: isLoadingAddresses } = useAddresses();
+  const [selectedAddressId, setSelectedAddressId] = useState<string | "new" | null>(null);
 
   const form = useForm<TForm>({
     resolver: zodResolver(formSchema),
@@ -145,7 +151,35 @@ export default function CheckoutPage() {
     });
   }, [cartItems, cartTotal, cartCount, shippingWeight, calculateShipping]);
 
+  const applyAddressToForm = useCallback((addr: Address) => {
+    form.setValue("fullName", addr.recipient_name, { shouldValidate: true });
+    form.setValue("phone", addr.phone, { shouldValidate: true });
+    form.setValue("address", addr.address_line, { shouldValidate: true });
+    form.setValue("postalCode", addr.postal_code ?? "", { shouldValidate: true });
+    form.setValue("lat", addr.latitude ?? undefined);
+    form.setValue("lng", addr.longitude ?? undefined);
+  }, [form]);
+
   useEffect(() => {
+    if (!user || isLoadingAddresses) return;
+    if (selectedAddressId !== null) return;
+    if (addresses.length === 0) {
+      setSelectedAddressId("new");
+      return;
+    }
+    const defaultAddr = addresses.find((a) => a.is_default === true) ?? addresses[0];
+    setSelectedAddressId(defaultAddr.id);
+    applyAddressToForm(defaultAddr);
+    if (defaultAddr.latitude != null && defaultAddr.longitude != null) {
+      handleCalculateShippingByGeo(defaultAddr.latitude, defaultAddr.longitude);
+    } else if (defaultAddr.postal_code) {
+      handleCalculateShippingByPostal(defaultAddr.postal_code);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, isLoadingAddresses, addresses]);
+
+  useEffect(() => {
+    if (selectedAddressId !== "new") return;
     const latValid = typeof watchedLat === "number" && Number.isFinite(watchedLat);
     const lngValid = typeof watchedLng === "number" && Number.isFinite(watchedLng);
     if (latValid && lngValid) return;
@@ -157,16 +191,42 @@ export default function CheckoutPage() {
       resetShipping();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedPostalCode, watchedLat, watchedLng]);
+  }, [debouncedPostalCode, watchedLat, watchedLng, selectedAddressId]);
 
   useEffect(() => {
+    if (selectedAddressId !== "new") return;
     const latValid = typeof watchedLat === "number" && Number.isFinite(watchedLat);
     const lngValid = typeof watchedLng === "number" && Number.isFinite(watchedLng);
     if (latValid && lngValid) {
       handleCalculateShippingByGeo(watchedLat as number, watchedLng as number);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watchedLat, watchedLng]);
+  }, [watchedLat, watchedLng, selectedAddressId]);
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const handleAddressSelect = useCallback((id: string) => {
+    setSelectedAddressId(id);
+    if (id === "new") {
+      form.setValue("address", "");
+      form.setValue("postalCode", "");
+      form.setValue("lat", undefined);
+      form.setValue("lng", undefined);
+      setShowMap(false);
+      resetShipping();
+      return;
+    }
+    const addr = addresses.find((a) => a.id === id);
+    if (!addr) return;
+    applyAddressToForm(addr);
+    setShowMap(false);
+    if (addr.latitude != null && addr.longitude != null) {
+      handleCalculateShippingByGeo(addr.latitude, addr.longitude);
+    } else if (addr.postal_code) {
+      handleCalculateShippingByPostal(addr.postal_code);
+    } else {
+      resetShipping();
+    }
+  }, [addresses, applyAddressToForm, form, resetShipping, handleCalculateShippingByGeo, handleCalculateShippingByPostal]);
 
   const shippingCost = selectedShipping?.price ?? 0;
   const total = cartTotal + shippingCost;
