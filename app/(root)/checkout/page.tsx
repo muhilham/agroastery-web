@@ -428,11 +428,12 @@ export default function CheckoutPage() {
             {/* Saved address selector — authenticated users with saved addresses */}
             {user && !isLoadingAddresses && addresses.length > 0 && (
               <div className="space-y-1">
-                <label className="text-sm font-medium text-white">Pilih Alamat</label>
+                <label htmlFor="saved-address-select" className="text-sm font-medium text-white">Pilih Alamat</label>
                 <select
+                  id="saved-address-select"
                   value={selectedAddressId ?? ""}
                   onChange={(e) => handleAddressSelect(e.target.value)}
-                  className="flex h-12 w-full rounded-xl bg-[#242424] border border-white/15 px-3 py-1 text-sm text-[#CCC4A9]/80 shadow-sm transition-colors focus:outline-none appearance-none"
+                  className="flex h-12 w-full rounded-xl bg-[#242424] border border-white/10 px-3 py-1 text-sm text-[#CCC4A9]/80 shadow-sm transition-colors focus:outline-none appearance-none"
                 >
                   {addresses.map((addr) => (
                     <option key={addr.id} value={addr.id}>
