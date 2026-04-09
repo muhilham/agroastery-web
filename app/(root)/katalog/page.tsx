@@ -12,7 +12,9 @@ export default async function Page({
 }: {
   searchParams: Promise<{ category?: string }>;
 }) {
-  const { category } = await searchParams;
+  const { category: rawCategory } = await searchParams;
+  // Next.js decodes searchParams automatically; decodeURIComponent makes the intent explicit
+  const category = rawCategory ? decodeURIComponent(rawCategory) : undefined;
   const allProducts = await getProducts();
   const categories = deriveCategoriesFromProducts(allProducts);
   const filteredProducts = category
