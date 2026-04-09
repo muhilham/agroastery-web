@@ -8,7 +8,6 @@ import {
   CardTitle,
 } from "./card";
 import { useRouter } from "next/navigation";
-import { selectProductBySlug } from "@/lib/stores/product";
 import Image from "next/image";
 
 interface I_ProductCardProps {
@@ -32,7 +31,6 @@ export function ProductCard({
 
   const handleClick = () => {
     if (onClick) return onClick();
-    selectProductBySlug(productSlug);
     router.push(`/product/${productSlug}`);
   };
 
@@ -43,7 +41,7 @@ export function ProductCard({
       onClick={handleClick}
     >
       <div>
-        <div className="relative aspect-[16/9]  w-full overflow-hidden rounded-t-xl mb-4">
+        <div className="relative aspect-[16/9] w-full overflow-hidden rounded-t-xl mb-4">
           <div className="w-full h-14 bg-gradient-to-t from-[#252525] absolute bottom-0"></div>
           <div className="w-full h-14 bg-gradient-to-b from-[#252525] absolute top-0"></div>
           <Image
