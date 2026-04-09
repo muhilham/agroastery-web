@@ -1,0 +1,68 @@
+<h2>How should saved addresses work on Checkout?</h2>
+<p class="subtitle">When a logged-in user has saved addresses, which UX pattern feels right?</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Pick-then-fill</h3>
+      <p>A card list of saved addresses appears above the shipping form. Tapping one fills all the form fields. User can still edit individual fields after.</p>
+      <div style="margin-top:12px;background:#1a1a1a;border-radius:8px;padding:12px;font-size:12px;color:#aaa;border:1px solid rgba(255,255,255,0.08)">
+        <div style="color:#f5ebc9;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Alamat Tersimpan</div>
+        <div style="display:flex;gap:8px;margin-bottom:6px">
+          <div style="background:#2a2a2a;border:1.5px solid #f5ebc9;border-radius:6px;padding:8px 10px;flex:1;font-size:11px">
+            <div style="color:#f5ebc9;font-weight:600">🏠 Rumah</div>
+            <div style="color:#888;margin-top:2px">Budi Santoso · 0812xxxx</div>
+          </div>
+          <div style="background:#2a2a2a;border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:8px 10px;flex:1;font-size:11px">
+            <div style="color:#f5ebc9;font-weight:600">🏢 Kantor</div>
+            <div style="color:#888;margin-top:2px">Budi Santoso · 0812xxxx</div>
+          </div>
+        </div>
+        <div style="color:#666;font-size:10px;margin-top:4px">↓ Form diisi otomatis setelah pilih alamat</div>
+        <div style="height:1px;background:rgba(255,255,255,0.06);margin:8px 0"></div>
+        <div style="color:#666;font-size:11px;font-style:italic">Atau isi manual di bawah…</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Replace with selector</h3>
+      <p>The manual address form is replaced entirely by a saved address selector. A "Gunakan alamat lain" button reveals the manual form.</p>
+      <div style="margin-top:12px;background:#1a1a1a;border-radius:8px;padding:12px;font-size:12px;color:#aaa;border:1px solid rgba(255,255,255,0.08)">
+        <div style="color:#f5ebc9;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Alamat Pengiriman</div>
+        <div style="background:#2a2a2a;border:1.5px solid #f5ebc9;border-radius:8px;padding:10px 12px;margin-bottom:6px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="color:#f5ebc9;font-weight:600;font-size:12px">🏠 Rumah</div>
+              <div style="color:#888;font-size:11px;margin-top:2px">Budi Santoso · 0812xxxx</div>
+              <div style="color:#666;font-size:10px;margin-top:2px">Jl. Kemang Barat No.7...</div>
+            </div>
+            <div style="color:#f5ebc9;font-size:18px">✓</div>
+          </div>
+        </div>
+        <div style="background:#222;border-radius:6px;padding:8px 12px;text-align:center;color:#666;font-size:11px">+ Tambah / gunakan alamat lain</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Dropdown select</h3>
+      <p>A simple dropdown at the top of the address section. User picks a saved address or "Alamat baru". Selecting a saved address hides/fills the form fields.</p>
+      <div style="margin-top:12px;background:#1a1a1a;border-radius:8px;padding:12px;font-size:12px;color:#aaa;border:1px solid rgba(255,255,255,0.08)">
+        <div style="color:#f5ebc9;font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Alamat Pengiriman</div>
+        <div style="background:#2a2a2a;border:1px solid rgba(255,255,255,0.15);border-radius:6px;padding:8px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+          <span style="color:#f5ebc9">🏠 Rumah — Budi Santoso</span>
+          <span style="color:#666">▾</span>
+        </div>
+        <div style="color:#555;font-size:10px;text-align:center;margin-bottom:6px">↓ Fields auto-filled, hidden unless "Alamat baru" selected</div>
+        <div style="height:1px;background:rgba(255,255,255,0.06);margin:4px 0"></div>
+        <div style="color:#444;font-size:10px;font-style:italic;margin-top:6px">Pilih "Alamat baru" untuk input manual</div>
+      </div>
+    </div>
+  </div>
+</div>
