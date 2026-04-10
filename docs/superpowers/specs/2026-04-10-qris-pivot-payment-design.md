@@ -121,6 +121,37 @@ PIVOT_API_URL=https://api.pivot-payment.com  # https://api-stg.pivot-payment.com
 
 **Polling security:** UUID order IDs are unguessable; only `payment_status` + `status` are returned (no PII).
 
+## Local Development
+
+### Environment (`.env.local`)
+```env
+PIVOT_MERCHANT_ID=your_sandbox_merchant_id
+PIVOT_MERCHANT_SECRET=your_sandbox_merchant_secret
+PIVOT_CALLBACK_API_KEY=your_sandbox_callback_api_key
+PIVOT_API_URL=https://api-stg.pivot-payment.com
+```
+
+### Option 1 — ngrok tunnel (full callback flow)
+1. `npx ngrok http 3000` → get a public URL, e.g. `https://abc123.ngrok-free.app`
+2. Register `https://abc123.ngrok-free.app/api/webhooks/pivot` in Pivot sandbox dashboard (**Developer Settings → Callbacks**)
+3. Use Pivot's simulation endpoint to trigger a payment without real QR scan:
+   ```
+   POST https://api-stg.pivot-payment.com/v2/payments/simulations
+   ```
+   with the `paymentSessionId` to mark it as paid — Pivot fires the callback to your ngrok URL.
+4. Note: free ngrok URLs change every session — re-register in the dashboard each time.
+
+### Option 2 — Dev manual trigger (no tunnel needed)
+Add a dev-only API route `POST /api/dev/simulate-payment` guarded by `NODE_ENV !== 'production'`. It accepts `{ orderId }` and directly sets `payment_status: 'paid'`, `status: 'processing'` on the order in the DB. The payment page's polling detects it and redirects as normal — letting you test the full frontend flow without Pivot reaching your machine.
+
+This route must **not** be deployed to production (enforce with a build-time check or middleware guard).
+
+### Recommended workflow
+- Use **Option 2** for day-to-day frontend development (fastest iteration)
+- Use **Option 1 + Pivot simulation** when testing the actual webhook handler code
+
+---
+
 ## Pivot Dashboard Setup Required
 
 Before going live, register the callback URL in:
