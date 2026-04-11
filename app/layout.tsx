@@ -38,7 +38,6 @@ export default function RootLayout({
     <html lang="en">
       <head>
         {/* Preconnect to third-party origins used at checkout */}
-        <link rel="preconnect" href="https://js.xendit.co" />
         <link rel="preconnect" href="https://maps.googleapis.com" />
         <link rel="dns-prefetch" href="https://maps.gstatic.com" />
       </head>
