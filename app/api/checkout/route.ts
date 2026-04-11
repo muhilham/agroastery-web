@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
-import { createXenditInvoice } from "@/lib/xendit/client";
+import { createQrisPaymentSession } from "@/lib/pivot/client";
 import { sendOrderNotification } from "@/lib/telegram/notify";
 
 const CheckoutItemSchema = z.object({
@@ -283,43 +283,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Failed to create order items", code: "DB_ERROR" }, { status: 500 });
     }
 
-    // Create Xendit invoice
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://agroastery.com";
-    let xenditInvoice;
+    // Create Pivot QRIS payment session
+    let pivotSession: { paymentSessionId: string; qrUrl: string; qrExpiresAt: string };
     try {
-      xenditInvoice = await createXenditInvoice({
-        externalId: order.id as string,
-        amount: total,
-        payerEmail: data.customerEmail || undefined,
-        description: `Pesanan ${orderNumber} - Agroastery`,
+      pivotSession = await createQrisPaymentSession({
+        orderId: order.id as string,
+        orderNumber,
+        total,
         customerName: data.customerName,
+        customerEmail: data.customerEmail || null,
         customerPhone: data.customerPhone,
-        successRedirectUrl: `${appUrl}/checkout/success?order=${order.id}`,
-        failureRedirectUrl: `${appUrl}/checkout?error=payment_failed`,
-        items: verifiedItems.map((item) => ({
-          name: `${item.productName} - ${item.variantDescription}`,
-          quantity: item.quantity,
-          price: item.unitPrice,
-          category: "Coffee",
-        })),
-        invoiceDuration: 86400, // 24 hours
       });
-    } catch (xenditError) {
-      console.error("Xendit invoice creation error:", xenditError);
-      // Clean up order and restore stock
+    } catch (pivotError) {
+      console.error("Pivot session creation error:", pivotError);
       await admin.from("ecom_order_items").delete().eq("order_id", order.id as string);
       await admin.from("ecom_orders").delete().eq("id", order.id as string);
       await restoreStock(admin, data.items);
       return NextResponse.json(
-        { error: "Gagal membuat invoice pembayaran", code: "PAYMENT_ERROR" },
+        { error: "Gagal membuat sesi pembayaran", code: "PAYMENT_ERROR" },
         { status: 500 }
       );
     }
 
-    // Update order with Xendit invoice ID
+    // Store Pivot session data on order
     await admin
       .from("ecom_orders")
-      .update({ xendit_invoice_id: xenditInvoice.id })
+      .update({
+        pivot_payment_session_id: pivotSession.paymentSessionId,
+        pivot_qr_url: pivotSession.qrUrl,
+        pivot_qr_expires_at: pivotSession.qrExpiresAt,
+      })
       .eq("id", order.id as string);
 
     // Notify Telegram group (fire-and-forget — never blocks the response)
@@ -349,8 +342,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       orderId: order.id,
       orderNumber,
-      invoiceUrl: xenditInvoice.invoice_url,
-      invoiceId: xenditInvoice.id,
       total,
     });
   } catch (error) {
