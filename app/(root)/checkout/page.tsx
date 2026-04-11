@@ -35,7 +35,6 @@ import { useCart } from "@/lib/hooks/useCart";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import Script from "next/script";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { useAddresses } from "@/lib/hooks/useAddresses";
 import type { Address } from "@/lib/hooks/useAddresses";
@@ -54,12 +53,6 @@ function CheckoutImage({ src, alt }: { src: string; alt: string }) {
   );
 }
 
-declare global {
-  interface Window {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Xendit?: any;
-  }
-}
 
 const formSchema = z.object({
   fullName: z.string().min(2, "Minimal 2 karakter").max(50),
@@ -276,33 +269,9 @@ export default function CheckoutPage() {
         return;
       }
 
-      // Open Xendit popup
-      const { invoiceUrl, orderId } = data;
-
-      if (window.Xendit) {
-        window.Xendit.popup.open(invoiceUrl, {
-          onSuccess: () => {
-            clearCart();
-            router.push(`/checkout/success?order=${orderId}`);
-          },
-          onPending: () => {
-            clearCart();
-            router.push(`/checkout/success?order=${orderId}&status=pending`);
-          },
-          onFailure: () => {
-            setSubmitError("Pembayaran gagal. Silakan coba lagi.");
-            setIsSubmitting(false);
-          },
-          onClose: () => {
-            setSubmitError("Pembayaran dibatalkan.");
-            setIsSubmitting(false);
-          },
-        });
-      } else {
-        // Fallback: redirect to invoice URL directly (user must complete payment there)
-        clearCart();
-        window.location.href = invoiceUrl;
-      }
+      // Redirect to QR payment page
+      const { orderId } = data;
+      router.push(`/checkout/payment/${orderId}`);
     } catch (err) {
       console.error("Checkout error:", err);
       setSubmitError("Terjadi kesalahan. Silakan coba lagi.");
@@ -344,8 +313,6 @@ export default function CheckoutPage() {
 
   return (
     <Fragment>
-      {/* Load Xendit.js non-blocking */}
-      <Script src="https://js.xendit.co/v1/xendit.min.js" strategy="afterInteractive" />
       <Navigation />
       <main className="bg-background pt-20 tablet:px-10 desktop:px-20 px-4 min-h-screen" style={{ paddingBottom: "max(12rem, calc(env(safe-area-inset-bottom) + 12rem))" }}>
         <h1 className="text-xl font-semibold text-primary mb-6 tracking-widest uppercase mt-4">
