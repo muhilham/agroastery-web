@@ -282,7 +282,8 @@ export default function MapPicker({
   // Get current location on mount
   useEffect(() => {
     getCurrentLocation();
-  }, [getCurrentLocation]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Initialize map when container is ready and location is determined
   useEffect(() => {

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useLayoutEffect, useCallback, useMemo } from "react";
 import { EmblaOptionsType } from "embla-carousel";
 import useEmblaCarousel from "embla-carousel-react";
 import { Thumb } from "./thumb";
@@ -52,10 +52,18 @@ export const EmblaCarousel: React.FC<PropType> = ({
     emblaThumbsApi.scrollTo(snap);
   }, [emblaMainApi, emblaThumbsApi]);
 
+  useLayoutEffect(() => {
+    if (!emblaMainApi) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    onSelect();
+  }, [emblaMainApi, onSelect]);
+
   useEffect(() => {
     if (!emblaMainApi) return;
-    onSelect();
     emblaMainApi.on("select", onSelect).on("reInit", onSelect);
+    return () => {
+      emblaMainApi.off("select", onSelect).off("reInit", onSelect);
+    };
   }, [emblaMainApi, onSelect]);
 
   return (

@@ -46,18 +46,20 @@ const OrderDetail = ({
 }: OrderDetailProps) => {
   const router = useRouter();
 
-  const [size, setSize] = useState<string>(
+  const [size, setSize] = useState<string>(() =>
     selectedSize || sizeOptions[0] || "",
   );
-  const [grind, setGrind] = useState<string>(
+  const [grind, setGrind] = useState<string>(() =>
     selectedGrind || grindOptions[0] || "",
   );
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSize(selectedSize || sizeOptions[0] || "");
   }, [selectedSize, sizeOptions]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setGrind(selectedGrind || grindOptions[0] || "");
   }, [selectedGrind, grindOptions]);
 
