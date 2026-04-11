@@ -27,6 +27,11 @@ export async function POST(request: NextRequest) {
   }
 
   const event = body.event as string;
+
+  if (event === "PAYMENT.TEST") {
+    return NextResponse.json({ received: true });
+  }
+
   const data = body.data as Record<string, unknown>;
   const paymentSessionId = data?.id as string | undefined;
 
