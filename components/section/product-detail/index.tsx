@@ -34,12 +34,14 @@ const ProductDetailPage = ({ slug }: { slug: string }) => {
   const [selectedGrind, setSelectedGrind] = useState<string>("");
   const [qty, setQty] = useState<number>(0);
 
+  // Update selections when product changes
   useEffect(() => {
     if (!product) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedSize(product.size?.[0] ?? "");
     setSelectedGrind(product.grindSize?.[0] ?? "");
     setQty(0);
-  }, [product, product?.slug]);
+  }, [product]);
 
   if (!product) {
     return (
