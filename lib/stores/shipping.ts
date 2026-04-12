@@ -1,38 +1,4 @@
-import { map, atom } from "nanostores";
-
-// The store for shipping-related state
-export const $shipping = map<{
-  rates: unknown[];
-  selectedRate: unknown | null;
-  isLoading: boolean;
-  error: string | null;
-}>({
-  rates: [],
-  selectedRate: null,
-  isLoading: false,
-  error: null,
-});
-
-// --- Actions to interact with the shipping store ---
-
-/**
- * Sets the user's chosen shipping rate.
- */
-export function setSelectedRate(rate: unknown | null) {
-  $shipping.setKey("selectedRate", rate);
-}
-
-/**
- * Resets the shipping store to its initial state.
- */
-export function clearShippingState() {
-  $shipping.set({
-    rates: [],
-    selectedRate: null,
-    isLoading: false,
-    error: null,
-  });
-}
+import { atom } from "nanostores";
 
 // --- Destination geo/place details (for WhatsApp message + shipping geo) ---
 
