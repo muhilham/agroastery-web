@@ -73,10 +73,13 @@ export async function POST(request: NextRequest) {
   } else if (event === 'order.waybill_id') {
     const waybillId = body.courier_waybill_id as string | undefined;
     if (waybillId) {
-      await supabase
+      const { error, count } = await supabase
         .from('ecom_orders')
         .update({ tracking_number: waybillId })
         .eq('biteship_order_id', biteshipOrderId);
+      if (error || count === 0) {
+        console.warn(`[biteship-webhook] No order found for biteship_order_id: ${biteshipOrderId} (waybill_id event)`);
+      }
     }
   } else {
     // order.price or any future event — log only, no action required
