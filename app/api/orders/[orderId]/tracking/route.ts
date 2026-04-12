@@ -5,15 +5,15 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ orderId: string }> }
 ) {
-  const { id } = await params;
+  const { orderId } = await params;
   const admin = createSupabaseAdminClient();
 
   const { data: order, error } = await admin
     .from('ecom_orders')
     .select('id, user_id, status, biteship_order_id, tracking_number, shipping_courier')
-    .eq('id', id)
+    .eq('id', orderId)
     .single();
 
   if (error || !order) {
@@ -30,11 +30,12 @@ export async function GET(
     if (user && order.user_id && user.id !== order.user_id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
-  } catch {
-    // Not logged in — guest access allowed
+  } catch (err) {
+    // createSupabaseServerClient may throw on infrastructure errors; log and allow guest access
+    console.error('[tracking] Auth check failed, proceeding as guest:', err);
   }
 
-  if (!order.biteship_order_id || !order.tracking_number) {
+  if (!order.biteship_order_id || !order.tracking_number || !order.shipping_courier) {
     return NextResponse.json({
       dispatched: false,
       status: order.status,
@@ -47,10 +48,16 @@ export async function GET(
     return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
   }
 
-  const trackingRes = await fetch(
-    `https://api.biteship.com/v1/trackings/${order.tracking_number}/couriers/${order.shipping_courier}`,
-    { headers: { Authorization: `Bearer ${apiKey}` } }
-  );
+  let trackingRes: Response;
+  try {
+    trackingRes = await fetch(
+      `https://api.biteship.com/v1/trackings/${order.tracking_number}/couriers/${order.shipping_courier}`,
+      { headers: { Authorization: `Bearer ${apiKey}` } }
+    );
+  } catch (err) {
+    console.error('[tracking] Biteship fetch failed:', err);
+    return NextResponse.json({ error: 'Failed to fetch tracking data' }, { status: 502 });
+  }
 
   if (!trackingRes.ok) {
     // Waybill exists but courier hasn't published tracking events yet

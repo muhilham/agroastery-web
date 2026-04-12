@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 
 vi.mock('next/headers', () => ({
-  cookies: vi.fn(() => ({ getAll: () => [], set: vi.fn() })),
+  cookies: vi.fn(() => ({ getAll: () => [], setAll: vi.fn() })),
 }));
 
 const mockFrom = vi.fn();
@@ -37,7 +37,7 @@ function mockOrder(overrides: Record<string, unknown> = {}) {
   mockFrom.mockReturnValue({ select });
 }
 
-describe('GET /api/orders/[id]/tracking', () => {
+describe('GET /api/orders/[orderId]/tracking', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.BITESHIP_API_KEY = 'test-key';
@@ -49,16 +49,16 @@ describe('GET /api/orders/[id]/tracking', () => {
     const select = vi.fn().mockReturnValue({ eq });
     mockFrom.mockReturnValue({ select });
 
-    const { GET } = await import('@/app/api/orders/[id]/tracking/route');
-    const res = await GET(makeRequest('bad-id'), { params: Promise.resolve({ id: 'bad-id' }) });
+    const { GET } = await import('@/app/api/orders/[orderId]/tracking/route');
+    const res = await GET(makeRequest('bad-id'), { params: Promise.resolve({ orderId: 'bad-id' }) });
     expect(res.status).toBe(404);
   });
 
   it('returns dispatched:false when biteship_order_id is null', async () => {
     mockOrder({ biteship_order_id: null, tracking_number: null });
 
-    const { GET } = await import('@/app/api/orders/[id]/tracking/route');
-    const res = await GET(makeRequest('order-1'), { params: Promise.resolve({ id: 'order-1' }) });
+    const { GET } = await import('@/app/api/orders/[orderId]/tracking/route');
+    const res = await GET(makeRequest('order-1'), { params: Promise.resolve({ orderId: 'order-1' }) });
     const body = await res.json();
 
     expect(res.status).toBe(200);
@@ -71,8 +71,8 @@ describe('GET /api/orders/[id]/tracking', () => {
   it('returns dispatched:false when tracking_number is null (waybill not yet assigned)', async () => {
     mockOrder({ biteship_order_id: 'bs-order-1', tracking_number: null });
 
-    const { GET } = await import('@/app/api/orders/[id]/tracking/route');
-    const res = await GET(makeRequest('order-1'), { params: Promise.resolve({ id: 'order-1' }) });
+    const { GET } = await import('@/app/api/orders/[orderId]/tracking/route');
+    const res = await GET(makeRequest('order-1'), { params: Promise.resolve({ orderId: 'order-1' }) });
     const body = await res.json();
 
     expect(body.dispatched).toBe(false);
@@ -96,8 +96,8 @@ describe('GET /api/orders/[id]/tracking', () => {
       }),
     });
 
-    const { GET } = await import('@/app/api/orders/[id]/tracking/route');
-    const res = await GET(makeRequest('order-1'), { params: Promise.resolve({ id: 'order-1' }) });
+    const { GET } = await import('@/app/api/orders/[orderId]/tracking/route');
+    const res = await GET(makeRequest('order-1'), { params: Promise.resolve({ orderId: 'order-1' }) });
     const body = await res.json();
 
     expect(res.status).toBe(200);
@@ -123,8 +123,8 @@ describe('GET /api/orders/[id]/tracking', () => {
 
     mockFetch.mockResolvedValueOnce({ ok: false, json: async () => ({ error: 'Not found' }) });
 
-    const { GET } = await import('@/app/api/orders/[id]/tracking/route');
-    const res = await GET(makeRequest('order-1'), { params: Promise.resolve({ id: 'order-1' }) });
+    const { GET } = await import('@/app/api/orders/[orderId]/tracking/route');
+    const res = await GET(makeRequest('order-1'), { params: Promise.resolve({ orderId: 'order-1' }) });
     const body = await res.json();
 
     expect(body.dispatched).toBe(true);
