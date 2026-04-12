@@ -80,7 +80,7 @@ destination_postal_code   ← shipping_address.postal_code (number, if present)
 destination_coordinate    ← shipping_address.latitude + longitude (if both present)
 courier_company        ← shipping_courier (e.g. "jne")
 courier_type           ← shipping_service (e.g. "reg")
-delivery_type          ← "now"
+delivery_type          ← "scheduled"
 order_note             ← notes (if any)
 reference_id           ← order_number (e.g. "AGR-20260412-ABCD1E") — unique
 items[]                ← one entry per ecom_order_item:

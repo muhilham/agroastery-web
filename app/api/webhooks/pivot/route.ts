@@ -88,7 +88,12 @@ export async function POST(request: NextRequest) {
         paymentMethod: "QRIS",
         total: updatedOrder.total as number,
         paidAt,
-      });
+      }).catch((err: unknown) =>
+        console.error(
+          `[pivot-webhook] Payment notification failed for order ${updatedOrder.id}:`,
+          err
+        )
+      );
 
       // Fire-and-forget: create Biteship order after payment confirmed.
       // Never awaited — Pivot expects a fast 200. Failure is logged for manual ops recovery.
