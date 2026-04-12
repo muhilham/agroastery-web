@@ -112,6 +112,8 @@ export default function CheckoutPage() {
   const handleCalculateShippingByPostal = useCallback(async (postalCode: string) => {
     if (cartItems.length === 0) return;
     try {
+      // TODO: Pass cart items[] directly for accurate per-item weight pricing
+      // (useShippingCalculator now supports items[] via ShippingCalcParams.items)
       await calculateShipping({
         originPostalCode: process.env.NEXT_PUBLIC_ORIGIN_POSTAL_CODE || "12440",
         destinationPostalCode: postalCode,

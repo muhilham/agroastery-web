@@ -74,7 +74,6 @@ export async function createBiteshipOrder(orderId: string): Promise<void> {
 
     courier_company: order.shipping_courier,
     courier_type: order.shipping_service,
-    delivery_type: 'scheduled',
     ...(order.notes ? { order_note: order.notes } : {}),
     reference_id: order.order_number,
 
