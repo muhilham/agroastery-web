@@ -74,7 +74,7 @@ export async function createBiteshipOrder(orderId: string): Promise<void> {
 
     courier_company: order.shipping_courier,
     courier_type: order.shipping_service,
-    delivery_type: 'now',
+    delivery_type: 'scheduled',
     ...(order.notes ? { order_note: order.notes } : {}),
     reference_id: order.order_number,
 
@@ -107,13 +107,21 @@ export async function createBiteshipOrder(orderId: string): Promise<void> {
   // Idempotency: if order_number was already used as reference_id (webhook retry),
   // Biteship returns code 40002060 with the existing order's details.
   if (!res.ok && data.code === 40002060 && data.details?.order_id) {
-    await supabase
+    console.warn(
+      `[createBiteshipOrder] Idempotent recovery for order ${orderId}: using existing Biteship order ${data.details.order_id}`
+    );
+    const { error: idempotentUpdateError } = await supabase
       .from('ecom_orders')
       .update({
         biteship_order_id: data.details.order_id,
         ...(data.details.waybill_id ? { tracking_number: data.details.waybill_id } : {}),
       })
       .eq('id', orderId);
+    if (idempotentUpdateError) {
+      throw new Error(
+        `[createBiteshipOrder] Failed to store recovered biteship_order_id for order ${orderId}: ${idempotentUpdateError.message}`
+      );
+    }
     return;
   }
 
@@ -123,11 +131,16 @@ export async function createBiteshipOrder(orderId: string): Promise<void> {
     );
   }
 
-  await supabase
+  const { error: updateError } = await supabase
     .from('ecom_orders')
     .update({
       biteship_order_id: data.id,
       ...(data.courier?.waybill_id ? { tracking_number: data.courier.waybill_id } : {}),
     })
     .eq('id', orderId);
+  if (updateError) {
+    throw new Error(
+      `[createBiteshipOrder] Failed to store biteship_order_id for order ${orderId}: ${updateError.message}`
+    );
+  }
 }

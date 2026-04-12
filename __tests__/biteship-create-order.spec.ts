@@ -116,7 +116,7 @@ describe('createBiteshipOrder', () => {
     expect(payload.courier_company).toBe('jne');
     expect(payload.courier_type).toBe('reg');
     expect(payload.reference_id).toBe('AGR-20260412-ABC');
-    expect(payload.delivery_type).toBe('now');
+    expect(payload.delivery_type).toBe('scheduled');
     expect(payload.order_note).toBe('handle with care');
     expect(payload.origin_postal_code).toBe(12440);
     expect(payload.destination_postal_code).toBe(12240);
