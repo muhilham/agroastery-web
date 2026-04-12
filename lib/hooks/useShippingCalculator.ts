@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { 
+import {
   ShippingCalcParams,
+  ShippingCalcItem,
   BiteshipRatesResponseSchema,
   NormalizedRate,
-  VerifiedLocation 
+  VerifiedLocation
 } from '../types/shipping';
 
 const ensureNonEmpty = (v: string | undefined | null, name: string): string => {
@@ -12,60 +13,61 @@ const ensureNonEmpty = (v: string | undefined | null, name: string): string => {
 };
 
 async function getShippingRates(p: ShippingCalcParams) {
-  // DEV guards: catch nulls early
   const origin = Number(p.originPostalCode);
   const hasGeo = Number.isFinite(p.destinationLatitude ?? NaN) && Number.isFinite(p.destinationLongitude ?? NaN);
   const destination = Number(p.destinationPostalCode);
   if (!Number.isFinite(origin)) throw new Error('originPostalCode must be a number-like value');
   if (!hasGeo && !Number.isFinite(destination)) throw new Error('destinationPostalCode must be a number-like value when coordinates are not provided');
-  if (!p.weightGrams || p.weightGrams <= 0) throw new Error('weightGrams must be > 0');
-  if (!p.quantity || p.quantity <= 0) throw new Error('quantity must be > 0');
-  const name = ensureNonEmpty(p.name, 'name');
 
   const couriers = p.couriers ?? process.env.NEXT_PUBLIC_BITESHIP_DEFAULT_COURIERS ?? "anteraja,jne,sicepat";
-  const body: Record<string, unknown> = {
-    origin_postal_code: origin,
-    couriers,
-    items: [
-      {
-        name,
-        description: p.description ?? name,
-        value: Math.max(0, Math.trunc(p.price)),
-        length: p.length ?? 20,
-        width: p.width ?? 15,
-        height: p.height ?? 10,
-        weight: Math.trunc(p.weightGrams),
-        quantity: Math.trunc(p.quantity),
-      },
-    ],
-  };
+
+  // Use provided items array; fall back to building one item from scalar fields
+  const items: ShippingCalcItem[] = p.items && p.items.length > 0
+    ? p.items
+    : (() => {
+        if (!p.weightGrams || p.weightGrams <= 0) throw new Error('weightGrams must be > 0');
+        if (!p.quantity || p.quantity <= 0) throw new Error('quantity must be > 0');
+        const name = ensureNonEmpty(p.name, 'name');
+        return [{
+          name,
+          description: p.description ?? name,
+          value: Math.max(0, Math.trunc(p.price)),
+          length: p.length ?? 20,
+          width: p.width ?? 15,
+          height: p.height ?? 10,
+          weight: Math.trunc(p.weightGrams),
+          quantity: Math.trunc(p.quantity),
+        }];
+      })();
+
+  const body: Record<string, unknown> = { origin_postal_code: origin };
   if (hasGeo) {
     body.destination_latitude = p.destinationLatitude;
     body.destination_longitude = p.destinationLongitude;
   } else {
     body.destination_postal_code = destination;
   }
+  body.couriers = couriers;
+  body.items = items;
 
-  const res = await fetch('/api/shipping/rates', { 
-    method: "POST", 
-    headers: { "Content-Type": "application/json" }, 
-    body: JSON.stringify(body) 
+  const res = await fetch('/api/shipping/rates', {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
   });
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({ error: 'Failed to fetch shipping rates' }));
     throw new Error(errorData.error || 'Failed to fetch shipping rates');
   }
-  
+
   const data = await res.json();
   const parsed = BiteshipRatesResponseSchema.safeParse(data);
   if (!parsed.success) {
-    // Attach raw to error for debugging in dev
     console.error('Failed to parse Biteship response', parsed.error.format(), data);
     throw new Error('Failed to parse shipping response');
   }
-  
-  const pricing = parsed.data.pricing;
-  const mapped: NormalizedRate[] = pricing.map((p) => ({
+
+  return parsed.data.pricing.map((p) => ({
     carrier: p.courier_name,
     code: `${p.courier_code}-${p.courier_service_code}`,
     service: p.courier_service_name,
@@ -73,8 +75,6 @@ async function getShippingRates(p: ShippingCalcParams) {
     price: p.price,
     raw: p,
   }));
-  
-  return mapped;
 }
 
 export const useShippingCalculator = () => {
@@ -101,18 +101,18 @@ export const useShippingCalculator = () => {
     try {
       const normalizedRates = await getShippingRates(params);
       setShippingRates(normalizedRates);
-      
+
       if (normalizedRates.length === 0) {
         setShippingError('Tidak ada kurir yang tersedia untuk tujuan ini.');
       }
-      
+
       // Note: Location data is not available in current Biteship response
       // This is handled gracefully by the UI components
       return { pricing: normalizedRates, location: null };
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Terjadi kesalahan. Silakan coba lagi.';
       setShippingError(errorMessage);
-      return null;
+      throw err;
     } finally {
       setIsLoadingShipping(false);
     }
