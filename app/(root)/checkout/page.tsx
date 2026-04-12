@@ -111,37 +111,45 @@ export default function CheckoutPage() {
 
   const handleCalculateShippingByPostal = useCallback(async (postalCode: string) => {
     if (cartItems.length === 0) return;
-    await calculateShipping({
-      originPostalCode: process.env.NEXT_PUBLIC_ORIGIN_POSTAL_CODE || "12440",
-      destinationPostalCode: postalCode,
-      couriers: "anteraja,jne,sicepat",
-      name: cartItems[0]?.productName ?? "Kopi Agroastery",
-      description: "Pesanan Agroastery",
-      price: cartTotal,
-      quantity: cartCount,
-      weightGrams: shippingWeight,
-      length: 20,
-      width: 20,
-      height: 20,
-    });
+    try {
+      await calculateShipping({
+        originPostalCode: process.env.NEXT_PUBLIC_ORIGIN_POSTAL_CODE || "12440",
+        destinationPostalCode: postalCode,
+        couriers: "anteraja,jne,sicepat",
+        name: cartItems[0]?.productName ?? "Kopi Agroastery",
+        description: "Pesanan Agroastery",
+        price: cartTotal,
+        quantity: cartCount,
+        weightGrams: shippingWeight,
+        length: 20,
+        width: 20,
+        height: 20,
+      });
+    } catch {
+      // error already surfaced via shippingError state
+    }
   }, [cartItems, cartTotal, cartCount, shippingWeight, calculateShipping]);
 
   const handleCalculateShippingByGeo = useCallback(async (lat: number, lng: number) => {
     if (cartItems.length === 0) return;
-    await calculateShipping({
-      originPostalCode: process.env.NEXT_PUBLIC_ORIGIN_POSTAL_CODE || "12440",
-      destinationLatitude: lat,
-      destinationLongitude: lng,
-      couriers: "anteraja,jne,sicepat,lalamove,grab,gojek",
-      name: cartItems[0]?.productName ?? "Kopi Agroastery",
-      description: "Pesanan Agroastery",
-      price: cartTotal,
-      quantity: cartCount,
-      weightGrams: shippingWeight,
-      length: 20,
-      width: 20,
-      height: 20,
-    });
+    try {
+      await calculateShipping({
+        originPostalCode: process.env.NEXT_PUBLIC_ORIGIN_POSTAL_CODE || "12440",
+        destinationLatitude: lat,
+        destinationLongitude: lng,
+        couriers: "anteraja,jne,sicepat,lalamove,grab,gojek",
+        name: cartItems[0]?.productName ?? "Kopi Agroastery",
+        description: "Pesanan Agroastery",
+        price: cartTotal,
+        quantity: cartCount,
+        weightGrams: shippingWeight,
+        length: 20,
+        width: 20,
+        height: 20,
+      });
+    } catch {
+      // error already surfaced via shippingError state
+    }
   }, [cartItems, cartTotal, cartCount, shippingWeight, calculateShipping]);
 
   const applyAddressToForm = useCallback((addr: Address) => {

@@ -1,15 +1,17 @@
 import { z } from 'zod'
 
-export type ShippingCalcItem = {
+export type ShippingItem = {
   name: string;
   description?: string;
   value: number;
   length: number;
   width: number;
   height: number;
-  weight: number; // grams
+  weight: number;
   quantity: number;
 };
+
+export type ShippingCalcItem = ShippingItem;
 
 export type ShippingCalcParams = {
   originPostalCode: string | number;
@@ -28,17 +30,6 @@ export type ShippingCalcParams = {
   destinationLongitude?: number | null;
   // Optional: when provided, sent directly instead of building from scalar fields above
   items?: ShippingCalcItem[];
-};
-
-export type ShippingItem = {
-  name: string;
-  description?: string;
-  value: number;
-  length: number;
-  width: number;
-  height: number;
-  weight: number;
-  quantity: number;
 };
 
 export type ShippingRateRequest = {
