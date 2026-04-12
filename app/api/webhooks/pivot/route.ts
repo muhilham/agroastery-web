@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { sendPaymentNotification } from "@/lib/telegram/notify";
+import { createBiteshipOrder } from '@/lib/biteship/createOrder';
 
 function verifyPivotCallback(request: NextRequest): boolean {
   const apiKey = request.headers.get("x-api-key") ?? "";
@@ -88,6 +89,15 @@ export async function POST(request: NextRequest) {
         total: updatedOrder.total as number,
         paidAt,
       });
+
+      // Fire-and-forget: create Biteship order after payment confirmed.
+      // Never awaited — Pivot expects a fast 200. Failure is logged for manual ops recovery.
+      createBiteshipOrder(updatedOrder.id as string).catch((err: unknown) =>
+        console.error(
+          `[pivot-webhook] Biteship order creation failed for order ${updatedOrder.id}:`,
+          err
+        )
+      );
     }
   } else if (event === "PAYMENT.EXPIRED" || event === "PAYMENT.CANCELLED") {
     // Idempotently cancel the order (use neq to act as a lock)
