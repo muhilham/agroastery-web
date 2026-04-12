@@ -6,7 +6,7 @@
 
 **Architecture:** Pivot payment webhook triggers fire-and-forget Biteship order creation (`POST /v1/orders`); a new Biteship webhook handler updates `ecom_orders.status` and `tracking_number`; a new tracking endpoint calls Biteship's public tracking API using the stored waybill + courier code.
 
-**Tech Stack:** Next.js 15 App Router, TypeScript, Supabase admin client, Biteship REST API v1, Vitest + jsdom
+**Tech Stack:** Next.js 16.2.3 App Router, TypeScript, Supabase admin client, Biteship REST API v1, Vitest + jsdom
 
 **Branch:** `claude/review-pr-7AjrY` — do NOT create a new branch.
 
