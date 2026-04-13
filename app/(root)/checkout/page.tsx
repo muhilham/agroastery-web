@@ -469,7 +469,7 @@ export default function CheckoutPage() {
                       className={`flex-shrink-0 w-36 rounded-xl border-2 border-dashed p-3 flex flex-col items-center justify-center gap-1 transition-colors ${
                         selectedAddressId === "new"
                           ? "border-primary/50 bg-primary/5"
-                          : "border-white/15 bg-transparent active:bg-white/5"
+                          : "border-white/[0.15] bg-transparent active:bg-white/5"
                       }`}
                     >
                       <span className="text-primary text-xl leading-none font-light">+</span>
