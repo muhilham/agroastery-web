@@ -358,181 +358,196 @@ export default function CheckoutPage() {
         {/* Form */}
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <h2 className="text-primary font-medium">Data Penerima</h2>
-
-            <FormField
-              control={form.control}
-              name="fullName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nama Lengkap</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Nama lengkap penerima" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nomor HP</FormLabel>
-                  <FormControl>
-                    <Input placeholder="08xxxxxxxxxx" inputMode="tel" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email (Opsional)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="email@contoh.com" type="email" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <h2 className="text-primary font-medium pt-2">Alamat Pengiriman</h2>
-
-            {/* Saved address selector — authenticated users with saved addresses */}
-            {user && !isLoadingAddresses && addresses.length > 0 && (
-              <div className="space-y-1">
-                <label htmlFor="saved-address-select" className="text-sm font-medium text-white">Pilih Alamat</label>
-                <select
-                  id="saved-address-select"
-                  value={selectedAddressId ?? ""}
-                  onChange={(e) => handleAddressSelect(e.target.value)}
-                  className="flex h-12 w-full rounded-xl bg-[#242424] border border-white/10 px-3 py-1 text-sm text-[#CCC4A9]/80 shadow-sm transition-colors focus:outline-none appearance-none"
-                >
-                  {addresses.map((addr) => (
-                    <option key={addr.id} value={addr.id}>
-                      {addr.label ? `${addr.label} — ${addr.recipient_name}` : addr.recipient_name}
-                      {addr.is_default ? " (Utama)" : ""}
-                    </option>
-                  ))}
-                  <option value="new">+ Alamat baru</option>
-                </select>
+            {/* Step 1: Data Penerima */}
+            <div className="bg-[#1a1a1a] rounded-xl border border-white/10 p-4 space-y-4">
+              <div className="flex items-center gap-3">
+                <span className="w-5 h-5 rounded-full bg-primary/20 border border-primary/30 text-primary text-[10px] font-bold flex items-center justify-center shrink-0">1</span>
+                <h2 className="text-primary font-semibold tracking-widest uppercase text-xs">Data Penerima</h2>
               </div>
-            )}
 
-            {/* Loading addresses indicator */}
-            {user && isLoadingAddresses && (
-              <div className="flex items-center gap-2 text-sm text-[#CCC4A9]/60">
-                <LoaderCircle className="animate-spin w-4 h-4" />
-                <span>Memuat alamat tersimpan...</span>
+              <FormField
+                control={form.control}
+                name="fullName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nama Lengkap</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Nama lengkap penerima" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nomor HP</FormLabel>
+                    <FormControl>
+                      <Input placeholder="08xxxxxxxxxx" inputMode="tel" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email (Opsional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="email@contoh.com" type="email" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Step 2: Alamat Pengiriman */}
+            <div className="bg-[#1a1a1a] rounded-xl border border-white/10 p-4 space-y-4">
+              <div className="flex items-center gap-3">
+                <span className="w-5 h-5 rounded-full bg-primary/20 border border-primary/30 text-primary text-[10px] font-bold flex items-center justify-center shrink-0">2</span>
+                <h2 className="text-primary font-semibold tracking-widest uppercase text-xs">Alamat Pengiriman</h2>
               </div>
-            )}
 
-            {(selectedAddressId === "new" || (selectedAddressId === null && !user)) && (
-              <>
-                <FormField
-                  control={form.control}
-                  name="address"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Alamat Lengkap</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Jl. Kemang Barat No. 7, RT.9/RW.1, Bangka, Mampang Prapatan"
-                          className="resize-none"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              {/* Saved address selector — authenticated users with saved addresses */}
+              {user && !isLoadingAddresses && addresses.length > 0 && (
+                <div className="space-y-1">
+                  <label htmlFor="saved-address-select" className="text-sm font-medium text-white">Pilih Alamat</label>
+                  <select
+                    id="saved-address-select"
+                    value={selectedAddressId ?? ""}
+                    onChange={(e) => handleAddressSelect(e.target.value)}
+                    className="flex h-12 w-full rounded-xl bg-[#242424] border border-white/10 px-3 py-1 text-sm text-[#CCC4A9]/80 shadow-sm transition-colors focus:outline-none appearance-none"
+                  >
+                    {addresses.map((addr) => (
+                      <option key={addr.id} value={addr.id}>
+                        {addr.label ? `${addr.label} — ${addr.recipient_name}` : addr.recipient_name}
+                        {addr.is_default ? " (Utama)" : ""}
+                      </option>
+                    ))}
+                    <option value="new">+ Alamat baru</option>
+                  </select>
+                </div>
+              )}
 
-                <FormField
-                  control={form.control}
-                  name="postalCode"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Kode Pos</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Input
-                            placeholder="12190"
-                            maxLength={5}
-                            inputMode="numeric"
+              {/* Loading addresses indicator */}
+              {user && isLoadingAddresses && (
+                <div className="flex items-center gap-2 text-sm text-[#CCC4A9]/60">
+                  <LoaderCircle className="animate-spin w-4 h-4" />
+                  <span>Memuat alamat tersimpan...</span>
+                </div>
+              )}
+
+              {(selectedAddressId === "new" || (selectedAddressId === null && !user)) && (
+                <>
+                  <FormField
+                    control={form.control}
+                    name="address"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Alamat Lengkap</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Jl. Kemang Barat No. 7, RT.9/RW.1, Bangka, Mampang Prapatan"
+                            className="resize-none"
                             {...field}
                           />
-                          {isLoadingShipping && (
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                              <LoaderCircle className="animate-spin h-4 w-4 text-primary" />
-                            </div>
-                          )}
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-white">
-                    Pilih Lokasi (Opsional)
-                  </label>
-                  {showMap ? (
-                    <MapPicker
-                      value={{
-                        lat: form.getValues("lat") || null,
-                        lng: form.getValues("lng") || null,
-                      }}
-                      onChange={(coords) => {
-                        form.setValue("lat", coords.lat);
-                        form.setValue("lng", coords.lng);
-                      }}
-                      height={240}
-                      className="w-full"
-                    />
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setShowMap(true)}
-                      className="w-full h-[60px] rounded-lg border border-white/10 bg-white/5 text-secondary text-sm hover:bg-white/10 active:bg-white/15 transition-colors"
-                    >
-                      Buka Peta untuk Pilih Lokasi
-                    </button>
-                  )}
-                </div>
-              </>
-            )}
+                  <FormField
+                    control={form.control}
+                    name="postalCode"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Kode Pos</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Input
+                              placeholder="12190"
+                              maxLength={5}
+                              inputMode="numeric"
+                              {...field}
+                            />
+                            {isLoadingShipping && (
+                              <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                <LoaderCircle className="animate-spin h-4 w-4 text-primary" />
+                              </div>
+                            )}
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-            {/* Read-only address summary card */}
-            {selectedAddressId !== null && selectedAddressId !== "new" && (() => {
-              const addr = addresses.find((a) => a.id === selectedAddressId);
-              if (!addr) return null;
-              return (
-                <div className="rounded-xl bg-[#242424] border border-white/10 px-4 py-3 space-y-1">
-                  <p className="text-[#CCC4A9] text-sm font-medium">{addr.address_line}</p>
-                  {addr.postal_code && (
-                    <p className="text-[#CCC4A9]/60 text-xs">Kode Pos: {addr.postal_code}</p>
-                  )}
-                </div>
-              );
-            })()}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-white">
+                      Pilih Lokasi (Opsional)
+                    </label>
+                    {showMap ? (
+                      <MapPicker
+                        value={{
+                          lat: form.getValues("lat") || null,
+                          lng: form.getValues("lng") || null,
+                        }}
+                        onChange={(coords) => {
+                          form.setValue("lat", coords.lat);
+                          form.setValue("lng", coords.lng);
+                        }}
+                        height={240}
+                        className="w-full"
+                      />
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setShowMap(true)}
+                        className="w-full h-[60px] rounded-lg border border-white/10 bg-white/5 text-secondary text-sm hover:bg-white/10 active:bg-white/15 transition-colors"
+                      >
+                        Buka Peta untuk Pilih Lokasi
+                      </button>
+                    )}
+                  </div>
+                </>
+              )}
 
-            <LocationDisplay
-              location={location}
-              isLoading={isLoadingShipping}
-              error={shippingError}
-            />
+              {/* Read-only address summary card */}
+              {selectedAddressId !== null && selectedAddressId !== "new" && (() => {
+                const addr = addresses.find((a) => a.id === selectedAddressId);
+                if (!addr) return null;
+                return (
+                  <div className="rounded-xl bg-[#242424] border border-white/10 px-4 py-3 space-y-1">
+                    <p className="text-[#CCC4A9] text-sm font-medium">{addr.address_line}</p>
+                    {addr.postal_code && (
+                      <p className="text-[#CCC4A9]/60 text-xs">Kode Pos: {addr.postal_code}</p>
+                    )}
+                  </div>
+                );
+              })()}
+
+              <LocationDisplay
+                location={location}
+                isLoading={isLoadingShipping}
+                error={shippingError}
+              />
+            </div>
 
             {/* Shipping options */}
             {shippingRates.length > 0 && !shippingError && (
-              <div className="space-y-2 pt-2">
-                <h2 className="text-primary font-medium">Opsi Pengiriman</h2>
+              <div className="bg-[#1a1a1a] rounded-xl border border-white/10 p-4 space-y-3">
+                <div className="flex items-center gap-3">
+                  <span className="w-5 h-5 rounded-full bg-primary/20 border border-primary/30 text-primary text-[10px] font-bold flex items-center justify-center shrink-0">3</span>
+                  <h2 className="text-primary font-semibold tracking-widest uppercase text-xs">Opsi Pengiriman</h2>
+                </div>
                 <RadioGroup
                   onValueChange={(value) => {
                     const rate = shippingRates.find((r) => r.code === value) ?? null;
