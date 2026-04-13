@@ -439,22 +439,43 @@ export default function CheckoutPage() {
 
               {/* Saved address selector — authenticated users with saved addresses */}
               {user && !isLoadingAddresses && addresses.length > 0 && (
-                <div className="space-y-1">
-                  <label htmlFor="saved-address-select" className="text-sm font-medium text-white">Pilih Alamat</label>
-                  <select
-                    id="saved-address-select"
-                    value={selectedAddressId ?? ""}
-                    onChange={(e) => handleAddressSelect(e.target.value)}
-                    className="flex h-12 w-full rounded-xl bg-[#242424] border border-white/10 px-3 py-1 text-sm text-[#CCC4A9]/80 shadow-sm transition-colors focus:outline-none appearance-none"
-                  >
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-white">Pilih Alamat</label>
+                  <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar -mx-1 px-1">
                     {addresses.map((addr) => (
-                      <option key={addr.id} value={addr.id}>
-                        {addr.label ? `${addr.label} — ${addr.recipient_name}` : addr.recipient_name}
-                        {addr.is_default ? " (Utama)" : ""}
-                      </option>
+                      <button
+                        key={addr.id}
+                        type="button"
+                        onClick={() => handleAddressSelect(addr.id)}
+                        className={`flex-shrink-0 w-44 rounded-xl border-2 p-3 text-left transition-colors ${
+                          selectedAddressId === addr.id
+                            ? "border-primary bg-primary/10"
+                            : "border-white/10 bg-[#242424] active:bg-[#2a2a2a]"
+                        }`}
+                      >
+                        {(addr.label || addr.is_default) && (
+                          <p className="text-[10px] font-semibold uppercase tracking-widest text-primary/70 mb-1 truncate">
+                            {addr.label ?? ""}
+                            {addr.is_default ? (addr.label ? " · Utama" : "Utama") : ""}
+                          </p>
+                        )}
+                        <p className="text-xs font-medium text-[#CCC4A9] line-clamp-1">{addr.recipient_name}</p>
+                        <p className="text-[11px] text-[#CCC4A9]/50 line-clamp-2 mt-0.5 leading-tight">{addr.address_line}</p>
+                      </button>
                     ))}
-                    <option value="new">+ Alamat baru</option>
-                  </select>
+                    <button
+                      type="button"
+                      onClick={() => handleAddressSelect("new")}
+                      className={`flex-shrink-0 w-36 rounded-xl border-2 border-dashed p-3 flex flex-col items-center justify-center gap-1 transition-colors ${
+                        selectedAddressId === "new"
+                          ? "border-primary/50 bg-primary/5"
+                          : "border-white/15 bg-transparent active:bg-white/5"
+                      }`}
+                    >
+                      <span className="text-primary text-xl leading-none font-light">+</span>
+                      <span className="text-xs text-[#CCC4A9]/50">Alamat baru</span>
+                    </button>
+                  </div>
                 </div>
               )}
 
