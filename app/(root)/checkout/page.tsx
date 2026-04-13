@@ -182,7 +182,8 @@ export default function CheckoutPage() {
   }, [user, isLoadingAddresses, addresses]);
 
   useEffect(() => {
-    if (selectedAddressId !== "new") return;
+    // Fire for "new" address mode (logged-in) OR guest mode (null + no user)
+    if (selectedAddressId !== "new" && selectedAddressId !== null) return;
     const latValid = typeof watchedLat === "number" && Number.isFinite(watchedLat);
     const lngValid = typeof watchedLng === "number" && Number.isFinite(watchedLng);
     if (latValid && lngValid) return;
@@ -197,7 +198,8 @@ export default function CheckoutPage() {
   }, [debouncedPostalCode, watchedLat, watchedLng, selectedAddressId]);
 
   useEffect(() => {
-    if (selectedAddressId !== "new") return;
+    // Fire for "new" address mode (logged-in) OR guest mode (null + no user)
+    if (selectedAddressId !== "new" && selectedAddressId !== null) return;
     const latValid = typeof watchedLat === "number" && Number.isFinite(watchedLat);
     const lngValid = typeof watchedLng === "number" && Number.isFinite(watchedLng);
     if (latValid && lngValid) {
