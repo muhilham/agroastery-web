@@ -151,7 +151,7 @@ export default function QrPaymentClient({
           </div>
 
           {/* Payment steps */}
-          <div className="grid grid-cols-3 gap-2 mb-4">
+          <div className="grid grid-cols-3 gap-2 my-4">
             {[
               { n: "1", text: "Buka aplikasi bank atau e-wallet" },
               { n: "2", text: "Scan QR code ini" },
