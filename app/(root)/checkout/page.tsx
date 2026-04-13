@@ -607,17 +607,25 @@ export default function CheckoutPage() {
                         </FormControl>
                         <FormLabel
                           htmlFor={key}
-                          className={`flex items-center justify-between gap-3 p-3 tablet:p-4 rounded-lg border-2 cursor-pointer transition-colors min-h-[3.5rem] ${
+                          className={`flex items-center justify-between gap-3 p-3 tablet:p-4 rounded-lg border cursor-pointer transition-all min-h-[3.5rem] relative overflow-hidden ${
                             selectedShipping?.code === rate.code
-                              ? "border-primary bg-primary/10"
-                              : "border-transparent bg-white/5 active:bg-white/10"
+                              ? "border-primary/40 bg-primary/10"
+                              : "border-white/10 bg-[#1e1e1e] active:bg-white/5"
                           }`}
                         >
-                          <div className="flex flex-col min-w-0">
-                            <span className="uppercase text-sm font-medium truncate">{rate.carrier} {rate.service}</span>
-                            <span className="text-xs text-secondary">Estimasi {rate.eta || "N/A"}</span>
+                          {selectedShipping?.code === rate.code && (
+                            <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary" />
+                          )}
+                          <div className="flex flex-col min-w-0 gap-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-[10px] font-bold uppercase tracking-widest bg-white/10 rounded px-1.5 py-0.5 text-[#CCC4A9]/70 shrink-0">
+                                {rate.carrier}
+                              </span>
+                              <span className="text-sm font-medium text-primary truncate">{rate.service}</span>
+                            </div>
+                            <span className="text-xs text-secondary">Tiba {rate.eta || "N/A"}</span>
                           </div>
-                          <span className="text-sm font-semibold shrink-0">{numberToIdr({ nominal: rate.price })}</span>
+                          <span className="text-sm font-semibold shrink-0 text-primary">{numberToIdr({ nominal: rate.price })}</span>
                         </FormLabel>
                       </FormItem>
                     );
