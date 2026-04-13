@@ -296,8 +296,30 @@ export default function CheckoutPage() {
     return (
       <div className="min-h-svh flex flex-col bg-background">
         <Navigation />
-        <main className="flex-1 flex items-center justify-center">
-          <LoaderCircle className="animate-spin w-8 h-8 text-primary" />
+        <main className="pt-20 px-4 tablet:px-10 desktop:px-20">
+          <div className="h-6 w-24 bg-white/10 rounded-lg mb-6 mt-4 animate-pulse" />
+          {/* Cart summary skeleton */}
+          <div className="bg-[#1a1a1a] rounded-xl border border-white/10 p-4 mb-6 space-y-3">
+            {[0, 1].map((i) => (
+              <div key={i} className="flex gap-3 items-center">
+                <div className="w-12 h-12 rounded-lg bg-white/10 animate-pulse shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-3 bg-white/10 rounded animate-pulse w-3/4" />
+                  <div className="h-3 bg-white/10 rounded animate-pulse w-1/2" />
+                </div>
+                <div className="h-4 w-16 bg-white/10 rounded animate-pulse" />
+              </div>
+            ))}
+          </div>
+          {/* Form skeleton */}
+          <div className="bg-[#1a1a1a] rounded-xl border border-white/10 p-4 space-y-4">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="space-y-1.5">
+                <div className="h-3 w-20 bg-white/10 rounded animate-pulse" />
+                <div className="h-12 bg-white/10 rounded-xl animate-pulse" />
+              </div>
+            ))}
+          </div>
         </main>
       </div>
     );
