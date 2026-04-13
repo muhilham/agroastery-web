@@ -35,6 +35,38 @@ function useCountdown(expiresAtIso: string) {
   return secondsLeft;
 }
 
+function CountdownRing({ secondsLeft, totalSeconds }: { secondsLeft: number; totalSeconds: number }) {
+  const radius = 28;
+  const circumference = 2 * Math.PI * radius;
+  const progress = totalSeconds > 0 ? secondsLeft / totalSeconds : 0;
+  const dashOffset = circumference * (1 - progress);
+  const color =
+    secondsLeft > 60 ? "#86efac" : secondsLeft > 20 ? "#fde047" : "#f87171";
+  const mm = Math.floor(secondsLeft / 60).toString().padStart(2, "0");
+  const ss = (secondsLeft % 60).toString().padStart(2, "0");
+
+  return (
+    <div className="relative w-16 h-16 flex items-center justify-center">
+      <svg className="absolute inset-0 -rotate-90" width="64" height="64" aria-hidden="true">
+        <circle cx="32" cy="32" r={radius} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="3" />
+        <circle
+          cx="32" cy="32" r={radius}
+          fill="none"
+          stroke={color}
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={dashOffset}
+          style={{ transition: "stroke-dashoffset 0.9s linear, stroke 0.4s ease" }}
+        />
+      </svg>
+      <span className="text-xs font-mono font-semibold tabular-nums" style={{ color }}>
+        {mm}:{ss}
+      </span>
+    </div>
+  );
+}
+
 export default function QrPaymentClient({
   orderId,
   orderNumber,
@@ -48,18 +80,13 @@ export default function QrPaymentClient({
   const [qrExpiresAt, setQrExpiresAt] = useState(initialQrExpiresAt);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);
+  const [totalSeconds, setTotalSeconds] = useState(() =>
+    Math.max(1, Math.floor((new Date(initialQrExpiresAt).getTime() - Date.now()) / 1000))
+  );
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const secondsLeft = useCountdown(qrExpiresAt);
   const isExpired = secondsLeft === 0;
-
-  const formatCountdown = (s: number) => {
-    const m = Math.floor(s / 60)
-      .toString()
-      .padStart(2, "0");
-    const sec = (s % 60).toString().padStart(2, "0");
-    return `${m}:${sec}`;
-  };
 
   // Poll order status every 3 seconds
   useEffect(() => {
@@ -101,6 +128,9 @@ export default function QrPaymentClient({
       }
       setQrUrl(data.qrUrl);
       setQrExpiresAt(data.qrExpiresAt);
+      setTotalSeconds(
+        Math.max(1, Math.floor((new Date(data.qrExpiresAt).getTime() - Date.now()) / 1000))
+      );
     } catch {
       setRefreshError("Terjadi kesalahan. Coba lagi.");
     } finally {
@@ -118,6 +148,22 @@ export default function QrPaymentClient({
             <p className="text-secondary text-sm">
               Pesanan #{orderNumber} &middot; {numberToIdr({ nominal: total })}
             </p>
+          </div>
+
+          {/* Payment steps */}
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            {[
+              { n: "1", text: "Buka aplikasi bank atau e-wallet" },
+              { n: "2", text: "Scan QR code ini" },
+              { n: "3", text: "Konfirmasi pembayaran" },
+            ].map((step) => (
+              <div key={step.n} className="flex flex-col items-center gap-1.5 text-center">
+                <div className="w-5 h-5 rounded-full bg-white/10 border border-white/20 text-white/60 text-[10px] font-bold flex items-center justify-center">
+                  {step.n}
+                </div>
+                <p className="text-[10px] text-[#CCC4A9]/40 leading-tight">{step.text}</p>
+              </div>
+            ))}
           </div>
 
           <div className="bg-white rounded-2xl p-6 shadow-sm flex flex-col items-center gap-4">
@@ -143,9 +189,7 @@ export default function QrPaymentClient({
             )}
 
             {!isExpired && (
-              <p className="text-sm text-secondary">
-                Berlaku {formatCountdown(secondsLeft)}
-              </p>
+              <CountdownRing secondsLeft={secondsLeft} totalSeconds={totalSeconds} />
             )}
 
             {(isExpired || secondsLeft < 30) && (
@@ -169,14 +213,23 @@ export default function QrPaymentClient({
             )}
 
             <p className="text-xs text-secondary text-center">
-              Gunakan aplikasi perbankan atau dompet digital yang mendukung QRIS
+              Mendukung QRIS — GoPay, OVO, Dana, dan semua bank
             </p>
           </div>
 
           <div className="mt-6 text-center">
-            <p className="text-xs text-secondary mb-3">
-              Menunggu konfirmasi pembayaran...
-            </p>
+            <div className="flex flex-col items-center gap-2 mb-3">
+              <div className="flex items-center gap-1">
+                {[0, 1, 2].map((i) => (
+                  <div
+                    key={i}
+                    className="w-1.5 h-1.5 rounded-full bg-primary/50 animate-bounce"
+                    style={{ animationDelay: `${i * 0.2}s`, animationDuration: "1.2s" }}
+                  />
+                ))}
+              </div>
+              <p className="text-xs text-secondary">Menunggu konfirmasi pembayaran...</p>
+            </div>
             <Link href="/checkout" className="text-sm text-secondary underline-offset-4 hover:underline">
               Batalkan dan kembali ke checkout
             </Link>
