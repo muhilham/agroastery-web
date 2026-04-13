@@ -192,21 +192,21 @@ export default function QrPaymentClient({
               <CountdownRing secondsLeft={secondsLeft} totalSeconds={totalSeconds} />
             )}
 
-            {(isExpired || secondsLeft < 30) && (
-              <Button
-                onClick={handleRefresh}
-                disabled={isRefreshing}
-                variant="outline"
-                className="w-full"
-              >
-                {isRefreshing ? (
-                  <Loader2 className="animate-spin w-4 h-4 mr-2" />
-                ) : (
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                )}
-                {isRefreshing ? "Memperbarui..." : "Perbarui QR"}
-              </Button>
-            )}
+            <Button
+              onClick={handleRefresh}
+              disabled={isRefreshing || secondsLeft >= 30}
+              variant="outline"
+              className={`w-full transition-opacity duration-300 ${
+                secondsLeft >= 30 ? "opacity-30" : "opacity-100"
+              }`}
+            >
+              {isRefreshing ? (
+                <Loader2 className="animate-spin w-4 h-4 mr-2" />
+              ) : (
+                <RefreshCw className="w-4 h-4 mr-2" />
+              )}
+              {isRefreshing ? "Memperbarui..." : "Perbarui QR"}
+            </Button>
 
             {refreshError && (
               <p className="text-destructive text-sm text-center">{refreshError}</p>
