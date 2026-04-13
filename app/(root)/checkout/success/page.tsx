@@ -22,8 +22,7 @@ function SuccessContent() {
             {isPending ? (
               <div className="w-20 h-20 rounded-full bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center mx-auto">
                 <svg
-                  className="w-9 h-9 text-yellow-400"
-                  style={{ animation: "spin 3s linear infinite" }}
+                  className="w-9 h-9 text-yellow-400 animate-spin [animation-duration:3s]"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
