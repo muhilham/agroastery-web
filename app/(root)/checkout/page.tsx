@@ -17,7 +17,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { LoaderCircle, ShoppingBag } from "lucide-react";
+import { LoaderCircle, MapPin, ShoppingBag } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useDebounce } from "@/lib/hooks/useDebounce";
 import { useShippingCalculator } from "@/lib/hooks/useShippingCalculator";
@@ -554,9 +554,13 @@ export default function CheckoutPage() {
                       <button
                         type="button"
                         onClick={() => setShowMap(true)}
-                        className="w-full h-[60px] rounded-lg border border-white/10 bg-white/5 text-secondary text-sm hover:bg-white/10 active:bg-white/15 transition-colors"
+                        className="w-full h-[60px] rounded-xl border border-white/10 bg-[#1e1e1e] hover:bg-[#242424] active:bg-[#2a2a2a] transition-colors flex items-center justify-center gap-2.5 group"
                       >
-                        Buka Peta untuk Pilih Lokasi
+                        <MapPin className="w-4 h-4 text-primary/50 group-hover:text-primary/80 transition-colors" />
+                        <span className="text-sm text-[#CCC4A9]/60 group-hover:text-[#CCC4A9]/80 transition-colors">
+                          Pilih Lokasi di Peta
+                        </span>
+                        <span className="text-[10px] text-[#CCC4A9]/25">(Opsional)</span>
                       </button>
                     )}
                   </div>
