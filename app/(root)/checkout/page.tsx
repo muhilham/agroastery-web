@@ -667,33 +667,40 @@ export default function CheckoutPage() {
       </main>
 
       {/* Fixed bottom bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-[#141414] border-t border-border/50 px-4 pt-3 tablet:px-10 desktop:px-20 z-30"
-        style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}>
-        <div className="flex justify-between text-sm text-secondary mb-1">
-          <span>Subtotal</span>
-          <span className="text-primary">{numberToIdr({ nominal: cartTotal })}</span>
-        </div>
-        <div className="flex justify-between text-sm text-secondary mb-2">
-          <span>Pengiriman</span>
-          <span className="text-primary">
-            {selectedShipping ? numberToIdr({ nominal: shippingCost }) : "-"}
-          </span>
-        </div>
-        <div className="flex justify-between font-bold text-primary mb-3">
-          <span>Total</span>
-          <span>{numberToIdr({ nominal: total })}</span>
-        </div>
-        <Button
-          onClick={form.handleSubmit(onSubmit)}
-          className="w-full h-12"
-          disabled={isSubmitting || isLoadingShipping || !selectedShipping || cartCount === 0}
+      <div className="fixed bottom-0 left-0 right-0 z-30">
+        {/* Gradient fade */}
+        <div className="h-8 bg-gradient-to-b from-transparent to-[#141414] pointer-events-none" />
+        {/* Bar content */}
+        <div
+          className="bg-[#141414]/90 backdrop-blur-md border-t border-white/10 px-4 pt-3 tablet:px-10 desktop:px-20"
+          style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
         >
-          {isSubmitting ? (
-            <><LoaderCircle className="animate-spin w-4 h-4 mr-2" /> Memproses...</>
-          ) : (
-            "Bayar Sekarang"
-          )}
-        </Button>
+          <div className="flex justify-between text-sm text-secondary mb-1">
+            <span>Subtotal</span>
+            <span className="text-primary">{numberToIdr({ nominal: cartTotal })}</span>
+          </div>
+          <div className="flex justify-between text-sm text-secondary mb-2">
+            <span>Pengiriman</span>
+            <span className="text-primary">
+              {selectedShipping ? numberToIdr({ nominal: shippingCost }) : "-"}
+            </span>
+          </div>
+          <div className="flex justify-between font-bold text-primary mb-3">
+            <span>Total</span>
+            <span>{numberToIdr({ nominal: total })}</span>
+          </div>
+          <Button
+            onClick={form.handleSubmit(onSubmit)}
+            className="w-full h-12"
+            disabled={isSubmitting || isLoadingShipping || !selectedShipping || cartCount === 0}
+          >
+            {isSubmitting ? (
+              <><LoaderCircle className="animate-spin w-4 h-4 mr-2" /> Memproses...</>
+            ) : (
+              "Bayar Sekarang"
+            )}
+          </Button>
+        </div>
       </div>
     </Fragment>
   );
