@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
       xendit_payment_method: "QRIS_DEV_SIMULATE",
     })
     .eq("id", orderId)
-    .eq("payment_status", "pending_payment")
+    .eq("payment_status", "unpaid")
     .select("id");
 
   if (error) {

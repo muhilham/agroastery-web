@@ -97,7 +97,7 @@ export async function createQrisPaymentSession(
     },
     customer: {
       givenName: customerName,
-      ...(customerEmail ? { email: customerEmail } : {}),
+      email: customerEmail || `${phone.number}@noreply.agroastery.com`,
       phoneNumber: phone,
     },
     autoConfirm: true,
