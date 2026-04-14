@@ -56,12 +56,14 @@ export async function POST(request: NextRequest) {
       .update({
         pivot_payment_session_id: session.paymentSessionId,
         pivot_qr_url: session.qrUrl,
+        pivot_qr_string: session.qrString,
         pivot_qr_expires_at: session.qrExpiresAt,
       })
       .eq("id", orderId);
 
     return NextResponse.json({
       qrUrl: session.qrUrl,
+      qrString: session.qrString,
       qrExpiresAt: session.qrExpiresAt,
     });
   } catch (error) {

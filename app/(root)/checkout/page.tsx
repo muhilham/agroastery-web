@@ -69,6 +69,7 @@ type TForm = z.infer<typeof formSchema>;
 export default function CheckoutPage() {
   const router = useRouter();
   const { cartItems, cartTotal, cartCount, clearCart, totalWeight, hydrated } = useCart();
+  const [mounted, setMounted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [showMap, setShowMap] = useState(false);
@@ -162,6 +163,8 @@ export default function CheckoutPage() {
     form.setValue("lat", addr.latitude ?? undefined);
     form.setValue("lng", addr.longitude ?? undefined);
   }, [form]);
+
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     if (!user || isLoadingAddresses || authLoading) return;
@@ -291,8 +294,9 @@ export default function CheckoutPage() {
     }
   };
 
-  // Loading state during cart hydration
-  if (!hydrated) {
+  // Loading state during cart hydration — also gate on mounted so SSR and first
+  // client render both show the skeleton (prevents hydration mismatch)
+  if (!mounted || !hydrated) {
     return (
       <div className="min-h-svh flex flex-col bg-background">
         <Navigation />

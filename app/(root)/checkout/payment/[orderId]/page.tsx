@@ -12,7 +12,7 @@ export default async function PaymentPage({
 
   const { data: order } = await supabase
     .from("ecom_orders")
-    .select("id, order_number, total, payment_status, status, pivot_qr_url, pivot_qr_expires_at")
+    .select("id, order_number, total, payment_status, status, pivot_qr_url, pivot_qr_string, pivot_qr_expires_at")
     .eq("id", orderId)
     .single();
 
@@ -20,6 +20,7 @@ export default async function PaymentPage({
 
   const orderAny = order as typeof order & {
     pivot_qr_url: string | null;
+    pivot_qr_string: string | null;
     pivot_qr_expires_at: string | null;
   };
 
@@ -38,7 +39,7 @@ export default async function PaymentPage({
       orderId={orderId}
       orderNumber={orderAny.order_number as string}
       total={orderAny.total as number}
-      qrUrl={orderAny.pivot_qr_url ?? ""}
+      qrString={orderAny.pivot_qr_string ?? ""}
       qrExpiresAt={orderAny.pivot_qr_expires_at ?? ""}
     />
   );

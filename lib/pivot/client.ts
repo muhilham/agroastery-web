@@ -69,6 +69,7 @@ export interface CreateQrisSessionParams {
 export interface QrisSessionResult {
   paymentSessionId: string;
   qrUrl: string;
+  qrString: string; // raw EMVCO QRIS string for client-side QR rendering
   qrExpiresAt: string; // ISO 8601
 }
 
@@ -100,7 +101,7 @@ export async function createQrisPaymentSession(
       phoneNumber: phone,
     },
     autoConfirm: true,
-    statementDescriptor: `Agroastery ${orderNumber}`,
+    statementDescriptor: orderNumber,
   };
 
   const res = await fetch(`${PIVOT_API_URL}/v2/payments`, {
@@ -128,9 +129,16 @@ export async function createQrisPaymentSession(
     throw new Error("Pivot response missing QR URL");
   }
 
+  // Raw QRIS EMVCO string — try common field names from Pivot/Bank Neo API
+  const qrString: string = qr.qrString ?? qr.qrContent ?? qr.content ?? "";
+  if (!qrString) {
+    console.warn("Pivot response missing raw QR string — available qr fields:", Object.keys(qr));
+  }
+
   return {
     paymentSessionId: data.id,
     qrUrl: qr.qrUrl,
+    qrString,
     qrExpiresAt: qr.expiryAt,
   };
 }

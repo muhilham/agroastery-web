@@ -459,6 +459,7 @@ export type Database = {
           user_id: string | null
           pivot_payment_session_id: string | null
           pivot_qr_url: string | null
+          pivot_qr_string: string | null
           pivot_qr_expires_at: string | null
           xendit_invoice_id: string | null
           xendit_payment_method: string | null
@@ -487,6 +488,7 @@ export type Database = {
           user_id?: string | null
           pivot_payment_session_id?: string | null
           pivot_qr_url?: string | null
+          pivot_qr_string?: string | null
           pivot_qr_expires_at?: string | null
           xendit_invoice_id?: string | null
           xendit_payment_method?: string | null
@@ -515,6 +517,7 @@ export type Database = {
           user_id?: string | null
           pivot_payment_session_id?: string | null
           pivot_qr_url?: string | null
+          pivot_qr_string?: string | null
           pivot_qr_expires_at?: string | null
           xendit_invoice_id?: string | null
           xendit_payment_method?: string | null

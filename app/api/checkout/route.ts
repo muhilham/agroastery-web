@@ -284,7 +284,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create Pivot QRIS payment session
-    let pivotSession: { paymentSessionId: string; qrUrl: string; qrExpiresAt: string };
+    let pivotSession: { paymentSessionId: string; qrUrl: string; qrString: string; qrExpiresAt: string };
     try {
       pivotSession = await createQrisPaymentSession({
         orderId: order.id as string,
@@ -311,6 +311,7 @@ export async function POST(request: NextRequest) {
       .update({
         pivot_payment_session_id: pivotSession.paymentSessionId,
         pivot_qr_url: pivotSession.qrUrl,
+        pivot_qr_string: pivotSession.qrString,
         pivot_qr_expires_at: pivotSession.qrExpiresAt,
       })
       .eq("id", order.id as string);

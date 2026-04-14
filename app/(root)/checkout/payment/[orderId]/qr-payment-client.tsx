@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
+import QRCode from "react-qr-code";
 import Link from "next/link";
 import Navigation from "@/components/navigation";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,7 @@ interface Props {
   orderId: string;
   orderNumber: string;
   total: number;
-  qrUrl: string;
+  qrString: string; // raw EMVCO QRIS string
   qrExpiresAt: string; // ISO 8601
 }
 
@@ -71,12 +71,12 @@ export default function QrPaymentClient({
   orderId,
   orderNumber,
   total,
-  qrUrl: initialQrUrl,
+  qrString: initialQrString,
   qrExpiresAt: initialQrExpiresAt,
 }: Props) {
   const router = useRouter();
   const { clearCart } = useCart();
-  const [qrUrl, setQrUrl] = useState(initialQrUrl);
+  const [qrString, setQrString] = useState(initialQrString);
   const [qrExpiresAt, setQrExpiresAt] = useState(initialQrExpiresAt);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);
@@ -126,7 +126,7 @@ export default function QrPaymentClient({
         setRefreshError(data.error ?? "Gagal memperbarui QR");
         return;
       }
-      setQrUrl(data.qrUrl);
+      setQrString(data.qrString ?? "");
       setQrExpiresAt(data.qrExpiresAt);
       setTotalSeconds(
         Math.max(1, Math.floor((new Date(data.qrExpiresAt).getTime() - Date.now()) / 1000))
@@ -167,17 +167,11 @@ export default function QrPaymentClient({
           </div>
 
           <div className="bg-white rounded-2xl p-6 shadow-sm flex flex-col items-center gap-4">
-            {qrUrl ? (
-              <div className="relative w-56 h-56">
-                <Image
-                  src={qrUrl}
-                  alt="QRIS payment code"
-                  fill
-                  className={`object-contain ${isExpired ? "opacity-30" : ""}`}
-                  unoptimized // external URL from Pivot
-                />
+            {qrString ? (
+              <div className={`relative transition-opacity duration-300 ${isExpired ? "opacity-30" : "opacity-100"}`}>
+                <QRCode value={qrString} size={224} />
                 {isExpired && (
-                  <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="absolute inset-0 flex items-center justify-center bg-white/60">
                     <span className="text-sm font-medium text-gray-600">QR Kedaluwarsa</span>
                   </div>
                 )}

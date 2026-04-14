@@ -7,6 +7,7 @@
   },
   "scripts": {
     "dev": "bash -c '. \"$HOME/.nvm/nvm.sh\" && nvm use && next dev --turbopack'",
+    "dev:log": "bash -c '. \"$HOME/.nvm/nvm.sh\" && nvm use && next dev --turbopack' 2>&1 | tee .claude-context/service.log",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
@@ -33,6 +34,7 @@
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.56.3",
     "react-icons": "^5.5.0",
+    "react-qr-code": "^2.0.18",
     "tailwind-merge": "^3.2.0",
     "tailwindcss-animate": "^1.0.7",
     "xendit-node": "^7.0.0",
