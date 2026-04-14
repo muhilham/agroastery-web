@@ -80,6 +80,29 @@ export default function QrPaymentClient({
   const [qrExpiresAt, setQrExpiresAt] = useState(initialQrExpiresAt);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);
+  const [simulateError, setSimulateError] = useState<string | null>(null);
+  const [isSimulating, setIsSimulating] = useState(false);
+
+  const handleSimulate = useCallback(async () => {
+    setIsSimulating(true);
+    setSimulateError(null);
+    try {
+      const res = await fetch("/api/dev/simulate-payment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setSimulateError(data.error ?? "Gagal simulate pembayaran");
+      }
+      // On success, the polling loop detects payment_status "paid" and redirects
+    } catch {
+      setSimulateError("Terjadi kesalahan. Coba lagi.");
+    } finally {
+      setIsSimulating(false);
+    }
+  }, [orderId]);
   const [totalSeconds, setTotalSeconds] = useState(() =>
     Math.max(1, Math.floor((new Date(initialQrExpiresAt).getTime() - Date.now()) / 1000))
   );
@@ -210,6 +233,21 @@ export default function QrPaymentClient({
               Mendukung QRIS — GoPay, OVO, Dana, dan semua bank
             </p>
           </div>
+
+          {process.env.NODE_ENV === "development" && (
+            <div className="mt-4 flex flex-col items-center gap-1">
+              <button
+                onClick={handleSimulate}
+                disabled={isSimulating}
+                className="text-xs px-3 py-1.5 rounded border border-amber-400 text-amber-600 bg-amber-50 hover:bg-amber-100 disabled:opacity-50 disabled:cursor-not-allowed font-mono transition-colors"
+              >
+                {isSimulating ? "Simulating..." : "[DEV] Simulate Payment"}
+              </button>
+              {simulateError && (
+                <p className="text-xs text-destructive">{simulateError}</p>
+              )}
+            </div>
+          )}
 
           <div className="mt-6 text-center">
             <div className="flex flex-col items-center gap-2 mb-3">
