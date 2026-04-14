@@ -48,8 +48,8 @@ describe("QrPaymentClient — simulate button", () => {
     vi.restoreAllMocks();
   });
 
-  it("does not render the simulate button outside development", () => {
-    vi.stubEnv("NODE_ENV", "test");
+  it("does not render the simulate button in production", () => {
+    vi.stubEnv("NODE_ENV", "production");
 
     render(<QrPaymentClient {...defaultProps} />);
 

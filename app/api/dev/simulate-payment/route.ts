@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
   const { orderId } = parsed.data;
   const supabase = createSupabaseAdminClient();
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from("ecom_orders")
     .update({
       payment_status: "paid",
@@ -29,10 +29,18 @@ export async function POST(request: NextRequest) {
       xendit_payment_method: "QRIS_DEV_SIMULATE",
     })
     .eq("id", orderId)
-    .eq("payment_status", "pending_payment");
+    .eq("payment_status", "pending_payment")
+    .select("id");
 
   if (error) {
     return NextResponse.json({ error: "DB error" }, { status: 500 });
+  }
+
+  if (!updated || updated.length === 0) {
+    return NextResponse.json(
+      { error: "Order not found or already paid" },
+      { status: 404 }
+    );
   }
 
   return NextResponse.json({ simulated: true });
