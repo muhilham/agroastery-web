@@ -38,6 +38,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { useAddresses } from "@/lib/hooks/useAddresses";
 import type { Address } from "@/lib/hooks/useAddresses";
+import { guestFormSchema, loggedInFormSchema, type TForm } from "./checkoutSchemas";
 
 function CheckoutImage({ src, alt }: { src: string; alt: string }) {
   const [imgSrc, setImgSrc] = useState(src);
@@ -53,19 +54,6 @@ function CheckoutImage({ src, alt }: { src: string; alt: string }) {
   );
 }
 
-
-const formSchema = z.object({
-  fullName: z.string().min(2, "Minimal 2 karakter").max(50),
-  email: z.string().email("Email tidak valid").optional().or(z.literal("")),
-  phone: z.string().min(6, "Nomor tidak valid").max(20),
-  address: z.string().min(10, "Alamat terlalu singkat").max(300),
-  postalCode: z.string().min(5, "Kode pos tidak valid").max(5),
-  lat: z.number().min(-90).max(90).optional(),
-  lng: z.number().min(-180).max(180).optional(),
-  notes: z.string().max(500).optional(),
-});
-type TForm = z.infer<typeof formSchema>;
-
 export default function CheckoutPage() {
   const router = useRouter();
   const { cartItems, cartTotal, cartCount, clearCart, totalWeight, hydrated } = useCart();
@@ -77,8 +65,9 @@ export default function CheckoutPage() {
   const { addresses, isLoading: isLoadingAddresses } = useAddresses();
   const [selectedAddressId, setSelectedAddressId] = useState<string | "new" | null>(null);
 
+  const isGuest = !user && !authLoading;
   const form = useForm<TForm>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(isGuest ? guestFormSchema : loggedInFormSchema),
     defaultValues: {
       fullName: "",
       email: "",
@@ -419,19 +408,24 @@ export default function CheckoutPage() {
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email (Opsional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="email@contoh.com" type="email" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {isGuest && (
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input placeholder="budi@gmail.com" type="email" {...field} value={field.value ?? ""} />
+                      </FormControl>
+                      <p className="text-xs text-secondary mt-1">
+                        We&apos;ll send your order confirmation here
+                      </p>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
             </div>
 
             {/* Step 2: Alamat Pengiriman */}
