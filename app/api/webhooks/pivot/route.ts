@@ -3,6 +3,7 @@ import { timingSafeEqual } from "crypto";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { sendPaymentNotification } from "@/lib/telegram/notify";
 import { createBiteshipOrder } from '@/lib/biteship/createOrder';
+import { sendOrderEmail } from "@/lib/resend/sendOrderEmail";
 
 function verifyPivotCallback(request: NextRequest): boolean {
   const apiKey = request.headers.get("x-api-key") ?? "";
@@ -100,6 +101,13 @@ export async function POST(request: NextRequest) {
       createBiteshipOrder(updatedOrder.id as string).catch((err: unknown) =>
         console.error(
           `[pivot-webhook] Biteship order creation failed for order ${updatedOrder.id}:`,
+          err
+        )
+      );
+
+      sendOrderEmail(updatedOrder.id as string).catch((err: unknown) =>
+        console.error(
+          `[pivot-webhook] Order email failed for order ${updatedOrder.id}:`,
           err
         )
       );
