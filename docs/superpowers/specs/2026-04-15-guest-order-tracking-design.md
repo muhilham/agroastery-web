@@ -1,7 +1,7 @@
 # Guest Order Tracking — Design Spec
 
 **Date:** 2026-04-15
-**Branch:** feat/guest-order-tracking (to be created)
+**Branch:** claude/review-pr-7AjrY (existing)
 
 ---
 
@@ -135,27 +135,35 @@ supabase
 <main>
   // Header
   <OrderNumber />        // "AGR-20260415-X7K2M"
-  <OrderDate />          // "April 15, 2026"
-  <StatusBadge />        // "Processing" (colored pill)
+  <OrderDate />          // "15 April 2026, 14:32"
+  <StatusBadge />        // "Dikirim" (colored pill, matches status)
 
-  // Card 1 — Status (most prominent)
-  <StatusCard>
-    status dot + human-readable label + description line
-  </StatusCard>
-
-  // Card 2 — Shipping
+  // Card — Shipping + Biteship live tracking
   <ShippingCard>
-    Courier + service | ETA | Destination address
-    Tracking number (when available, with resi number)
+    // Always shown:
+    Courier + service | Destination address
+
+    // When dispatched (tracking_number present):
+    Resi highlight chip (cyan, prominent)
+    Estimated arrival
+
+    // Biteship live timeline — rendered by <TrackingTimeline> client component
+    // (fetches GET /api/orders/[orderId]/tracking on mount)
+    - dispatched: false → "Pesanan sedang disiapkan untuk dikirim"
+    - dispatched: true, no history → resi shown, "Menunggu update dari kurir"
+    - dispatched: true, history present → event list newest-first
+        Most recent event: glowing cyan dot + full opacity
+        Older events: dimmed dot + reduced opacity
+    - fetch error → "Tidak dapat memuat info pengiriman" (non-blocking)
   </ShippingCard>
 
-  // Card 3 — Items
+  // Card — Items
   <ItemsCard>
-    per-item: name, variant description, qty, subtotal
-    Total line (subtotal + shipping)
+    per-item: product name, variant description, qty, subtotal
+    Total line (subtotal + shipping cost)
   </ItemsCard>
 
-  // Account conversion (guest-only — no user_id on order)
+  // Account conversion (guest-only — shown when order.user_id is null)
   <AccountConversionCard>
     "Simpan pesanan ke akun"
     "Lanjut dengan Google" button → /login?next=/track/[orderId]
@@ -163,6 +171,26 @@ supabase
   </AccountConversionCard>
 </main>
 ```
+
+### Biteship tracking — client-side fetch
+
+The page is a server component (static order data). The live timeline is isolated in a `<TrackingTimeline orderId={orderId} />` client component that fetches on mount:
+
+```ts
+// Calls existing route:
+GET /api/orders/[orderId]/tracking
+
+// Response shape (already implemented):
+{
+  dispatched: boolean
+  status: string
+  waybill_id?: string
+  courier?: string
+  history?: { note: string; status: string; updated_at: string }[]
+}
+```
+
+Loading state: skeleton pulse on the timeline area — does not block the rest of the page.
 
 ### Status labels (Indonesian — tracking page is part of the web app, not the email)
 | DB value | Display |
@@ -329,7 +357,8 @@ if (user?.email) {
 
 | File | Purpose |
 |---|---|
-| `app/(root)/track/[orderId]/page.tsx` | Public tracking page |
+| `app/(root)/track/[orderId]/page.tsx` | Public tracking page (server component) |
+| `app/(root)/track/[orderId]/TrackingTimeline.tsx` | Client component — fetches Biteship live events |
 | `lib/resend/sendOrderEmail.ts` | Resend send function |
 | `lib/resend/templates/OrderConfirmation.tsx` | React Email template |
 
