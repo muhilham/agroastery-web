@@ -72,6 +72,7 @@ export async function createBiteshipOrder(orderId: string): Promise<void> {
       ? { destination_coordinate: { latitude: addr.latitude, longitude: addr.longitude } }
       : {}),
 
+    delivery_type: 'now',
     courier_company: order.shipping_courier,
     courier_type: order.shipping_service,
     ...(order.notes ? { order_note: order.notes } : {}),

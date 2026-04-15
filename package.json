@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "bash -c '. \"$HOME/.nvm/nvm.sh\" && nvm use && next dev --turbopack'",
     "dev:log": "bash -c '. \"$HOME/.nvm/nvm.sh\" && nvm use && next dev --turbopack' 2>&1 | tee .claude-context/service.log",
+    "dev:tunnel": "bash -c '. \"$HOME/.nvm/nvm.sh\"; nvm use 2>/dev/null || true; trap \"kill 0\" EXIT; ngrok http --url=deviant-pancreas-stinking.ngrok-free.dev --log=false 3000 & next dev --turbopack' 2>&1 | tee .claude-context/service.log",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",

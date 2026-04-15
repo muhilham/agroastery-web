@@ -142,3 +142,23 @@ export async function createQrisPaymentSession(
     qrExpiresAt: qr.expiryAt,
   };
 }
+
+export async function simulatePayment(paymentSessionId: string): Promise<void> {
+  const token = await getPivotToken();
+  const res = await fetch(`${PIVOT_API_URL}/v2/payments/simulations`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ paymentSessionId, chargeStatus: "SUCCESS" }),
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Pivot simulation failed ${res.status}: ${err}`);
+  }
+  const json = await res.json();
+  if (json.code !== "00") {
+    throw new Error(`Pivot simulation error: ${json.message}`);
+  }
+}

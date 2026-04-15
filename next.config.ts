@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ["deviant-pancreas-stinking.ngrok-free.dev"],
   output: "standalone",
   images: {
     remotePatterns: [
