@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient, createSupabaseAdminClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
@@ -13,6 +13,22 @@ export async function GET(request: NextRequest) {
     const supabase = await createSupabaseServerClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
+      // Link all guest orders that share this user's email — idempotent
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.email) {
+          const admin = createSupabaseAdminClient();
+          await admin
+            .from("ecom_orders")
+            .update({ user_id: user.id })
+            .eq("customer_email", user.email)
+            .is("user_id", null);
+        }
+      } catch (linkErr) {
+        // Non-critical — log and continue. Orders will be linked on next login.
+        console.error("[auth/callback] Failed to link guest orders:", linkErr);
+      }
+
       return NextResponse.redirect(`${origin}${next}`);
     }
   }
