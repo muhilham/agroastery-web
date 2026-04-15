@@ -49,4 +49,14 @@ describe("loggedInFormSchema", () => {
     const result = loggedInFormSchema.safeParse({ ...validBase, email: null });
     expect(result.success).toBe(true);
   });
+
+  it("fails when email is invalid", () => {
+    const result = loggedInFormSchema.safeParse({ ...validBase, email: "not-an-email" });
+    expect(result.success).toBe(false);
+  });
+
+  it("passes when email is a valid address", () => {
+    const result = loggedInFormSchema.safeParse({ ...validBase, email: "budi@gmail.com" });
+    expect(result.success).toBe(true);
+  });
 });
