@@ -63,7 +63,6 @@ function formatDate(iso: string): string {
 
 export function OrderConfirmation({
   orderNumber,
-  orderId,
   createdAt,
   items,
   subtotal,

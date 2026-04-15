@@ -12,6 +12,7 @@ interface TrackingData {
   status: string;
   waybill_id?: string;
   courier?: string;
+  link?: string | null;
   history?: TrackingEvent[];
 }
 

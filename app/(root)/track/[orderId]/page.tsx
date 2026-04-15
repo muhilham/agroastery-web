@@ -8,6 +8,7 @@ import { TrackingTimeline } from "./TrackingTimeline";
 
 const STATUS_LABELS: Record<string, string> = {
   pending_payment: "Menunggu Pembayaran",
+  paid: "Pembayaran Diterima",
   processing: "Sedang Diproses",
   shipped: "Dikirim",
   delivered: "Diterima",
@@ -17,6 +18,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 const STATUS_COLORS: Record<string, string> = {
   pending_payment: "text-yellow-400 bg-yellow-400/10 border-yellow-400/20",
+  paid: "text-blue-400 bg-blue-400/10 border-blue-400/20",
   processing: "text-blue-400 bg-blue-400/10 border-blue-400/20",
   shipped: "text-cyan-400 bg-cyan-400/10 border-cyan-400/20",
   delivered: "text-green-500 bg-green-500/10 border-green-500/20",
@@ -162,9 +164,9 @@ export default async function TrackingPage({ params }: PageProps) {
               </svg>
               Lanjut dengan Google
             </Link>
-            <p className="text-secondary/40 text-xs mt-3 underline cursor-pointer">
+            <Link href="/katalog" className="text-secondary/40 text-xs mt-3 underline block">
               Lewati
-            </p>
+            </Link>
           </div>
         )}
 

@@ -5,6 +5,10 @@ import { OrderConfirmation } from "./templates/OrderConfirmation";
 
 export async function sendOrderEmail(orderId: string): Promise<void> {
   try {
+    if (!process.env.RESEND_API_KEY) {
+      console.error("[sendOrderEmail] RESEND_API_KEY is not set — skipping email");
+      return;
+    }
     const admin = createSupabaseAdminClient();
     const { data: order, error } = await admin
       .from("ecom_orders")
