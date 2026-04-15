@@ -14,6 +14,15 @@ describe("guestFormSchema", () => {
     expect(result.success).toBe(false);
   });
 
+  it("fails when email is missing with correct message", () => {
+    const result = guestFormSchema.safeParse({ ...validBase, email: "" });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const emailErrors = result.error.errors.filter(e => e.path.includes("email"));
+      expect(emailErrors[0].message).toBe("Email wajib diisi");
+    }
+  });
+
   it("fails when email is invalid", () => {
     const result = guestFormSchema.safeParse({ ...validBase, email: "not-an-email" });
     expect(result.success).toBe(false);
@@ -33,6 +42,11 @@ describe("loggedInFormSchema", () => {
 
   it("passes when email is empty string", () => {
     const result = loggedInFormSchema.safeParse({ ...validBase, email: "" });
+    expect(result.success).toBe(true);
+  });
+
+  it("passes when email is null", () => {
+    const result = loggedInFormSchema.safeParse({ ...validBase, email: null });
     expect(result.success).toBe(true);
   });
 });

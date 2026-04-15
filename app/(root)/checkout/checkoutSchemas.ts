@@ -11,11 +11,11 @@ const baseSchema = z.object({
 });
 
 export const guestFormSchema = baseSchema.extend({
-  email: z.string().email("Email tidak valid").min(1, "Email wajib diisi"),
+  email: z.string().min(1, "Email wajib diisi").email("Email tidak valid"),
 });
 
 export const loggedInFormSchema = baseSchema.extend({
-  email: z.string().email().optional().or(z.literal("")),
+  email: z.string().email().or(z.literal("")).nullable().optional(),
 });
 
 // TForm is derived from the permissive schema so it works for both guest and
