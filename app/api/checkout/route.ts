@@ -297,25 +297,46 @@ export async function POST(request: NextRequest) {
       });
     } catch (pivotError) {
       console.error("Pivot session creation error:", pivotError);
-      await admin.from("ecom_order_items").delete().eq("order_id", order.id as string);
-      await admin.from("ecom_orders").delete().eq("id", order.id as string);
+      // Keep order + items in DB as audit trail. Mark cancelled, restore stock.
+      // Deleting would remove the audit trail; marking cancelled is safer for ops.
+      await admin
+        .from("ecom_orders")
+        .update({ status: "cancelled", payment_status: "expired" })
+        .eq("id", order.id as string);
       await restoreStock(admin, data.items);
       return NextResponse.json(
         { error: "Gagal membuat sesi pembayaran", code: "PAYMENT_ERROR" },
-        { status: 500 }
+        { status: 502 }
       );
     }
 
-    // Store Pivot session data on order
-    await admin
-      .from("ecom_orders")
-      .update({
-        pivot_payment_session_id: pivotSession.paymentSessionId,
-        pivot_qr_url: pivotSession.qrUrl,
-        pivot_qr_string: pivotSession.qrString,
-        pivot_qr_expires_at: pivotSession.qrExpiresAt,
-      })
-      .eq("id", order.id as string);
+    // Store Pivot session data with retry — session ID is in memory so retries are safe.
+    let sessionUpdateError: unknown = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const { error } = await admin
+        .from("ecom_orders")
+        .update({
+          pivot_payment_session_id: pivotSession.paymentSessionId,
+          pivot_qr_url: pivotSession.qrUrl,
+          pivot_qr_string: pivotSession.qrString,
+          pivot_qr_expires_at: pivotSession.qrExpiresAt,
+        })
+        .eq("id", order.id as string);
+      if (!error) { sessionUpdateError = null; break; }
+      sessionUpdateError = error;
+      if (attempt < 2) await new Promise((r) => setTimeout(r, 200));
+    }
+    if (sessionUpdateError) {
+      console.error(
+        `[checkout] CRITICAL: Failed to store pivot session ${pivotSession.paymentSessionId} ` +
+        `for order ${order.id as string}. Ops must manually link. Error:`,
+        sessionUpdateError
+      );
+      return NextResponse.json(
+        { error: "Gagal menyimpan sesi pembayaran", code: "SESSION_STORE_ERROR" },
+        { status: 502 }
+      );
+    }
 
     // Notify Telegram group (fire-and-forget — never blocks the response)
     sendOrderNotification({
