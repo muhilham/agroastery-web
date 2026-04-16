@@ -155,42 +155,24 @@ export async function POST(request: NextRequest) {
       };
     });
 
-    // Atomically decrement stock for all variants
-    for (const item of data.items) {
-      const { data: updated, error: stockError } = await admin.rpc("ecom_decrement_stock", {
-        p_variant_id: item.variantId,
-        p_quantity: item.quantity,
-      });
-
-      // If the RPC doesn't exist yet, fall back to a conditional update
-      if (stockError?.code === "42883") {
-        // Function not found — use conditional UPDATE as fallback
-        const { data: updateResult, error: updateError } = await admin
-          .from("product_variants")
-          .update({ stock_quantity: (variantMap.get(item.variantId)!.stock_quantity ?? 0) - item.quantity })
-          .eq("id", item.variantId)
-          .gte("stock_quantity", item.quantity)
-          .select("id")
-          .single();
-
-        if (updateError || !updateResult) {
-          return NextResponse.json(
-            { error: "Stok tidak cukup", code: "INSUFFICIENT_STOCK" },
-            { status: 409 }
-          );
-        }
-      } else if (stockError) {
-        return NextResponse.json(
-          { error: "Gagal memproses stok", code: "STOCK_ERROR" },
-          { status: 500 }
-        );
-      } else if (updated === false) {
-        // RPC returned false — insufficient stock
-        return NextResponse.json(
-          { error: "Stok tidak cukup", code: "INSUFFICIENT_STOCK" },
-          { status: 409 }
-        );
+    // Atomically decrement stock for all items in one DB transaction.
+    // If any item has insufficient stock, the RPC raises an exception and all decrements roll back.
+    const { data: stockDecremented, error: stockError } = await admin.rpc(
+      "ecom_decrement_stock_multi",
+      {
+        p_items: data.items.map((item) => ({
+          variant_id: item.variantId,
+          quantity: item.quantity,
+        })),
       }
+    );
+
+    if (stockError || !stockDecremented) {
+      console.error("Stock decrement error:", stockError);
+      return NextResponse.json(
+        { error: "Stok tidak cukup", code: "INSUFFICIENT_STOCK" },
+        { status: 409 }
+      );
     }
 
     // Generate order number with retry for uniqueness
