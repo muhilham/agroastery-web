@@ -93,4 +93,110 @@ describe("sendOrderEmail", () => {
     const { sendOrderEmail } = await import("../sendOrderEmail");
     await expect(sendOrderEmail("bad-uuid")).resolves.toBeUndefined();
   });
+
+  it("skips send if email_sent_at is already set", async () => {
+    vi.resetModules();
+    const mockSend = vi.fn().mockResolvedValue({ error: null });
+    vi.doMock("resend", () => ({
+      Resend: vi.fn().mockImplementation(() => ({ emails: { send: mockSend } })),
+    }));
+    vi.doMock("@/lib/supabase/server", () => ({
+      createSupabaseAdminClient: () => ({
+        from: () => ({
+          select: () => ({
+            eq: () => ({
+              single: () =>
+                Promise.resolve({
+                  data: {
+                    id: "order-uuid",
+                    order_number: "AGR-001",
+                    created_at: new Date().toISOString(),
+                    customer_name: "Test",
+                    customer_email: "test@example.com",
+                    email_sent_at: "2026-04-15T10:00:00Z", // already sent
+                    ecom_order_items: [],
+                    subtotal: 100000,
+                    shipping_cost: 0,
+                    shipping_courier: null,
+                    shipping_service: null,
+                    shipping_etd: null,
+                    total: 100000,
+                    shipping_address: {
+                      recipient_name: "Test",
+                      phone: "081",
+                      address_line: "Jl Test",
+                    },
+                  },
+                  error: null,
+                }),
+            }),
+          }),
+        }),
+      }),
+    }));
+    const { sendOrderEmail } = await import("../sendOrderEmail");
+    await sendOrderEmail("order-uuid");
+    expect(mockSend).not.toHaveBeenCalled();
+  });
+
+  it("updates email_sent_at after successful send", async () => {
+    vi.resetModules();
+    const mockUpdate = vi.fn().mockReturnValue({
+      eq: vi.fn().mockResolvedValue({ error: null }),
+    });
+    vi.doMock("resend", () => ({
+      Resend: vi.fn().mockImplementation(() => ({
+        emails: { send: vi.fn().mockResolvedValue({ error: null }) },
+      })),
+    }));
+    vi.doMock("@/lib/supabase/server", () => ({
+      createSupabaseAdminClient: () => ({
+        from: (table: string) => {
+          if (table === "ecom_orders") {
+            return {
+              select: () => ({
+                eq: () => ({
+                  single: () =>
+                    Promise.resolve({
+                      data: {
+                        id: "order-uuid",
+                        order_number: "AGR-001",
+                        created_at: new Date().toISOString(),
+                        customer_name: "Test",
+                        customer_email: "test@example.com",
+                        email_sent_at: null, // not sent yet
+                        ecom_order_items: [],
+                        subtotal: 100000,
+                        shipping_cost: 0,
+                        shipping_courier: null,
+                        shipping_service: null,
+                        shipping_etd: null,
+                        total: 100000,
+                        shipping_address: {
+                          recipient_name: "Test",
+                          phone: "081",
+                          address_line: "Jl Test",
+                        },
+                      },
+                      error: null,
+                    }),
+                }),
+              }),
+              update: mockUpdate,
+            };
+          }
+          return {
+            select: () => ({
+              eq: () => ({ single: () => Promise.resolve({ data: null, error: null }) }),
+            }),
+          };
+        },
+      }),
+    }));
+    const { sendOrderEmail } = await import("../sendOrderEmail");
+    await sendOrderEmail("order-uuid");
+    expect(mockUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ email_sent_at: expect.any(String) })
+    );
+  });
 });

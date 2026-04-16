@@ -25,6 +25,11 @@ export async function sendOrderEmail(orderId: string): Promise<void> {
       return;
     }
 
+    // Dedup guard: skip if already sent (handles concurrent webhook retries)
+    if (order.email_sent_at) {
+      return;
+    }
+
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://agroastery.com";
     const trackingUrl = `${appUrl}/track/${orderId}`;
 
@@ -63,7 +68,14 @@ export async function sendOrderEmail(orderId: string): Promise<void> {
 
     if (sendError) {
       console.error(`[sendOrderEmail] Resend error for order ${orderId}:`, sendError);
+      return;
     }
+
+    // Mark as sent — prevents duplicate emails on webhook retry
+    await admin
+      .from("ecom_orders")
+      .update({ email_sent_at: new Date().toISOString() })
+      .eq("id", orderId);
   } catch (err) {
     console.error(`[sendOrderEmail] Unexpected error for order ${orderId}:`, err);
   }
