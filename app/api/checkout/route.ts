@@ -29,6 +29,7 @@ const CheckoutSchema = z.object({
   shippingCost: z.number().int().nonnegative().default(0),
   shippingEtd: z.string().optional(),
   notes: z.string().max(500).optional(),
+  idempotencyKey: z.string().uuid().optional(),
 });
 
 const MAX_ORDER_NUMBER_RETRIES = 3;
@@ -138,6 +139,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Idempotency: if this key was already used, return the existing order (no double-deduction)
+    if (data.idempotencyKey) {
+      const { data: existingOrder } = await admin
+        .from("ecom_orders")
+        .select("id, order_number, total")
+        .eq("idempotency_key", data.idempotencyKey)
+        .maybeSingle();
+
+      if (existingOrder) {
+        return NextResponse.json({
+          orderId: existingOrder.id,
+          orderNumber: existingOrder.order_number,
+          total: existingOrder.total,
+        });
+      }
+    }
+
     const total = subtotal + data.shippingCost;
 
     // Build items with server-side prices and names
@@ -208,6 +226,7 @@ export async function POST(request: NextRequest) {
           subtotal,
           total,
           notes: data.notes ?? null,
+          idempotency_key: data.idempotencyKey ?? null,
         })
         .select()
         .single();

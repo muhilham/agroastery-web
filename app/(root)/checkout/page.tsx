@@ -1,5 +1,5 @@
 "use client";
-import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Navigation from "@/components/navigation";
 import { Footer } from "@/components/ui/footer";
 import { z } from "zod";
@@ -59,6 +59,7 @@ export default function CheckoutPage() {
   const { cartItems, cartTotal, cartCount, clearCart, totalWeight, hydrated } = useCart();
   const [mounted, setMounted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const idempotencyKey = useRef<string>(crypto.randomUUID());
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [showMap, setShowMap] = useState(false);
   const { user, loading: authLoading } = useAuth();
@@ -263,6 +264,7 @@ export default function CheckoutPage() {
           shippingCost,
           shippingEtd: selectedShipping?.eta ?? undefined,
           notes: values.notes || undefined,
+          idempotencyKey: idempotencyKey.current,
         }),
       });
 
