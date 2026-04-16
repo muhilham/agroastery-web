@@ -98,12 +98,22 @@ export async function POST(request: NextRequest) {
 
       // Fire-and-forget: create Biteship order after payment confirmed.
       // Never awaited — Pivot expects a fast 200. Failure is logged for manual ops recovery.
-      createBiteshipOrder(updatedOrder.id as string).catch((err: unknown) =>
+      createBiteshipOrder(updatedOrder.id as string).catch((err: unknown) => {
         console.error(
           `[pivot-webhook] Biteship order creation failed for order ${updatedOrder.id}:`,
           err
-        )
-      );
+        );
+        // Alert ops immediately — customer paid but no shipment created. Requires manual action.
+        sendPaymentNotification({
+          orderId: updatedOrder.id as string,
+          orderNumber: updatedOrder.order_number as string,
+          customerName: updatedOrder.customer_name as string,
+          customerPhone: updatedOrder.customer_phone as string,
+          paymentMethod: "⚠️ BITESHIP GAGAL — buat order manual",
+          total: updatedOrder.total as number,
+          paidAt: new Date().toISOString(),
+        }).catch(() => {});
+      });
 
       sendOrderEmail(updatedOrder.id as string).catch((err: unknown) =>
         console.error(
