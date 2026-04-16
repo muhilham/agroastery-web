@@ -441,11 +441,17 @@ export type Database = {
           customer_email: string | null
           customer_name: string
           customer_phone: string
+          email_sent_at: string | null
           id: string
+          idempotency_key: string | null
           notes: string | null
           order_number: string
           paid_at: string | null
           payment_status: string | null
+          pivot_payment_session_id: string | null
+          pivot_qr_expires_at: string | null
+          pivot_qr_string: string | null
+          pivot_qr_url: string | null
           shipping_address: Json
           shipping_cost: number
           shipping_courier: string | null
@@ -457,10 +463,6 @@ export type Database = {
           tracking_number: string | null
           updated_at: string | null
           user_id: string | null
-          pivot_payment_session_id: string | null
-          pivot_qr_url: string | null
-          pivot_qr_string: string | null
-          pivot_qr_expires_at: string | null
           xendit_invoice_id: string | null
           xendit_payment_method: string | null
         }
@@ -470,11 +472,17 @@ export type Database = {
           customer_email?: string | null
           customer_name: string
           customer_phone: string
+          email_sent_at?: string | null
           id?: string
+          idempotency_key?: string | null
           notes?: string | null
           order_number: string
           paid_at?: string | null
           payment_status?: string | null
+          pivot_payment_session_id?: string | null
+          pivot_qr_expires_at?: string | null
+          pivot_qr_string?: string | null
+          pivot_qr_url?: string | null
           shipping_address: Json
           shipping_cost?: number
           shipping_courier?: string | null
@@ -486,10 +494,6 @@ export type Database = {
           tracking_number?: string | null
           updated_at?: string | null
           user_id?: string | null
-          pivot_payment_session_id?: string | null
-          pivot_qr_url?: string | null
-          pivot_qr_string?: string | null
-          pivot_qr_expires_at?: string | null
           xendit_invoice_id?: string | null
           xendit_payment_method?: string | null
         }
@@ -499,11 +503,17 @@ export type Database = {
           customer_email?: string | null
           customer_name?: string
           customer_phone?: string
+          email_sent_at?: string | null
           id?: string
+          idempotency_key?: string | null
           notes?: string | null
           order_number?: string
           paid_at?: string | null
           payment_status?: string | null
+          pivot_payment_session_id?: string | null
+          pivot_qr_expires_at?: string | null
+          pivot_qr_string?: string | null
+          pivot_qr_url?: string | null
           shipping_address?: Json
           shipping_cost?: number
           shipping_courier?: string | null
@@ -515,10 +525,6 @@ export type Database = {
           tracking_number?: string | null
           updated_at?: string | null
           user_id?: string | null
-          pivot_payment_session_id?: string | null
-          pivot_qr_url?: string | null
-          pivot_qr_string?: string | null
-          pivot_qr_expires_at?: string | null
           xendit_invoice_id?: string | null
           xendit_payment_method?: string | null
         }
@@ -1181,7 +1187,315 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      attendance_absence_secure: {
+        Row: {
+          date: string | null
+          email: string | null
+          employee_id: string | null
+          employee_name: string | null
+          location_code: string | null
+          location_id: string | null
+          location_name: string | null
+          schedule_id: string | null
+          shift_name: string | null
+          start_time: string | null
+          status: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_schedule_assignments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "current_employee"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_schedule_assignments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_schedule_assignments_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "schedules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "schedules_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attendance_absence_view: {
+        Row: {
+          date: string | null
+          email: string | null
+          employee_id: string | null
+          employee_name: string | null
+          location_code: string | null
+          location_id: string | null
+          location_name: string | null
+          schedule_id: string | null
+          shift_name: string | null
+          start_time: string | null
+          status: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_schedule_assignments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "current_employee"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_schedule_assignments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_schedule_assignments_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "schedules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "schedules_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attendance_daily_secure: {
+        Row: {
+          checkin_local_time: string | null
+          checkin_time: string | null
+          cutoff_time: string | null
+          date: string | null
+          employee_id: string | null
+          employee_name: string | null
+          id: string | null
+          is_late: boolean | null
+          is_manual: boolean | null
+          lateness_minutes: number | null
+          location_code: string | null
+          location_id: string | null
+          location_name: string | null
+          schedule_id: string | null
+          shift_name: string | null
+          source: string | null
+          start_time: string | null
+          wifi_confirmed: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "current_employee"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attendance_daily_view: {
+        Row: {
+          checkin_local_time: string | null
+          checkin_local_timestamp: string | null
+          checkin_time: string | null
+          cutoff_time: string | null
+          date: string | null
+          employee_id: string | null
+          grace_minutes: number | null
+          id: string | null
+          is_late: boolean | null
+          is_manual: boolean | null
+          lateness_minutes: number | null
+          location_id: string | null
+          schedule_id: string | null
+          shift_name: string | null
+          source: string | null
+          start_time: string | null
+          wifi_confirmed: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "current_employee"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attendance_monthly_bonus: {
+        Row: {
+          bonus_multiplier: number | null
+          employee_id: string | null
+          late_days: number | null
+          month: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "current_employee"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attendance_monthly_bonus_secure: {
+        Row: {
+          bonus_multiplier: number | null
+          employee_id: string | null
+          late_days: number | null
+          month: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "current_employee"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attendance_weekly_secure: {
+        Row: {
+          employee_id: string | null
+          late_days: number | null
+          on_time_days: number | null
+          present_days: number | null
+          week_start_date: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "current_employee"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attendance_weekly_summary: {
+        Row: {
+          employee_id: string | null
+          late_days: number | null
+          on_time_days: number | null
+          present_days: number | null
+          week_start_date: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "current_employee"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      current_employee: {
+        Row: {
+          email: string | null
+          id: string | null
+          role: string | null
+        }
+        Insert: {
+          email?: string | null
+          id?: string | null
+          role?: string | null
+        }
+        Update: {
+          email?: string | null
+          id?: string | null
+          role?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       dev_reset_today_attendance: { Args: never; Returns: undefined }
@@ -1189,6 +1503,7 @@ export type Database = {
         Args: { p_quantity: number; p_variant_id: string }
         Returns: boolean
       }
+      ecom_decrement_stock_multi: { Args: { p_items: Json }; Returns: boolean }
       ecom_restore_stock: {
         Args: { p_quantity: number; p_variant_id: string }
         Returns: undefined
