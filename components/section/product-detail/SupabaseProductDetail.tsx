@@ -10,7 +10,7 @@ import Image from "next/image";
 import { numberToIdr } from "@/lib/numberToIdr";
 import Navigation from "@/components/navigation";
 import { useRouter } from "next/navigation";
-import { SHOPEE, TOKOPEDIA } from "@/constant/resource-and-link";
+
 import type { SupabaseProduct, SupabaseProductVariant } from "@/types/product";
 import { findMatchingVariant, getMinPrice, getProductImageUrl } from "@/lib/supabase/queries/productUtils";
 import { useCart } from "@/lib/hooks/useCart";
@@ -248,38 +248,6 @@ const SupabaseProductDetail = ({ product }: Props) => {
             </div>
           </div>
 
-          {/* Marketplace links */}
-          <div className="inline-flex items-center w-full gap-4">
-            <Button
-              variant="outline"
-              size="icon"
-              className="w-full h-10 px-4"
-              onClick={() => window.open(TOKOPEDIA, "_blank", "noopener,noreferrer")}
-            >
-              <Image
-                src="/assets/tokopedia.svg"
-                width={24}
-                height={24}
-                alt="tokopedia"
-                style={{ width: "auto", height: "auto" }}
-              />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="w-full h-10 px-4"
-              onClick={() => window.open(SHOPEE, "_blank", "noopener,noreferrer")}
-            >
-              <Image
-                src="/assets/shoppe.svg"
-                width={24}
-                height={24}
-                alt="shopee"
-                style={{ width: "auto", height: "auto" }}
-              />
-            </Button>
-          </div>
-
           {/* Add to Cart button */}
           <Button
             className="w-full flex items-center gap-2"
@@ -304,34 +272,6 @@ const SupabaseProductDetail = ({ product }: Props) => {
         {/* Mobile floating bar */}
         <div className="fixed bottom-0 w-full left-0 desktop:hidden bg-black/95 backdrop-blur-sm flex gap-2 z-40 px-4 pb-safe-bottom items-center py-3 border-t border-white/10"
           style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}>
-          <Button
-            size="icon"
-            className="w-11 h-11 shrink-0"
-            onClick={() => window.open(TOKOPEDIA, "_blank", "noopener,noreferrer")}
-            aria-label="Beli di Tokopedia"
-          >
-            <Image
-              src="/assets/tokopedia.svg"
-              width={20}
-              height={20}
-              alt="Tokopedia"
-              style={{ height: "auto" }}
-            />
-          </Button>
-          <Button
-            size="icon"
-            className="w-11 h-11 shrink-0"
-            onClick={() => window.open(SHOPEE, "_blank", "noopener,noreferrer")}
-            aria-label="Beli di Shopee"
-          >
-            <Image
-              src="/assets/shoppe.svg"
-              width={20}
-              height={20}
-              alt="Shopee"
-              style={{ height: "auto" }}
-            />
-          </Button>
           <Button
             className="flex-1 h-11 flex items-center gap-1.5 text-sm"
             disabled={!matchedVariant || !inStock}
