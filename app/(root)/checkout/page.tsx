@@ -149,9 +149,23 @@ export default function CheckoutPage() {
     form.setValue("fullName", addr.recipient_name, { shouldValidate: true });
     form.setValue("phone", addr.phone, { shouldValidate: true });
     form.setValue("address", addr.address_line, { shouldValidate: true });
-    form.setValue("postalCode", addr.postal_code ?? "", { shouldValidate: true });
-    form.setValue("lat", addr.latitude ?? undefined);
-    form.setValue("lng", addr.longitude ?? undefined);
+    
+    // Handle postal code: use saved value or extract from address string (e.g., "...Jakarta 12790, Indonesia")
+    let postalCode = addr.postal_code ?? "";
+    if (!postalCode && addr.address_line) {
+      const match = addr.address_line.match(/\b(\d{5})\b/);
+      if (match) postalCode = match[1];
+    }
+    form.setValue("postalCode", postalCode, { shouldValidate: true });
+    
+    // Set lat/lng with validation and trigger re-validation after all fields are set
+    const lat = addr.latitude != null ? Number(addr.latitude) : undefined;
+    const lng = addr.longitude != null ? Number(addr.longitude) : undefined;
+    form.setValue("lat", lat, { shouldValidate: true });
+    form.setValue("lng", lng, { shouldValidate: true });
+    
+    // Trigger form validation to ensure all fields are marked as valid
+    form.trigger();
   }, [form]);
 
   useEffect(() => { setMounted(true); }, []);
@@ -231,11 +245,16 @@ export default function CheckoutPage() {
   const total = cartTotal + shippingCost;
 
   const onSubmit = async (values: TForm) => {
-    if (cartItems.length === 0) return;
+    if (cartItems.length === 0) {
+      console.log("[Checkout] Cart is empty, returning");
+      return;
+    }
     if (!selectedShipping) {
+      console.log("[Checkout] No shipping selected");
       setSubmitError("Pilih opsi pengiriman terlebih dahulu");
       return;
     }
+    console.log("[Checkout] Starting submission...");
     setIsSubmitting(true);
     setSubmitError(null);
 
@@ -284,6 +303,16 @@ export default function CheckoutPage() {
       setIsSubmitting(false);
     }
   };
+
+  // Debug: log form errors when they change
+  useEffect(() => {
+    const subscription = form.watch(() => {
+      if (Object.keys(form.formState.errors).length > 0) {
+        console.log("[Checkout] Form errors:", form.formState.errors);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [form]);
 
   // Loading state during cart hydration — also gate on mounted so SSR and first
   // client render both show the skeleton (prevents hydration mismatch)
@@ -375,65 +404,10 @@ export default function CheckoutPage() {
         {/* Form */}
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {/* Step 1: Data Penerima */}
+            {/* Step 1: Alamat Pengiriman */}
             <div className="bg-[#1a1a1a] rounded-xl border border-white/10 p-4 space-y-4">
               <div className="flex items-center gap-3">
                 <span className="w-5 h-5 rounded-full bg-primary/20 border border-primary/30 text-primary text-[10px] font-bold flex items-center justify-center shrink-0">1</span>
-                <h2 className="text-primary font-semibold tracking-widest uppercase text-xs">Data Penerima</h2>
-              </div>
-
-              <FormField
-                control={form.control}
-                name="fullName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nama Lengkap</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Nama lengkap penerima" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nomor HP</FormLabel>
-                    <FormControl>
-                      <Input placeholder="08xxxxxxxxxx" inputMode="tel" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {isGuest && (
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input placeholder="budi@gmail.com" type="email" {...field} value={field.value ?? ""} />
-                      </FormControl>
-                      <p className="text-xs text-secondary mt-1">
-                        We&apos;ll send your order confirmation here
-                      </p>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
-            </div>
-
-            {/* Step 2: Alamat Pengiriman */}
-            <div className="bg-[#1a1a1a] rounded-xl border border-white/10 p-4 space-y-4">
-              <div className="flex items-center gap-3">
-                <span className="w-5 h-5 rounded-full bg-primary/20 border border-primary/30 text-primary text-[10px] font-bold flex items-center justify-center shrink-0">2</span>
                 <h2 className="text-primary font-semibold tracking-widest uppercase text-xs">Alamat Pengiriman</h2>
               </div>
 
@@ -540,10 +514,11 @@ export default function CheckoutPage() {
                     {showMap ? (
                       <MapPicker
                         value={{
-                          lat: form.getValues("lat") || null,
-                          lng: form.getValues("lng") || null,
+                          lat: watchedLat || null,
+                          lng: watchedLng || null,
                         }}
                         onChange={(coords) => {
+                          console.log("[Checkout] MapPicker onChange:", coords);
                           form.setValue("lat", coords.lat);
                           form.setValue("lng", coords.lng);
                         }}
@@ -567,15 +542,37 @@ export default function CheckoutPage() {
                 </>
               )}
 
-              {/* Read-only address summary card */}
+              {/* Map display for saved addresses with lat/lng */}
               {selectedAddressId !== null && selectedAddressId !== "new" && (() => {
                 const addr = addresses.find((a) => a.id === selectedAddressId);
                 if (!addr) return null;
+                const hasCoordinates = addr.latitude != null && addr.longitude != null;
                 return (
-                  <div className="rounded-xl bg-[#242424] border border-white/10 px-4 py-3 space-y-1">
-                    <p className="text-[#CCC4A9] text-sm font-medium">{addr.address_line}</p>
-                    {addr.postal_code && (
-                      <p className="text-[#CCC4A9]/60 text-xs">Kode Pos: {addr.postal_code}</p>
+                  <div className="space-y-3">
+                    <div className="rounded-xl bg-[#242424] border border-white/10 px-4 py-3 space-y-1">
+                      <p className="text-[#CCC4A9] text-sm font-medium">{addr.address_line}</p>
+                      {addr.postal_code && (
+                        <p className="text-[#CCC4A9]/60 text-xs">Kode Pos: {addr.postal_code}</p>
+                      )}
+                    </div>
+                    {hasCoordinates && (
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-white/70">Lokasi Pin</label>
+                        <MapPicker
+                          value={{
+                            lat: addr.latitude,
+                            lng: addr.longitude,
+                          }}
+                          onChange={() => {}} // No-op since readOnly
+                          height={180}
+                          showSearch={false}
+                          readOnly={true}
+                          zoom={16}
+                        />
+                        <p className="text-xs text-[#CCC4A9]/40">
+                          Lokasi telah ditentukan dari alamat tersimpan
+                        </p>
+                      </div>
                     )}
                   </div>
                 );
@@ -586,6 +583,61 @@ export default function CheckoutPage() {
                 isLoading={isLoadingShipping}
                 error={shippingError}
               />
+            </div>
+
+            {/* Step 2: Data Penerima */}
+            <div className="bg-[#1a1a1a] rounded-xl border border-white/10 p-4 space-y-4">
+              <div className="flex items-center gap-3">
+                <span className="w-5 h-5 rounded-full bg-primary/20 border border-primary/30 text-primary text-[10px] font-bold flex items-center justify-center shrink-0">2</span>
+                <h2 className="text-primary font-semibold tracking-widest uppercase text-xs">Data Penerima</h2>
+              </div>
+
+              <FormField
+                control={form.control}
+                name="fullName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nama Lengkap</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Nama lengkap penerima" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nomor HP</FormLabel>
+                    <FormControl>
+                      <Input placeholder="08xxxxxxxxxx" inputMode="tel" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {isGuest && (
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input placeholder="budi@gmail.com" type="email" {...field} value={field.value ?? ""} />
+                      </FormControl>
+                      <p className="text-xs text-secondary mt-1">
+                        We&apos;ll send your order confirmation here
+                      </p>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
             </div>
 
             {/* Shipping options */}
@@ -690,7 +742,27 @@ export default function CheckoutPage() {
             <span>{numberToIdr({ nominal: total })}</span>
           </div>
           <Button
-            onClick={form.handleSubmit(onSubmit)}
+            onClick={() => {
+              console.log("[Checkout] Button clicked!");
+              console.log("[Checkout] Form values:", form.getValues());
+              console.log("[Checkout] Form errors:", form.formState.errors);
+              console.log("[Checkout] isValid:", form.formState.isValid);
+              console.log("[Checkout] isSubmitting:", isSubmitting);
+              console.log("[Checkout] isLoadingShipping:", isLoadingShipping);
+              console.log("[Checkout] selectedShipping:", selectedShipping);
+              console.log("[Checkout] cartCount:", cartCount);
+              
+              // Check if button should be disabled
+              const isDisabled = isSubmitting || isLoadingShipping || !selectedShipping || cartCount === 0;
+              console.log("[Checkout] Button disabled?", isDisabled);
+              
+              if (!isDisabled) {
+                console.log("[Checkout] Calling form.handleSubmit...");
+                form.handleSubmit(onSubmit)();
+              } else {
+                console.log("[Checkout] Button is disabled, not submitting");
+              }
+            }}
             className="w-full h-12"
             disabled={isSubmitting || isLoadingShipping || !selectedShipping || cartCount === 0}
           >
