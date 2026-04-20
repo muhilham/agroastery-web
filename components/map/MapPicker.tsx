@@ -16,6 +16,7 @@ interface MapPickerProps {
   zoom?: number;
   showSearch?: boolean;
   searchValue?: string;
+  readOnly?: boolean;
 }
 
 const JAKARTA_CENTER = { lat: -6.200000, lng: 106.816666 };
@@ -29,7 +30,8 @@ export default function MapPicker({
   initialCenter = JAKARTA_CENTER,
   zoom = 14,
   showSearch = true,
-  searchValue = ''
+  searchValue = '',
+  readOnly = false
 }: MapPickerProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
@@ -190,15 +192,25 @@ export default function MapPicker({
 
   // Handle place selection from search
   const handlePlaceSelected = useCallback((coords: { lat: number; lng: number }, address: string) => {
+    console.log("[MapPicker] Place selected:", { coords, address });
+    console.log("[MapPicker] markerRef.current:", markerRef.current);
+    console.log("[MapPicker] mapRef.current:", mapRef.current);
+    
     // Update marker position
     if (markerRef.current) {
       markerRef.current.position = coords;
+      console.log("[MapPicker] Marker position updated");
+    } else {
+      console.log("[MapPicker] markerRef.current is null!");
     }
     
     // Pan and zoom map
     if (mapRef.current) {
       mapRef.current.setCenter(coords);
       mapRef.current.setZoom(16);
+      console.log("[MapPicker] Map centered and zoomed");
+    } else {
+      console.log("[MapPicker] mapRef.current is null!");
     }
     
     // Update form values
@@ -248,15 +260,17 @@ export default function MapPicker({
       const marker = new google.maps.marker.AdvancedMarkerElement({
         position: mapCenter,
         map,
-        gmpDraggable: true,
-        title: 'Pilih lokasi pengiriman',
+        gmpDraggable: !readOnly,
+        title: readOnly ? 'Lokasi pengiriman' : 'Pilih lokasi pengiriman',
       });
 
       markerRef.current = marker;
 
-      // Add event listeners
-      clickListenerRef.current = map.addListener('click', handleMapClick);
-      dragListenerRef.current = marker.addListener('dragend', handleMarkerDrag);
+      // Add event listeners only when not in readOnly mode
+      if (!readOnly) {
+        clickListenerRef.current = map.addListener('click', handleMapClick);
+        dragListenerRef.current = marker.addListener('dragend', handleMarkerDrag);
+      }
 
       setIsLoading(false);
     } catch (err) {
@@ -264,12 +278,16 @@ export default function MapPicker({
       setError(err instanceof Error ? err.message : 'Failed to load map');
       setIsLoading(false);
     }
-  }, [value, currentCenter, zoom, handleMapClick, handleMarkerDrag]);
+  }, [value, currentCenter, zoom, handleMapClick, handleMarkerDrag, readOnly]);
 
   // Update marker position when value changes
   useEffect(() => {
+    console.log("[MapPicker] value changed:", value);
+    console.log("[MapPicker] markerRef.current:", markerRef.current);
+    console.log("[MapPicker] mapRef.current:", mapRef.current);
     if (markerRef.current && value?.lat && value?.lng) {
       const newPosition = { lat: value.lat, lng: value.lng };
+      console.log("[MapPicker] Updating marker position to:", newPosition);
       markerRef.current.position = newPosition;
       
       // Optionally center map on new position
