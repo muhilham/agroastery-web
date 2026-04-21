@@ -40,10 +40,25 @@ export default function MapPicker({
   const clickListenerRef = useRef<google.maps.MapsEventListener | null>(null);
   const dragListenerRef = useRef<google.maps.MapsEventListener | null>(null);
 
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+  const onAddressChangeRef = useRef(onAddressChange);
+  onAddressChangeRef.current = onAddressChange;
+  const valueRef = useRef(value);
+  valueRef.current = value;
+
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentCenter, setCurrentCenter] = useState<{ lat: number; lng: number }>(initialCenter);
   const [searchInputValue, setSearchInputValue] = useState(searchValue);
+  // Store pending coords to apply after map initializes
+  const pendingCoordsRef = useRef<{ lat: number; lng: number } | null>(null);
+  // Track whether user has interacted with the map (selected place or clicked)
+  const userInteractedRef = useRef(false);
+  const mapInitializedRef = useRef(false);
+
+  // Stable reference to initialCenter for use in callbacks
+  const initialCenterRef = useRef(initialCenter);
+  initialCenterRef.current = initialCenter;
 
   // Reverse geocode helper (non-debounced)
   const reverseGeocode = useCallback(async (lat: number, lng: number) => {
@@ -110,61 +125,64 @@ export default function MapPicker({
     };
   }, [reverseGeocode]);
 
-  // Get user's current location
+  // Get user's current location and pan the existing map (without re-creating)
   const getCurrentLocation = useCallback(() => {
-    if (!navigator.geolocation) {
-      setCurrentCenter(initialCenter);
-      return;
-    }
+    if (!navigator.geolocation) return;
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
+        // Only pan to user location if they haven't already interacted
+        if (userInteractedRef.current) return;
         const userLocation = {
           lat: position.coords.latitude,
           lng: position.coords.longitude,
         };
-        setCurrentCenter(userLocation);
+        if (mapRef.current && markerRef.current) {
+          mapRef.current.setCenter(userLocation);
+          markerRef.current.position = userLocation;
+        }
       },
-      (error) => {
-        console.warn('Geolocation error:', error);
-        setCurrentCenter(initialCenter);
+      () => {
+        // Geolocation denied/failed — map stays at initialCenter
       },
       {
         timeout: 10000,
         enableHighAccuracy: false,
       }
     );
-  }, [initialCenter]);
+  }, []);
 
   // Handle map click
   const handleMapClick = useCallback((event: google.maps.MapMouseEvent) => {
     if (!event.latLng) return;
-    
+
+    userInteractedRef.current = true;
+
     // Ensure we get numbers, not Promises
     const latLng = event.latLng;
     const lat = typeof latLng.lat === 'function' ? latLng.lat() : latLng.lat;
     const lng = typeof latLng.lng === 'function' ? latLng.lng() : latLng.lng;
-    
+
     // Validate coordinates before using them
-    if (typeof lat !== 'number' || typeof lng !== 'number' || 
+    if (typeof lat !== 'number' || typeof lng !== 'number' ||
         isNaN(lat) || isNaN(lng)) {
       console.warn('Invalid coordinates from map click:', { lat, lng });
       return;
     }
-    
+
     // Update marker position
     if (markerRef.current) {
       markerRef.current.position = { lat, lng };
     }
-    
+
     // Call onChange callback
-    onChange({ lat, lng });
+    onChangeRef.current({ lat, lng });
     // Persist destination coords (address will be set by reverse geocode below)
     setDestinationGeo(lat, lng);
-    
+
     // Perform reverse geocoding
     debouncedReverseGeocodeRef.current?.(lat, lng);
-  }, [onChange]);
+  }, []);
 
   // Handle marker drag
   const handleMarkerDrag = useCallback((event: google.maps.MapMouseEvent) => {
@@ -182,62 +200,58 @@ export default function MapPicker({
       return;
     }
     
-    onChange({ lat, lng });
+    onChangeRef.current({ lat, lng });
     // Persist destination coords (address will be set by reverse geocode below)
     setDestinationGeo(lat, lng);
-    
+
     // Perform reverse geocoding
     debouncedReverseGeocodeRef.current?.(lat, lng);
-  }, [onChange]);
+  }, []);
 
   // Handle place selection from search
   const handlePlaceSelected = useCallback((coords: { lat: number; lng: number }, address: string) => {
-    console.log("[MapPicker] Place selected:", { coords, address });
-    console.log("[MapPicker] markerRef.current:", markerRef.current);
-    console.log("[MapPicker] mapRef.current:", mapRef.current);
-    
-    // Update marker position
+    userInteractedRef.current = true;
+
+    // Always update form values immediately
+    onChangeRef.current(coords);
+
+    // Update address
+    if (onAddressChangeRef.current) {
+      onAddressChangeRef.current(address);
+    }
+
+    setSearchInputValue(address);
+
+    // Update marker position if map is ready
     if (markerRef.current) {
       markerRef.current.position = coords;
-      console.log("[MapPicker] Marker position updated");
-    } else {
-      console.log("[MapPicker] markerRef.current is null!");
     }
-    
-    // Pan and zoom map
+
+    // Pan and zoom map if map is ready
     if (mapRef.current) {
       mapRef.current.setCenter(coords);
       mapRef.current.setZoom(16);
-      console.log("[MapPicker] Map centered and zoomed");
     } else {
-      console.log("[MapPicker] mapRef.current is null!");
+      // Map not ready yet, store coords to apply after initialization
+      pendingCoordsRef.current = coords;
     }
-    
-    // Update form values
-    onChange(coords);
-    
-    // Update address
-    if (onAddressChange) {
-      onAddressChange(address);
-    }
-    
-    setSearchInputValue(address);
-  }, [onChange, onAddressChange]);
+  }, []);
 
-  // Initialize map
+  // Initialize map (called once on mount)
   const initializeMap = useCallback(async () => {
-    if (!mapContainerRef.current) return;
+    if (!mapContainerRef.current || mapInitializedRef.current) return;
 
     try {
       setIsLoading(true);
       setError(null);
 
       await loadGoogleMaps();
-      
+
       // Determine initial map center
-      const mapCenter = value?.lat && value?.lng 
-        ? { lat: value.lat, lng: value.lng }
-        : currentCenter;
+      const currentValue = valueRef.current;
+      const mapCenter = currentValue?.lat && currentValue?.lng
+        ? { lat: currentValue.lat, lng: currentValue.lng }
+        : initialCenterRef.current;
 
       // Create map using the global google object
       const map = new google.maps.Map(mapContainerRef.current, {
@@ -272,41 +286,40 @@ export default function MapPicker({
         dragListenerRef.current = marker.addListener('dragend', handleMarkerDrag);
       }
 
+      // Apply any pending coordinates from search selection
+      if (pendingCoordsRef.current) {
+        marker.position = pendingCoordsRef.current;
+        map.setCenter(pendingCoordsRef.current);
+        map.setZoom(16);
+        pendingCoordsRef.current = null;
+      }
+
+      mapInitializedRef.current = true;
       setIsLoading(false);
     } catch (err) {
       console.error('Failed to load Google Maps:', err);
       setError(err instanceof Error ? err.message : 'Failed to load map');
       setIsLoading(false);
     }
-  }, [value, currentCenter, zoom, handleMapClick, handleMarkerDrag, readOnly]);
+  }, [zoom, handleMapClick, handleMarkerDrag, readOnly]);
 
   // Update marker position when value changes
   useEffect(() => {
-    console.log("[MapPicker] value changed:", value);
-    console.log("[MapPicker] markerRef.current:", markerRef.current);
-    console.log("[MapPicker] mapRef.current:", mapRef.current);
     if (markerRef.current && value?.lat && value?.lng) {
       const newPosition = { lat: value.lat, lng: value.lng };
-      console.log("[MapPicker] Updating marker position to:", newPosition);
       markerRef.current.position = newPosition;
-      
-      // Optionally center map on new position
       if (mapRef.current) {
         mapRef.current.setCenter(newPosition);
       }
     }
   }, [value]);
 
-  // Get current location on mount
+  // Initialize map once on mount, then get user location
   useEffect(() => {
-    getCurrentLocation();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Initialize map when container is ready and location is determined
-  useEffect(() => {
-    if (mapContainerRef.current && currentCenter) {
-      initializeMap();
+    if (mapContainerRef.current) {
+      initializeMap().then(() => {
+        getCurrentLocation();
+      });
     }
 
     // Cleanup on unmount
@@ -318,10 +331,12 @@ export default function MapPicker({
         google.maps.event.removeListener(dragListenerRef.current);
       }
     };
-  }, [initializeMap, currentCenter]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Retry function
   const handleRetry = useCallback(() => {
+    mapInitializedRef.current = false;
     initializeMap();
   }, [initializeMap]);
 

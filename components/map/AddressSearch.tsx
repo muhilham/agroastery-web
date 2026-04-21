@@ -51,10 +51,11 @@ export default function AddressSearch({
         elementRef.current = placeElement;
         containerRef.current.appendChild(placeElement);
 
-        placeElement.addEventListener('gmp-placeselect', async (e: Event) => {
-          const { place } = e as google.maps.places.PlaceAutocompletePlaceSelectEvent;
+        placeElement.addEventListener('gmp-select', async (e: Event) => {
+          const { placePrediction } = e as unknown as { placePrediction: google.maps.places.PlacePrediction };
 
           try {
+            const place = await placePrediction.toPlace();
             await place.fetchFields({
               fields: ['location', 'formattedAddress', 'addressComponents', 'displayName', 'id'],
             });
@@ -77,10 +78,10 @@ export default function AddressSearch({
 
               onPlaceSelected(coords, address);
             } else {
-              console.warn('No location in place selection');
+              console.warn('[AddressSearch] No location in place selection');
             }
           } catch (err) {
-            console.error('Failed to fetch place details:', err);
+            console.error('[AddressSearch] fetchFields failed:', err);
           }
         });
 
