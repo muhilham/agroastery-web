@@ -83,9 +83,16 @@ export default function CartPage() {
                     <p className="text-secondary text-xs mt-0.5 line-clamp-1">
                       {item.variantDescription}
                     </p>
-                    <p className="text-primary text-sm font-semibold mt-1">
-                      {numberToIdr({ nominal: item.unitPrice })}
-                    </p>
+                    <div className="flex items-baseline gap-1.5 mt-1">
+                      <p className="text-primary text-sm font-semibold">
+                        {numberToIdr({ nominal: item.unitPrice })}
+                      </p>
+                      {item.originalPrice > item.unitPrice && (
+                        <p className="text-xs text-gray-400 line-through">
+                          {numberToIdr({ nominal: item.originalPrice })}
+                        </p>
+                      )}
+                    </div>
 
                     {/* Quantity controls */}
                     <div className="flex items-center gap-2 mt-2">

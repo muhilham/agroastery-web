@@ -390,9 +390,16 @@ export default function CheckoutPage() {
                   <p className="text-primary text-sm font-medium line-clamp-1">{item.productName}</p>
                   <p className="text-secondary text-xs">{item.variantDescription} × {item.quantity}</p>
                 </div>
-                <span className="text-primary text-sm font-semibold shrink-0">
-                  {numberToIdr({ nominal: item.unitPrice * item.quantity })}
-                </span>
+                <div className="text-right shrink-0">
+                  <span className="text-primary text-sm font-semibold">
+                    {numberToIdr({ nominal: item.unitPrice * item.quantity })}
+                  </span>
+                  {item.originalPrice > item.unitPrice && (
+                    <div className="text-xs text-gray-400 line-through">
+                      {numberToIdr({ nominal: item.originalPrice * item.quantity })}
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
           </div>

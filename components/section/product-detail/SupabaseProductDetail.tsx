@@ -12,7 +12,7 @@ import Navigation from "@/components/navigation";
 import { useRouter } from "next/navigation";
 
 import type { SupabaseProduct, SupabaseProductVariant } from "@/types/product";
-import { findMatchingVariant, getMinPrice, getProductImageUrl } from "@/lib/supabase/queries/productUtils";
+import { findMatchingVariant, getMinPrice, getMinOriginalPrice, getProductImageUrl } from "@/lib/supabase/queries/productUtils";
 import { useCart } from "@/lib/hooks/useCart";
 
 type Props = {
@@ -79,7 +79,11 @@ const SupabaseProductDetail = ({ product }: Props) => {
       ? findMatchingVariant(activeVariants, selectedOptionValueIds)
       : activeVariants[0] ?? null;
 
-  const unitPrice = matchedVariant?.price ?? getMinPrice(activeVariants);
+  const unitPrice = matchedVariant
+    ? (matchedVariant.discounted_price ?? matchedVariant.price)
+    : getMinPrice(activeVariants);
+  const originalPrice = matchedVariant?.price ?? getMinOriginalPrice(activeVariants);
+  const hasDiscount = unitPrice < originalPrice;
   const inStock = matchedVariant ? matchedVariant.stock_quantity > 0 : false;
   const subtotal = unitPrice * qty;
 
@@ -109,7 +113,8 @@ const SupabaseProductDetail = ({ product }: Props) => {
       productSlug: product.slug,
       productName: product.name,
       variantDescription,
-      unitPrice: matchedVariant.price,
+      unitPrice: matchedVariant.discounted_price ?? matchedVariant.price,
+      originalPrice: matchedVariant.price,
       quantity: qty,
       shipWeightGrams: matchedVariant.ship_weight_grams,
       image: imageUrl,
@@ -136,8 +141,15 @@ const SupabaseProductDetail = ({ product }: Props) => {
 
         <section className="flex-1">
           <div className="px-4 tablet:px-6 mb-8 flex flex-col gap-1 mt-2">
-            <div className="text-lg tablet:text-xl desktop:text-2xl font-extrabold text-secondary">
-              {numberToIdr({ nominal: unitPrice })}
+            <div className="flex items-baseline gap-2">
+              <span className="text-lg tablet:text-xl desktop:text-2xl font-extrabold text-secondary">
+                {numberToIdr({ nominal: unitPrice })}
+              </span>
+              {hasDiscount && (
+                <span className="text-sm text-gray-400 line-through">
+                  {numberToIdr({ nominal: originalPrice })}
+                </span>
+              )}
             </div>
             <h1 className="text-primary text-sm tablet:text-base desktop:text-2xl tracking-widest font-normal uppercase leading-snug">
               {product.name}

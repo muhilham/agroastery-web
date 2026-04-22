@@ -16,6 +16,7 @@ interface I_ProductCardProps {
   productTitle: string;
   productDescription: string;
   productPrice: number;
+  originalPrice?: number;
   onClick?: () => void;
 }
 
@@ -25,6 +26,7 @@ export function ProductCard({
   productImage,
   productTitle,
   productPrice,
+  originalPrice,
   onClick,
 }: I_ProductCardProps) {
   const router = useRouter();
@@ -59,7 +61,14 @@ export function ProductCard({
           </CardDescription>
         </CardHeader>
       </div>
-      <CardFooter>From {numberToIdr({ nominal: productPrice })}</CardFooter>
+      <CardFooter>
+        <span>From {numberToIdr({ nominal: productPrice })}</span>
+        {originalPrice !== undefined && originalPrice > productPrice && (
+          <span className="ml-2 text-xs text-gray-400 line-through">
+            {numberToIdr({ nominal: originalPrice })}
+          </span>
+        )}
+      </CardFooter>
     </Card>
   );
 }

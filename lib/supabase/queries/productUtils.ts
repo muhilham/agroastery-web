@@ -24,11 +24,29 @@ export function findMatchingVariant(
 
 /**
  * Get minimum price across all active variants.
+ * Uses discounted_price if available, otherwise falls back to price.
  * Pure function — safe to import in client components.
  */
 export function getMinPrice(variants: SupabaseProductVariant[]): number {
+  const activePrices = variants.filter((v) => v.is_active).map((v) => v.discounted_price ?? v.price);
+  return activePrices.length > 0 ? Math.min(...activePrices) : 0;
+}
+
+/**
+ * Get minimum original price across all active variants (ignores discounts).
+ * Pure function — safe to import in client components.
+ */
+export function getMinOriginalPrice(variants: SupabaseProductVariant[]): number {
   const activePrices = variants.filter((v) => v.is_active).map((v) => v.price);
   return activePrices.length > 0 ? Math.min(...activePrices) : 0;
+}
+
+/**
+ * Check if any active variant has a discount applied.
+ * Pure function — safe to import in client components.
+ */
+export function hasAnyDiscount(variants: SupabaseProductVariant[]): boolean {
+  return variants.some((v) => v.is_active && v.discounted_price !== undefined);
 }
 
 /**

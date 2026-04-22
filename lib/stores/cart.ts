@@ -1,11 +1,17 @@
 import { atom, onMount } from "nanostores";
 
+// CART_SCHEMA_VERSION: Increment when CartItem type changes to force clear old carts
+const CART_SCHEMA_VERSION = 2;
+const CART_STORAGE_KEY = "agroastery_cart";
+const CART_VERSION_KEY = "agroastery_cart_version";
+
 export type CartItem = {
   variantId: string;
   productSlug: string;
   productName: string;
   variantDescription: string;
   unitPrice: number;
+  originalPrice: number;
   quantity: number;
   shipWeightGrams: number;
   image: string;
@@ -14,14 +20,45 @@ export type CartItem = {
 export const $cartItems = atom<CartItem[]>([]);
 export const $cartHydrated = atom<boolean>(false);
 
+// Check if stored items have the new schema (originalPrice field)
+function isValidCartItem(item: unknown): item is CartItem {
+  if (typeof item !== "object" || item === null) return false;
+  const cartItem = item as Record<string, unknown>;
+  return (
+    typeof cartItem.variantId === "string" &&
+    typeof cartItem.productSlug === "string" &&
+    typeof cartItem.productName === "string" &&
+    typeof cartItem.unitPrice === "number" &&
+    typeof cartItem.originalPrice === "number" &&
+    typeof cartItem.quantity === "number"
+  );
+}
+
 // Load from localStorage on mount and subscribe to save changes
 onMount($cartItems, () => {
   if (typeof window === "undefined") return;
 
   try {
-    const stored = localStorage.getItem("agroastery_cart");
-    if (stored) {
-      $cartItems.set(JSON.parse(stored));
+    const storedVersion = localStorage.getItem(CART_VERSION_KEY);
+    const needsReset = storedVersion !== String(CART_SCHEMA_VERSION);
+
+    if (needsReset) {
+      // Clear old cart data due to schema change
+      localStorage.removeItem(CART_STORAGE_KEY);
+      localStorage.setItem(CART_VERSION_KEY, String(CART_SCHEMA_VERSION));
+    } else {
+      const stored = localStorage.getItem(CART_STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored) as unknown[];
+        // Validate all items have required fields
+        const validItems = parsed.filter(isValidCartItem);
+        if (validItems.length === parsed.length) {
+          $cartItems.set(validItems);
+        } else {
+          // If any items are invalid, clear the cart
+          localStorage.removeItem(CART_STORAGE_KEY);
+        }
+      }
     }
   } catch {
     // ignore parse errors
@@ -37,7 +74,8 @@ onMount($cartItems, () => {
       return;
     }
     try {
-      localStorage.setItem("agroastery_cart", JSON.stringify(items));
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
+      localStorage.setItem(CART_VERSION_KEY, String(CART_SCHEMA_VERSION));
     } catch {
       // ignore storage errors
     }

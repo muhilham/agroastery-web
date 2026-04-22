@@ -1,5 +1,5 @@
 import { ProductCard } from "@/components/ui/product-card";
-import { getMinPrice, getProductImageUrl } from "@/lib/supabase/queries/productUtils";
+import { getMinPrice, getMinOriginalPrice, getProductImageUrl } from "@/lib/supabase/queries/productUtils";
 import type { SupabaseProduct } from "@/types/product";
 
 interface ProductGridProps {
@@ -14,16 +14,21 @@ export default function ProductGrid({ supabaseProducts }: ProductGridProps) {
           Produk tidak ditemukan
         </div>
       ) : (
-        supabaseProducts.map((item) => (
-          <ProductCard
-            key={item.slug}
-            productSlug={item.slug}
-            productTitle={item.name}
-            productDescription={item.short_description ?? item.description ?? ""}
-            productImage={getProductImageUrl(item)}
-            productPrice={getMinPrice(item.product_variants)}
-          />
-        ))
+        supabaseProducts.map((item) => {
+          const minPrice = getMinPrice(item.product_variants);
+          const minOriginalPrice = getMinOriginalPrice(item.product_variants);
+          return (
+            <ProductCard
+              key={item.slug}
+              productSlug={item.slug}
+              productTitle={item.name}
+              productDescription={item.short_description ?? item.description ?? ""}
+              productImage={getProductImageUrl(item)}
+              productPrice={minPrice}
+              originalPrice={minOriginalPrice > minPrice ? minOriginalPrice : undefined}
+            />
+          );
+        })
       )}
     </div>
   );

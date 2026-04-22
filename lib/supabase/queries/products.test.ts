@@ -13,6 +13,8 @@ function makeProduct(category_ids: string[]): SupabaseProduct {
     images: [],
     image_url: null,
     is_active: true,
+    is_global: false,
+    is_global_discountable: true,
     product_options: [],
     product_variants: [],
   };

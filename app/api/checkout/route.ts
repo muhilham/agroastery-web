@@ -3,6 +3,8 @@ import { z } from "zod";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
 import { createQrisPaymentSession } from "@/lib/pivot/client";
 import { sendOrderNotification } from "@/lib/telegram/notify";
+import { getActiveGlobalDiscounts, getActiveProductDiscounts } from "@/lib/supabase/queries/discounts";
+import { calculateDiscountedPrice } from "@/lib/utils/discount";
 
 const CheckoutItemSchema = z.object({
   variantId: z.string().uuid(),
@@ -90,19 +92,24 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Fetch product names from DB to avoid trusting client-sent names
+    // Fetch product names and discount eligibility from DB to avoid trusting client-sent names
     const productIds = [...new Set(dbVariants.map((v) => v.product_id).filter((id): id is string => id !== null))];
-    const { data: dbProducts } = await admin
-      .from("products")
-      .select("id, name")
-      .in("id", productIds);
+    const [{ data: dbProducts }, { data: dbOptionValues }, globalDiscounts, allProductDiscounts] = await Promise.all([
+      admin
+        .from("products")
+        .select("id, name, is_global, is_global_discountable")
+        .in("id", productIds),
+      admin
+        .from("product_variant_option_values")
+        .select("variant_id, product_option_values(value)")
+        .in("variant_id", variantIds),
+      getActiveGlobalDiscounts(),
+      getActiveProductDiscounts(),
+    ]);
     const productMap = new Map((dbProducts ?? []).map((p) => [p.id, p.name as string]));
+    const productDiscountableMap = new Map((dbProducts ?? []).map((p) => [p.id, p.is_global_discountable ?? p.is_global ?? false]));
 
     // Build variant description from DB option values
-    const { data: dbOptionValues } = await admin
-      .from("product_variant_option_values")
-      .select("variant_id, product_option_values(value)")
-      .in("variant_id", variantIds);
     const variantDescriptionMap = new Map<string, string>();
     if (dbOptionValues) {
       const grouped = new Map<string, string[]>();
@@ -117,18 +124,54 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Calculate totals using server-side prices
-    const subtotal = data.items.reduce((sum, item) => {
+    // Compute discounted prices once per item, reuse for subtotal and verifiedItems
+    interface ItemWithDiscount {
+      item: typeof data.items[number];
+      dbVariant: typeof dbVariants[number];
+      productName: string;
+      variantDescription: string;
+      discountedPrice: number;
+      shipWeightGrams: number;
+    }
+
+    const itemsWithDiscounts: ItemWithDiscount[] = data.items.map((item) => {
       const dbVariant = variantMap.get(item.variantId)!;
-      return sum + dbVariant.price * item.quantity;
+      const productId = dbVariant.product_id as string;
+      const productName = productMap.get(productId) ?? "Unknown Product";
+      const variantDescription = variantDescriptionMap.get(item.variantId) ?? "";
+      const isDiscountable = productDiscountableMap.get(productId) ?? false;
+
+      const applicableProductDiscounts = allProductDiscounts.filter(
+        (d) => d.product_id === productId
+      );
+      const applicableGlobalDiscounts = isDiscountable ? globalDiscounts : [];
+
+      const { discountedPrice } = calculateDiscountedPrice(
+        dbVariant.price as number,
+        applicableProductDiscounts,
+        applicableGlobalDiscounts
+      );
+
+      return {
+        item,
+        dbVariant,
+        productName,
+        variantDescription,
+        discountedPrice,
+        shipWeightGrams: dbVariant.ship_weight_grams as number,
+      };
+    });
+
+    // Calculate subtotal from pre-computed discounted prices
+    const subtotal = itemsWithDiscounts.reduce((sum, { discountedPrice, item }) => {
+      return sum + discountedPrice * item.quantity;
     }, 0);
 
     // Server-side shipping cost verification: re-calculate total weight and validate
     // that client-sent shipping cost is non-negative (Biteship re-verification would
     // require caching the rate quote; for now we validate the cost is reasonable)
-    const totalShipWeight = data.items.reduce((sum, item) => {
-      const dbVariant = variantMap.get(item.variantId)!;
-      return sum + dbVariant.ship_weight_grams * item.quantity;
+    const totalShipWeight = itemsWithDiscounts.reduce((sum, { shipWeightGrams, item }) => {
+      return sum + shipWeightGrams * item.quantity;
     }, 0);
 
     // Reject if shipping cost is 0 but items need shipping and a courier is specified
@@ -158,20 +201,15 @@ export async function POST(request: NextRequest) {
 
     const total = subtotal + data.shippingCost;
 
-    // Build items with server-side prices and names
-    const verifiedItems = data.items.map((item) => {
-      const dbVariant = variantMap.get(item.variantId)!;
-      const productName = productMap.get(dbVariant.product_id as string) ?? "Unknown Product";
-      const variantDescription = variantDescriptionMap.get(item.variantId) ?? "";
-      return {
-        variantId: item.variantId,
-        productName,
-        variantDescription,
-        unitPrice: dbVariant.price as number,
-        quantity: item.quantity,
-        shipWeightGrams: dbVariant.ship_weight_grams as number,
-      };
-    });
+    // Build verified items from pre-computed discounted prices
+    const verifiedItems = itemsWithDiscounts.map(({ item, productName, variantDescription, discountedPrice, shipWeightGrams }) => ({
+      variantId: item.variantId,
+      productName,
+      variantDescription,
+      unitPrice: discountedPrice,
+      quantity: item.quantity,
+      shipWeightGrams,
+    }));
 
     // Atomically decrement stock for all items in one DB transaction.
     // If any item has insufficient stock, the RPC raises an exception and all decrements roll back.

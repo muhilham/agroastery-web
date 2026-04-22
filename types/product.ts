@@ -24,6 +24,7 @@ export type SupabaseProductVariant = {
   ship_weight_grams: number;
   is_active: boolean;
   product_variant_option_values: { option_value_id: string }[];
+  discounted_price?: number;
 };
 
 export type SupabaseProduct = {
@@ -36,6 +37,8 @@ export type SupabaseProduct = {
   images: { url: string; alt?: string; sort_order?: number }[];
   image_url: string | null;
   is_active: boolean;
+  is_global: boolean;
+  is_global_discountable: boolean;
   product_options: SupabaseProductOption[];
   product_variants: SupabaseProductVariant[];
 };

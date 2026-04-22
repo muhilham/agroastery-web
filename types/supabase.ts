@@ -614,6 +614,33 @@ export type Database = {
         }
         Relationships: []
       }
+      global_discounts: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          type: string
+          value: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          type: string
+          value: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          type?: string
+          value?: number
+        }
+        Relationships: []
+      }
       jubelio_invoices: {
         Row: {
           created_at: string | null
@@ -894,6 +921,44 @@ export type Database = {
           },
         ]
       }
+      product_discounts: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          product_id: string
+          type: string
+          value: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          product_id: string
+          type: string
+          value: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          product_id?: string
+          type?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_discounts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_option_values: {
         Row: {
           created_at: string | null
@@ -1046,6 +1111,7 @@ export type Database = {
           images: Json | null
           is_active: boolean
           is_global: boolean
+          is_global_discountable: boolean | null
           name: string
           short_description: string | null
           sku: string | null
@@ -1063,6 +1129,7 @@ export type Database = {
           images?: Json | null
           is_active?: boolean
           is_global?: boolean
+          is_global_discountable?: boolean | null
           name: string
           short_description?: string | null
           sku?: string | null
@@ -1080,6 +1147,7 @@ export type Database = {
           images?: Json | null
           is_active?: boolean
           is_global?: boolean
+          is_global_discountable?: boolean | null
           name?: string
           short_description?: string | null
           sku?: string | null
