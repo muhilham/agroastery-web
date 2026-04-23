@@ -68,6 +68,11 @@ export async function POST(request: NextRequest) {
       // Guest checkout — no auth
     }
 
+    // Ensure profile row exists for logged-in users (guard against missing DB trigger)
+    if (userId) {
+      await admin.from("profiles").upsert({ id: userId }, { onConflict: "id", ignoreDuplicates: true });
+    }
+
     // Validate prices and stock server-side — never trust client-sent prices
     const variantIds = data.items.map((i) => i.variantId);
     const { data: dbVariants, error: variantsError } = await admin
