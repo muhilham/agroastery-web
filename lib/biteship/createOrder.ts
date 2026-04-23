@@ -47,8 +47,10 @@ export async function createBiteshipOrder(orderId: string): Promise<void> {
     longitude?: number | null;
   };
 
-  const originLat = process.env.ORIGIN_LATITUDE ? Number(process.env.ORIGIN_LATITUDE) : null;
-  const originLng = process.env.ORIGIN_LONGITUDE ? Number(process.env.ORIGIN_LONGITUDE) : null;
+  const DEFAULT_ORIGIN_LAT = -6.263450138760574;
+  const DEFAULT_ORIGIN_LNG = 106.81945752406575;
+  const originLat = Number(process.env.ORIGIN_LATITUDE ?? DEFAULT_ORIGIN_LAT);
+  const originLng = Number(process.env.ORIGIN_LONGITUDE ?? DEFAULT_ORIGIN_LNG);
   const originPostal =
     process.env.ORIGIN_POSTAL_CODE ?? process.env.NEXT_PUBLIC_ORIGIN_POSTAL_CODE;
 
