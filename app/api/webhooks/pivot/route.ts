@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { sendPaymentNotification } from "@/lib/telegram/notify";
-import { createBiteshipOrder } from '@/lib/biteship/createOrder';
+import { createBiteshipDraft } from '@/lib/biteship/createDraft';
 import { sendOrderEmail } from "@/lib/resend/sendOrderEmail";
 
 function verifyPivotCallback(request: NextRequest): boolean {
@@ -96,11 +96,11 @@ export async function POST(request: NextRequest) {
         )
       );
 
-      // Fire-and-forget: create Biteship order after payment confirmed.
+      // Fire-and-forget: create Biteship draft order after payment confirmed.
       // Never awaited — Pivot expects a fast 200. Failure is logged for manual ops recovery.
-      createBiteshipOrder(updatedOrder.id as string).catch((err: unknown) => {
+      createBiteshipDraft(updatedOrder.id as string).catch((err: unknown) => {
         console.error(
-          `[pivot-webhook] Biteship order creation failed for order ${updatedOrder.id}:`,
+          `[pivot-webhook] Biteship draft creation failed for order ${updatedOrder.id}:`,
           err
         );
         // Alert ops immediately — customer paid but no shipment created. Requires manual action.
