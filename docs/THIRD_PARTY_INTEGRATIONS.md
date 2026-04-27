@@ -76,8 +76,8 @@ Agroastery is an Indonesian specialty coffee e-commerce platform built on Next.j
 │  │  │                        SERVICE LAYER (lib/*)                                 │  │  │
 │  │  │                                                                              │  │  │
 │  │  │  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────────────┐  │  │  │
-│  │  │  │   pivot/client   │  │ biteship/create  │  │    telegram/notify       │  │  │  │
-│  │  │  │   .ts            │  │ Order.ts         │  │    .ts                   │  │  │  │
+  │  │  │  │   pivot/client   │  │ biteship/create  │  │    telegram/notify       │  │  │  │
+  │  │  │  │   .ts            │  │ Draft.ts         │  │    .ts                   │  │  │  │
 │  │  │  └────────┬─────────┘  └────────┬─────────┘  └───────────┬──────────────┘  │  │  │
 │  │  │           │                     │                        │                 │  │  │
 │  │  │  ┌────────▼─────────┐  ┌────────▼─────────┐  ┌───────────▼──────────────┐  │  │  │
@@ -226,19 +226,18 @@ PIVOT_CALLBACK_API_KEY=webhook-verification-key
 - **Base URL:** `https://api.biteship.com/v1`
 - **Authentication:** Bearer token in Authorization header
 - **Endpoints:**
-  - `POST /rates/couriers` - Get shipping rates
-  - `POST /orders` - Create shipping order
-  - `POST /v1/draft_orders` - Create draft order
+  - `POST /v1/rates/couriers` - Get shipping rates
+  - `POST /v1/draft_orders` - Create draft order (called after payment)
+  - `GET /v1/draft_orders?reference_id=…` - Idempotent recovery lookup
 
 **Key Integration Points:**
 
 | File | Purpose |
 |------|---------|
 | `lib/hooks/useShippingCalculator.ts` | React hook for shipping calculations |
-| `lib/biteship/createOrder.ts` | Creates Biteship orders after payment |
+| `lib/biteship/createDraft.ts` | Creates Biteship draft orders after payment |
 | `app/api/shipping/rates/route.ts` | Proxies rate requests to Biteship |
-| `app/api/shipping/draft-order/route.ts` | Creates draft orders |
-| `app/api/webhooks/biteship/route.ts` | Webhook handler for order updates |
+| `app/api/webhooks/biteship/route.ts` | Webhook handler; falls back to reference_id after staff confirms a draft |
 
 **Supported Couriers:**
 - Anteraja
@@ -250,9 +249,10 @@ PIVOT_CALLBACK_API_KEY=webhook-verification-key
 1. Customer enters address at checkout
 2. `calculateShipping()` fetches rates from Biteship API
 3. Customer selects courier and service
-4. After payment confirmed, `createBiteshipOrder()` creates order
-5. Biteship assigns courier and generates waybill
-6. Webhook updates order status and tracking number
+4. After payment confirmed, `createBiteshipDraft()` creates a draft order in Biteship
+5. **Staff reviews and confirms the draft in the Biteship dashboard**
+6. Biteship creates the live Order with the same `reference_id` and dispatches pickup
+7. Webhook fires; handler matches by `biteship_order_id`, falling back to `reference_id` and persisting the new `biteship_order_id`
 
 **Order Status Mapping:**
 ```typescript
@@ -496,13 +496,19 @@ XENDIT_MOCK=false
 │  (paid)         │                                  │  Payment Conf   │   │                 │
 └────────┬────────┘                                  └─────────────────┘   └─────────────────┘
          │
-         ▼
+          ▼
 ┌─────────────────┐
-│  Biteship       │── Create shipping order
-│  Create Order   │
+│  Biteship       │── Create draft order
+│  Create Draft   │
 └────────┬────────┘
-         │
-         ▼
+          │
+          ▼
+┌─────────────────┐
+│  Staff Confirms │── In Biteship Dashboard
+│  Draft → Order  │
+└────────┬────────┘
+          │
+          ▼
 ┌─────────────────┐
 │  Biteship       │── POST /api/webhooks/biteship
 │  Webhooks       │   - order.status
