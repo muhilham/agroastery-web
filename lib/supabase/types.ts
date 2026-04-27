@@ -10,19 +10,22 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.1"
+    PostgrestVersion: "14.4"
   }
   public: {
     Tables: {
       addresses: {
         Row: {
           address_line: string
+          biteship_location_id: string | null
+          client_id: string | null
           created_at: string | null
           id: string
           is_default: boolean | null
           label: string | null
           latitude: number | null
           longitude: number | null
+          note: string | null
           phone: string
           postal_code: string | null
           recipient_name: string
@@ -30,12 +33,15 @@ export type Database = {
         }
         Insert: {
           address_line: string
+          biteship_location_id?: string | null
+          client_id?: string | null
           created_at?: string | null
           id?: string
           is_default?: boolean | null
           label?: string | null
           latitude?: number | null
           longitude?: number | null
+          note?: string | null
           phone: string
           postal_code?: string | null
           recipient_name: string
@@ -43,12 +49,15 @@ export type Database = {
         }
         Update: {
           address_line?: string
+          biteship_location_id?: string | null
+          client_id?: string | null
           created_at?: string | null
           id?: string
           is_default?: boolean | null
           label?: string | null
           latitude?: number | null
           longitude?: number | null
+          note?: string | null
           phone?: string
           postal_code?: string | null
           recipient_name?: string
@@ -56,123 +65,17 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "addresses_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "addresses_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      attendance: {
-        Row: {
-          checkin_time: string
-          created_at: string
-          date: string
-          employee_id: string
-          id: string
-          is_manual: boolean
-          location_id: string
-          schedule_id: string
-          source: string
-          telegram_user_id: number
-          wifi_confirmed: boolean
-        }
-        Insert: {
-          checkin_time: string
-          created_at?: string
-          date: string
-          employee_id: string
-          id?: string
-          is_manual?: boolean
-          location_id: string
-          schedule_id: string
-          source: string
-          telegram_user_id: number
-          wifi_confirmed: boolean
-        }
-        Update: {
-          checkin_time?: string
-          created_at?: string
-          date?: string
-          employee_id?: string
-          id?: string
-          is_manual?: boolean
-          location_id?: string
-          schedule_id?: string
-          source?: string
-          telegram_user_id?: number
-          wifi_confirmed?: boolean
-        }
-        Relationships: [
-          {
-            foreignKeyName: "attendance_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "current_employee"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "attendance_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "attendance_location_id_fkey"
-            columns: ["location_id"]
-            isOneToOne: false
-            referencedRelation: "locations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "attendance_schedule_id_fkey"
-            columns: ["schedule_id"]
-            isOneToOne: false
-            referencedRelation: "schedules"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      bonus_policy: {
-        Row: {
-          bonus_multiplier: number
-          created_at: string
-          created_by: string
-          effective_from: string
-          id: string
-          max_late: number
-        }
-        Insert: {
-          bonus_multiplier: number
-          created_at?: string
-          created_by: string
-          effective_from: string
-          id?: string
-          max_late: number
-        }
-        Update: {
-          bonus_multiplier?: number
-          created_at?: string
-          created_by?: string
-          effective_from?: string
-          id?: string
-          max_late?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "bonus_policy_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "current_employee"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bonus_policy_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "employees"
             referencedColumns: ["id"]
           },
         ]
@@ -291,95 +194,6 @@ export type Database = {
         }
         Relationships: []
       }
-      config_audit_log: {
-        Row: {
-          action: string
-          config_id: string
-          config_type: string
-          id: string
-          performed_at: string
-          performed_by: string
-          snapshot: Json
-        }
-        Insert: {
-          action: string
-          config_id: string
-          config_type: string
-          id?: string
-          performed_at?: string
-          performed_by: string
-          snapshot: Json
-        }
-        Update: {
-          action?: string
-          config_id?: string
-          config_type?: string
-          id?: string
-          performed_at?: string
-          performed_by?: string
-          snapshot?: Json
-        }
-        Relationships: [
-          {
-            foreignKeyName: "config_audit_log_performed_by_fkey"
-            columns: ["performed_by"]
-            isOneToOne: false
-            referencedRelation: "current_employee"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "config_audit_log_performed_by_fkey"
-            columns: ["performed_by"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      ecom_notification_logs: {
-        Row: {
-          channel: string
-          created_at: string | null
-          error: string | null
-          id: string
-          message: string
-          order_id: string | null
-          order_number: string | null
-          status: string
-          type: string
-        }
-        Insert: {
-          channel?: string
-          created_at?: string | null
-          error?: string | null
-          id?: string
-          message: string
-          order_id?: string | null
-          order_number?: string | null
-          status: string
-          type: string
-        }
-        Update: {
-          channel?: string
-          created_at?: string | null
-          error?: string | null
-          id?: string
-          message?: string
-          order_id?: string | null
-          order_number?: string | null
-          status?: string
-          type?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ecom_notification_logs_order_id_fkey"
-            columns: ["order_id"]
-            isOneToOne: false
-            referencedRelation: "ecom_orders"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       ecom_order_items: {
         Row: {
           created_at: string | null
@@ -436,6 +250,7 @@ export type Database = {
       }
       ecom_orders: {
         Row: {
+          biteship_draft_id: string | null
           biteship_order_id: string | null
           created_at: string | null
           customer_email: string | null
@@ -467,6 +282,7 @@ export type Database = {
           xendit_payment_method: string | null
         }
         Insert: {
+          biteship_draft_id?: string | null
           biteship_order_id?: string | null
           created_at?: string | null
           customer_email?: string | null
@@ -498,6 +314,7 @@ export type Database = {
           xendit_payment_method?: string | null
         }
         Update: {
+          biteship_draft_id?: string | null
           biteship_order_id?: string | null
           created_at?: string | null
           customer_email?: string | null
@@ -534,55 +351,6 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      employee_schedule_assignments: {
-        Row: {
-          created_at: string
-          day_of_week: number
-          effective_from: string
-          employee_id: string
-          id: string
-          schedule_id: string
-        }
-        Insert: {
-          created_at?: string
-          day_of_week: number
-          effective_from: string
-          employee_id: string
-          id?: string
-          schedule_id: string
-        }
-        Update: {
-          created_at?: string
-          day_of_week?: number
-          effective_from?: string
-          employee_id?: string
-          id?: string
-          schedule_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "employee_schedule_assignments_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "current_employee"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "employee_schedule_assignments_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "employee_schedule_assignments_schedule_id_fkey"
-            columns: ["schedule_id"]
-            isOneToOne: false
-            referencedRelation: "schedules"
             referencedColumns: ["id"]
           },
         ]
@@ -641,140 +409,32 @@ export type Database = {
         }
         Relationships: []
       }
-      jubelio_invoices: {
-        Row: {
-          created_at: string | null
-          customer_name: string | null
-          doc_id: number
-          doc_number: string | null
-          doc_type: string | null
-          due: number | null
-          due_date: string | null
-          grand_total: number | null
-          report_date: string
-          transaction_date: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          customer_name?: string | null
-          doc_id: number
-          doc_number?: string | null
-          doc_type?: string | null
-          due?: number | null
-          due_date?: string | null
-          grand_total?: number | null
-          report_date: string
-          transaction_date?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          customer_name?: string | null
-          doc_id?: number
-          doc_number?: string | null
-          doc_type?: string | null
-          due?: number | null
-          due_date?: string | null
-          grand_total?: number | null
-          report_date?: string
-          transaction_date?: string | null
-        }
-        Relationships: []
-      }
-      jubelio_transactions: {
-        Row: {
-          created_at: string | null
-          customer_name: string | null
-          doc_id: number
-          doc_number: string | null
-          doc_type: string | null
-          due: number | null
-          due_date: string | null
-          grand_total: number | null
-          report_date: string
-          transaction_date: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          customer_name?: string | null
-          doc_id: number
-          doc_number?: string | null
-          doc_type?: string | null
-          due?: number | null
-          due_date?: string | null
-          grand_total?: number | null
-          report_date: string
-          transaction_date?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          customer_name?: string | null
-          doc_id?: number
-          doc_number?: string | null
-          doc_type?: string | null
-          due?: number | null
-          due_date?: string | null
-          grand_total?: number | null
-          report_date?: string
-          transaction_date?: string | null
-        }
-        Relationships: []
-      }
-      jubelio_webhook_events: {
-        Row: {
-          action: string | null
-          event_type: string
-          id: number
-          payload: Json
-          received_at: string | null
-          ref_id: number | null
-          ref_no: string | null
-        }
-        Insert: {
-          action?: string | null
-          event_type: string
-          id?: number
-          payload: Json
-          received_at?: string | null
-          ref_id?: number | null
-          ref_no?: string | null
-        }
-        Update: {
-          action?: string | null
-          event_type?: string
-          id?: number
-          payload?: Json
-          received_at?: string | null
-          ref_id?: number | null
-          ref_no?: string | null
-        }
-        Relationships: []
-      }
       locations: {
         Row: {
           code: string
-          created_at: string
+          created_at: string | null
           id: string
-          is_active: boolean
+          is_active: boolean | null
           name: string
-          telegram_topic_id: number | null
+          telegram_topic_id: string | null
           wifi_ssid: string | null
         }
         Insert: {
           code: string
-          created_at?: string
+          created_at?: string | null
           id?: string
-          is_active?: boolean
+          is_active?: boolean | null
           name: string
-          telegram_topic_id?: number | null
+          telegram_topic_id?: string | null
           wifi_ssid?: string | null
         }
         Update: {
           code?: string
-          created_at?: string
+          created_at?: string | null
           id?: string
-          is_active?: boolean
+          is_active?: boolean | null
           name?: string
-          telegram_topic_id?: number | null
+          telegram_topic_id?: string | null
           wifi_ssid?: string | null
         }
         Relationships: []
@@ -882,10 +542,11 @@ export type Database = {
           admin_notes: string | null
           client_id: string
           created_at: string
+          fulfillment_status: string
           id: string
           notes: string | null
           order_number: string
-          status: string
+          payment_status: string
           total_amount: number
           updated_at: string
         }
@@ -893,10 +554,11 @@ export type Database = {
           admin_notes?: string | null
           client_id: string
           created_at?: string
+          fulfillment_status?: string
           id?: string
           notes?: string | null
           order_number: string
-          status?: string
+          payment_status?: string
           total_amount: number
           updated_at?: string
         }
@@ -904,10 +566,11 @@ export type Database = {
           admin_notes?: string | null
           client_id?: string
           created_at?: string
+          fulfillment_status?: string
           id?: string
           notes?: string | null
           order_number?: string
-          status?: string
+          payment_status?: string
           total_amount?: number
           updated_at?: string
         }
@@ -1085,7 +748,7 @@ export type Database = {
           is_active?: boolean | null
           price?: number
           product_id?: string | null
-          ship_weight_grams?: number
+          ship_weight_grams: number
           sku?: string | null
           stock_quantity?: number | null
           updated_at?: string | null
@@ -1192,380 +855,45 @@ export type Database = {
           },
         ]
       }
-      schedules: {
-        Row: {
-          created_at: string
-          created_by: string
-          effective_from: string
-          grace_minutes: number
-          id: string
-          is_active: boolean | null
-          location_id: string
-          role: string
-          shift_name: string
-          start_time: string
-        }
-        Insert: {
-          created_at?: string
-          created_by: string
-          effective_from: string
-          grace_minutes?: number
-          id?: string
-          is_active?: boolean | null
-          location_id: string
-          role: string
-          shift_name: string
-          start_time: string
-        }
-        Update: {
-          created_at?: string
-          created_by?: string
-          effective_from?: string
-          grace_minutes?: number
-          id?: string
-          is_active?: boolean | null
-          location_id?: string
-          role?: string
-          shift_name?: string
-          start_time?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "schedules_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "current_employee"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "schedules_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "schedules_location_id_fkey"
-            columns: ["location_id"]
-            isOneToOne: false
-            referencedRelation: "locations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
     }
     Views: {
-      attendance_absence_secure: {
-        Row: {
-          date: string | null
-          email: string | null
-          employee_id: string | null
-          employee_name: string | null
-          location_code: string | null
-          location_id: string | null
-          location_name: string | null
-          schedule_id: string | null
-          shift_name: string | null
-          start_time: string | null
-          status: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "employee_schedule_assignments_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "current_employee"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "employee_schedule_assignments_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "employee_schedule_assignments_schedule_id_fkey"
-            columns: ["schedule_id"]
-            isOneToOne: false
-            referencedRelation: "schedules"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "schedules_location_id_fkey"
-            columns: ["location_id"]
-            isOneToOne: false
-            referencedRelation: "locations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      attendance_absence_view: {
-        Row: {
-          date: string | null
-          email: string | null
-          employee_id: string | null
-          employee_name: string | null
-          location_code: string | null
-          location_id: string | null
-          location_name: string | null
-          schedule_id: string | null
-          shift_name: string | null
-          start_time: string | null
-          status: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "employee_schedule_assignments_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "current_employee"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "employee_schedule_assignments_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "employee_schedule_assignments_schedule_id_fkey"
-            columns: ["schedule_id"]
-            isOneToOne: false
-            referencedRelation: "schedules"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "schedules_location_id_fkey"
-            columns: ["location_id"]
-            isOneToOne: false
-            referencedRelation: "locations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      attendance_daily_secure: {
-        Row: {
-          checkin_local_time: string | null
-          checkin_time: string | null
-          cutoff_time: string | null
-          date: string | null
-          employee_id: string | null
-          employee_name: string | null
-          id: string | null
-          is_late: boolean | null
-          is_manual: boolean | null
-          lateness_minutes: number | null
-          location_code: string | null
-          location_id: string | null
-          location_name: string | null
-          schedule_id: string | null
-          shift_name: string | null
-          source: string | null
-          start_time: string | null
-          wifi_confirmed: boolean | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "attendance_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "current_employee"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "attendance_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "attendance_location_id_fkey"
-            columns: ["location_id"]
-            isOneToOne: false
-            referencedRelation: "locations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "attendance_schedule_id_fkey"
-            columns: ["schedule_id"]
-            isOneToOne: false
-            referencedRelation: "schedules"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      attendance_daily_view: {
-        Row: {
-          checkin_local_time: string | null
-          checkin_local_timestamp: string | null
-          checkin_time: string | null
-          cutoff_time: string | null
-          date: string | null
-          employee_id: string | null
-          grace_minutes: number | null
-          id: string | null
-          is_late: boolean | null
-          is_manual: boolean | null
-          lateness_minutes: number | null
-          location_id: string | null
-          schedule_id: string | null
-          shift_name: string | null
-          source: string | null
-          start_time: string | null
-          wifi_confirmed: boolean | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "attendance_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "current_employee"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "attendance_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "attendance_location_id_fkey"
-            columns: ["location_id"]
-            isOneToOne: false
-            referencedRelation: "locations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "attendance_schedule_id_fkey"
-            columns: ["schedule_id"]
-            isOneToOne: false
-            referencedRelation: "schedules"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      attendance_monthly_bonus: {
-        Row: {
-          bonus_multiplier: number | null
-          employee_id: string | null
-          late_days: number | null
-          month: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "attendance_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "current_employee"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "attendance_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      attendance_monthly_bonus_secure: {
-        Row: {
-          bonus_multiplier: number | null
-          employee_id: string | null
-          late_days: number | null
-          month: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "attendance_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "current_employee"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "attendance_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      attendance_weekly_secure: {
-        Row: {
-          employee_id: string | null
-          late_days: number | null
-          on_time_days: number | null
-          present_days: number | null
-          week_start_date: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "attendance_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "current_employee"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "attendance_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      attendance_weekly_summary: {
-        Row: {
-          employee_id: string | null
-          late_days: number | null
-          on_time_days: number | null
-          present_days: number | null
-          week_start_date: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "attendance_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "current_employee"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "attendance_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      current_employee: {
-        Row: {
-          email: string | null
-          id: string | null
-          role: string | null
-        }
-        Insert: {
-          email?: string | null
-          id?: string | null
-          role?: string | null
-        }
-        Update: {
-          email?: string | null
-          id?: string | null
-          role?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
+      dblink: { Args: { "": string }; Returns: Record<string, unknown>[] }
+      dblink_cancel_query: { Args: { "": string }; Returns: string }
+      dblink_close: { Args: { "": string }; Returns: string }
+      dblink_connect: { Args: { "": string }; Returns: string }
+      dblink_connect_u: { Args: { "": string }; Returns: string }
+      dblink_current_query: { Args: never; Returns: string }
+      dblink_disconnect:
+        | { Args: never; Returns: string }
+        | { Args: { "": string }; Returns: string }
+      dblink_error_message: { Args: { "": string }; Returns: string }
+      dblink_exec: { Args: { "": string }; Returns: string }
+      dblink_fdw_validator: {
+        Args: { catalog: unknown; options: string[] }
+        Returns: undefined
+      }
+      dblink_get_connections: { Args: never; Returns: string[] }
+      dblink_get_notify:
+        | { Args: { conname: string }; Returns: Record<string, unknown>[] }
+        | { Args: never; Returns: Record<string, unknown>[] }
+      dblink_get_pkey: {
+        Args: { "": string }
+        Returns: Database["public"]["CompositeTypes"]["dblink_pkey_results"][]
+        SetofOptions: {
+          from: "*"
+          to: "dblink_pkey_results"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      dblink_get_result: {
+        Args: { "": string }
+        Returns: Record<string, unknown>[]
+      }
+      dblink_is_busy: { Args: { "": string }; Returns: number }
       dev_reset_today_attendance: { Args: never; Returns: undefined }
       ecom_decrement_stock: {
         Args: { p_quantity: number; p_variant_id: string }
@@ -1577,12 +905,22 @@ export type Database = {
         Returns: undefined
       }
       generate_order_number: { Args: never; Returns: string }
+      postgres_fdw_disconnect: { Args: { "": string }; Returns: boolean }
+      postgres_fdw_disconnect_all: { Args: never; Returns: boolean }
+      postgres_fdw_get_connections: {
+        Args: never
+        Returns: Record<string, unknown>[]
+      }
+      postgres_fdw_handler: { Args: never; Returns: unknown }
     }
     Enums: {
       [_ in never]: never
     }
     CompositeTypes: {
-      [_ in never]: never
+      dblink_pkey_results: {
+        position: number | null
+        colname: string | null
+      }
     }
   }
 }
