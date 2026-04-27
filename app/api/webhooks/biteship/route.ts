@@ -54,6 +54,9 @@ export async function POST(request: NextRequest) {
 
   const supabase = createSupabaseAdminClient();
 
+  // At this point biteshipOrderId is guaranteed to be defined (checked above)
+  const bsOrderId = biteshipOrderId as string;
+
   async function applyUpdate(
     update: Record<string, unknown>,
     label: string
@@ -61,7 +64,7 @@ export async function POST(request: NextRequest) {
     const byOrderId = await supabase
       .from('ecom_orders')
       .update(update)
-      .eq('biteship_order_id', biteshipOrderId)
+      .eq('biteship_order_id', bsOrderId)
       .select('id')
       .single();
     if (byOrderId.data) return true;
@@ -69,7 +72,7 @@ export async function POST(request: NextRequest) {
     const referenceId = body.reference_id as string | undefined;
     if (!referenceId) {
       console.warn(
-        `[biteship-webhook] No order found for biteship_order_id=${biteshipOrderId} and no reference_id fallback (${label})`
+        `[biteship-webhook] No order found for biteship_order_id=${bsOrderId} and no reference_id fallback (${label})`
       );
       return false;
     }
@@ -82,7 +85,7 @@ export async function POST(request: NextRequest) {
       .single();
     if (!byRef.data) {
       console.warn(
-        `[biteship-webhook] No order found for biteship_order_id=${biteshipOrderId} or reference_id=${referenceId} (${label})`
+        `[biteship-webhook] No order found for biteship_order_id=${bsOrderId} or reference_id=${referenceId} (${label})`
       );
       return false;
     }
@@ -90,7 +93,7 @@ export async function POST(request: NextRequest) {
     // Lazily persist biteship_order_id so future webhooks match by it directly.
     await supabase
       .from('ecom_orders')
-      .update({ biteship_order_id: biteshipOrderId })
+      .update({ biteship_order_id: bsOrderId })
       .eq('id', byRef.data.id);
     return true;
   }
@@ -109,7 +112,7 @@ export async function POST(request: NextRequest) {
       await applyUpdate({ tracking_number: waybillId }, 'order.waybill_id');
     }
   } else {
-    console.log(`[biteship-webhook] Unhandled event "${event}" for Biteship order ${biteshipOrderId}`);
+    console.log(`[biteship-webhook] Unhandled event "${event}" for Biteship order ${bsOrderId}`);
   }
 
   return NextResponse.json({ received: true });
