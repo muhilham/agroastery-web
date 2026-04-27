@@ -54,37 +54,61 @@ export async function POST(request: NextRequest) {
 
   const supabase = createSupabaseAdminClient();
 
+  async function applyUpdate(
+    update: Record<string, unknown>,
+    label: string
+  ): Promise<boolean> {
+    const byOrderId = await supabase
+      .from('ecom_orders')
+      .update(update)
+      .eq('biteship_order_id', biteshipOrderId)
+      .select('id')
+      .single();
+    if (byOrderId.data) return true;
+
+    const referenceId = body.reference_id as string | undefined;
+    if (!referenceId) {
+      console.warn(
+        `[biteship-webhook] No order found for biteship_order_id=${biteshipOrderId} and no reference_id fallback (${label})`
+      );
+      return false;
+    }
+
+    const byRef = await supabase
+      .from('ecom_orders')
+      .update(update)
+      .eq('order_number', referenceId)
+      .select('id')
+      .single();
+    if (!byRef.data) {
+      console.warn(
+        `[biteship-webhook] No order found for biteship_order_id=${biteshipOrderId} or reference_id=${referenceId} (${label})`
+      );
+      return false;
+    }
+
+    // Lazily persist biteship_order_id so future webhooks match by it directly.
+    await supabase
+      .from('ecom_orders')
+      .update({ biteship_order_id: biteshipOrderId })
+      .eq('id', byRef.data.id);
+    return true;
+  }
+
   if (event === 'order.status') {
     const rawStatus = body.status as string | undefined;
     const ecomStatus = rawStatus ? BITESHIP_STATUS_MAP[rawStatus] : undefined;
     if (ecomStatus) {
-      const { data } = await supabase
-        .from('ecom_orders')
-        .update({ status: ecomStatus })
-        .eq('biteship_order_id', biteshipOrderId)
-        .select('id')
-        .single();
-      if (!data) {
-        console.warn(`[biteship-webhook] No order found for biteship_order_id: ${biteshipOrderId}`);
-      }
+      await applyUpdate({ status: ecomStatus }, `order.status=${rawStatus}`);
     } else {
       console.log(`[biteship-webhook] Unrecognised Biteship status "${rawStatus}" — no DB update`);
     }
   } else if (event === 'order.waybill_id') {
     const waybillId = body.courier_waybill_id as string | undefined;
     if (waybillId) {
-      const { data: waybillData } = await supabase
-        .from('ecom_orders')
-        .update({ tracking_number: waybillId })
-        .eq('biteship_order_id', biteshipOrderId)
-        .select('id')
-        .single();
-      if (!waybillData) {
-        console.warn(`[biteship-webhook] No order found for biteship_order_id: ${biteshipOrderId} (waybill_id event)`);
-      }
+      await applyUpdate({ tracking_number: waybillId }, 'order.waybill_id');
     }
   } else {
-    // order.price or any future event — log only, no action required
     console.log(`[biteship-webhook] Unhandled event "${event}" for Biteship order ${biteshipOrderId}`);
   }
 

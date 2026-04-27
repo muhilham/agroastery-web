@@ -86,4 +86,72 @@ describe('POST /api/webhooks/biteship', () => {
     expect(res.status).toBe(200);
     expect(mockUpdate).not.toHaveBeenCalled();
   });
+
+  it('falls back to reference_id lookup when biteship_order_id miss, then persists order_id', async () => {
+    // First update by biteship_order_id returns no row → handler must lookup by order_number
+    const noMatch = { data: null, error: null };
+    const matched = { data: { id: 'ecom-99' }, error: null };
+
+    const updateByOrderId = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({ single: vi.fn().mockResolvedValue(noMatch) }),
+      }),
+    });
+    const updateByRef = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({ single: vi.fn().mockResolvedValue(matched) }),
+      }),
+    });
+    const updateAttachOrderId = vi.fn().mockReturnValue({
+      eq: vi.fn().mockResolvedValue({ data: null, error: null }),
+    });
+
+    let call = 0;
+    mockFrom.mockImplementation(() => {
+      call++;
+      if (call === 1) return { update: updateByOrderId };
+      if (call === 2) return { update: updateByRef };
+      return { update: updateAttachOrderId };
+    });
+
+    const { POST } = await import('@/app/api/webhooks/biteship/route');
+    const res = await POST(
+      makeRequest({
+        event: 'order.status',
+        order_id: 'bs-new-after-confirm',
+        reference_id: 'AGR-20260427-ABC',
+        status: 'confirmed',
+      })
+    );
+
+    expect(res.status).toBe(200);
+    expect(updateByOrderId).toHaveBeenCalledWith({ status: 'processing' });
+    expect(updateByRef).toHaveBeenCalledWith({ status: 'processing' });
+    expect(updateAttachOrderId).toHaveBeenCalledWith({ biteship_order_id: 'bs-new-after-confirm' });
+  });
+
+  it('does not call reference_id fallback when biteship_order_id matches', async () => {
+    const matched = { data: { id: 'ecom-99' }, error: null };
+    const updateByOrderId = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({ single: vi.fn().mockResolvedValue(matched) }),
+      }),
+    });
+
+    mockFrom.mockReturnValue({ update: updateByOrderId });
+
+    const { POST } = await import('@/app/api/webhooks/biteship/route');
+    const res = await POST(
+      makeRequest({
+        event: 'order.status',
+        order_id: 'bs-existing',
+        reference_id: 'AGR-20260427-ABC',
+        status: 'picked',
+      })
+    );
+
+    expect(res.status).toBe(200);
+    expect(updateByOrderId).toHaveBeenCalledOnce();
+    expect(updateByOrderId).toHaveBeenCalledWith({ status: 'shipped' });
+  });
 });
