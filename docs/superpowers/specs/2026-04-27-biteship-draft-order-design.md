@@ -37,13 +37,18 @@ Replace the live order call with a **draft order** call. Staff confirms drafts m
 
 ### Schema
 
+Schema changes must be applied in the **agr-ops** repo (`/Users/muhammadilham/Documents/GitHub/agr-ops`). This repo only consumes the columns. Required column:
+
 ```sql
+-- Apply in agr-ops migration, not here.
 ALTER TABLE ecom_orders ADD COLUMN IF NOT EXISTS biteship_draft_id TEXT;
 ```
 
 `biteship_order_id` stays. Populated lazily on first webhook after staff confirms in dashboard.
 
 No `shipping_status` column. Existing `status` enum already covers states (`paid` → `processing` after confirm).
+
+After the migration ships, regenerate Supabase types in this repo (`lib/supabase/types.ts`) so the new column is type-safe.
 
 ### Code Changes
 
@@ -111,5 +116,9 @@ if (!row.data) {
 
 ## Rollout
 
-- Single deploy. No feature flag needed (clean cutover; old `createBiteshipOrder` removed).
-- Existing in-flight orders with `biteship_order_id` already set keep working unchanged (webhook still matches by that column first).
+Order matters: schema must exist before this code deploys.
+
+1. Land migration in **agr-ops**: `ALTER TABLE ecom_orders ADD COLUMN biteship_draft_id TEXT`. Apply to production Supabase.
+2. Regenerate Supabase types in this repo from updated schema.
+3. Merge + deploy this repo. Single deploy. No feature flag (clean cutover; old `createBiteshipOrder` removed).
+4. Existing in-flight orders with `biteship_order_id` already set keep working unchanged (webhook still matches by that column first).
