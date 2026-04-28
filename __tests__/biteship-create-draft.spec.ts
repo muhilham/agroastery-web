@@ -98,6 +98,7 @@ describe('createBiteshipDraft', () => {
     const payload = JSON.parse(options.body as string);
     expect(payload.courier_company).toBe('jne');
     expect(payload.courier_type).toBe('reg');
+    expect(payload.delivery_type).toBe('now');
     expect(payload.reference_id).toBe('AGR-20260427-ABC');
     expect(payload.items).toHaveLength(1);
   });

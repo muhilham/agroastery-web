@@ -68,6 +68,16 @@ async function logNotification({
   }
 }
 
+/**
+ * Escape special Markdown characters for Telegram.
+ * In MarkdownV2 mode, these chars need escaping: _ * [ ] ( ) ~ ` > # + - = | { } . !
+ * We use the legacy Markdown mode which only needs: _ * [ ] ( ) ~ `
+ */
+function escapeMarkdown(text: string): string {
+  // Escape characters that have special meaning in Markdown
+  return text.replace(/([_*\[\]()~`])/g, '\\$1');
+}
+
 /** Send text to the configured Telegram group. Returns error string on failure, null on success. */
 async function sendTelegramMessage(text: string): Promise<string | null> {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
@@ -77,15 +87,31 @@ async function sendTelegramMessage(text: string): Promise<string | null> {
     return "TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID not configured";
   }
 
+  // Escape markdown special characters to prevent parsing errors
+  const escapedText = escapeMarkdown(text);
+
   try {
     const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chat_id: chatId, text, parse_mode: "Markdown" }),
+      body: JSON.stringify({ chat_id: chatId, text: escapedText, parse_mode: "Markdown" }),
     });
 
     if (!res.ok) {
       const body = await res.text();
+      // If Markdown parsing fails, retry without parse_mode as plain text
+      if (body.includes("parse entities") || body.includes("Bad Request")) {
+        const plainRes = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ chat_id: chatId, text: text }), // unescaped, no parse_mode
+        });
+        if (!plainRes.ok) {
+          const plainBody = await plainRes.text();
+          return `Telegram API error ${plainRes.status}: ${plainBody}`;
+        }
+        return null;
+      }
       return `Telegram API error ${res.status}: ${body}`;
     }
 
