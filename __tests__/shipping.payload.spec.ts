@@ -181,4 +181,36 @@ describe('Shipping Payload Tests', () => {
       })).rejects.toThrow('weightGrams must be > 0');
     });
   });
+
+  it('sends items array directly when items field is provided', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ success: true, pricing: [] }),
+    });
+
+    const { result } = renderHook(() => useShippingCalculator());
+
+    await act(async () => {
+      await result.current.calculateShipping({
+        originPostalCode: '12440',
+        destinationPostalCode: '12240',
+        // scalar fields are present but ignored when items[] is provided
+        name: 'ignored',
+        price: 0,
+        quantity: 1,
+        weightGrams: 0,
+        items: [
+          { name: 'Kopi A', description: 'Arabika', value: 100000, length: 20, width: 15, height: 10, weight: 220, quantity: 1 },
+          { name: 'Kopi B', description: 'Robusta', value: 80000,  length: 20, width: 15, height: 10, weight: 330, quantity: 2 },
+        ],
+      });
+    });
+
+    const sentBody = JSON.parse(
+      (mockFetch.mock.calls[0][1] as RequestInit).body as string
+    );
+    expect(sentBody.items).toHaveLength(2);
+    expect(sentBody.items[0].name).toBe('Kopi A');
+    expect(sentBody.items[1].name).toBe('Kopi B');
+  });
 });

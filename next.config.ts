@@ -1,19 +1,27 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ["deviant-pancreas-stinking.ngrok-free.dev"],
+  output: "standalone",
   images: {
     remotePatterns: [
       {
         protocol: "https",
         hostname: "cdn.agroastery.com",
         port: "",
-        pathname: "/produk/**",
+        pathname: "/**",
         search: "",
+      },
+      {
+        protocol: "https",
+        hostname: "*.supabase.co",
+      },
+      {
+        protocol: "https",
+        hostname: "*.supabase.in",
       },
     ],
   },
-  // Cloudflare Pages compatibility - Note: output: 'export' disables API routes
-  // Remove output: 'export' to keep API routes working
   trailingSlash: true,
   skipTrailingSlashRedirect: true,
 };

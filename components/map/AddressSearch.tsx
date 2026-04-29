@@ -1,32 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { Input } from '@/components/ui/input';
+import { useEffect, useRef, useState } from 'react';
 import { loadGoogleMaps } from '@/lib/maps/loadGoogleMaps';
 import { setDestinationGeo } from '@/lib/stores/shipping';
-
-// Type-safe helpers to extract coordinates without using `any`
-function hasLatLngMethods(loc: unknown): loc is { lat: () => number; lng: () => number } {
-  if (typeof loc !== 'object' || loc === null) return false;
-  const obj = loc as Record<string, unknown>;
-  return typeof obj.lat === 'function' && typeof obj.lng === 'function';
-}
-
-function hasLatLngProps(loc: unknown): loc is { lat: number; lng: number } {
-  if (typeof loc !== 'object' || loc === null) return false;
-  const obj = loc as Record<string, unknown>;
-  return typeof obj.lat === 'number' && typeof obj.lng === 'number';
-}
-
-function extractLatLng(loc: unknown): { lat: number; lng: number } | null {
-  if (hasLatLngMethods(loc)) {
-    return { lat: loc.lat(), lng: loc.lng() };
-  }
-  if (hasLatLngProps(loc)) {
-    return { lat: loc.lat, lng: loc.lng };
-  }
-  return null;
-}
 
 interface AddressSearchProps {
   value?: string;
@@ -43,143 +19,106 @@ export default function AddressSearch({
   className = '',
   placeholder = 'Cari alamat atau tempat…'
 }: AddressSearchProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const elementRef = useRef<google.maps.places.PlaceAutocompleteElement | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [inputValue, setInputValue] = useState(value);
 
-  // Initialize autocomplete
-  const initializeAutocomplete = useCallback(async () => {
-    if (!inputRef.current) return;
+  useEffect(() => {
+    let mounted = true;
 
-    try {
-      setIsLoading(true);
-      setError(null);
+    async function init() {
+      if (!containerRef.current) return;
 
-      await loadGoogleMaps();
-
-      const autocomplete = new google.maps.places.Autocomplete(inputRef.current, {
-        fields: ['geometry', 'formatted_address', 'address_components', 'name'],
-        componentRestrictions: { country: Array.isArray(country) ? country : [country] },
-        types: ['establishment', 'geocode']
-      });
-
-      autocompleteRef.current = autocomplete;
-
-      // Listen for place selection
-      autocomplete.addListener('place_changed', () => {
-        const place = autocomplete.getPlace();
-        
-        if (place.geometry?.location) {
-          const coords = extractLatLng(place.geometry.location);
-          if (coords && !isNaN(coords.lat) && !isNaN(coords.lng)) {
-            const address = place.formatted_address || place.name || '';
-            // Extract postal code if available with proper typing
-            const components: google.maps.GeocoderAddressComponent[] | undefined =
-              (place.address_components as unknown as google.maps.GeocoderAddressComponent[]) || undefined;
-            const postalComponent = components?.find((comp) => Array.isArray(comp.types) && comp.types.includes('postal_code'));
-            const postal_code = postalComponent?.long_name;
-
-            // Save to destination store
-            setDestinationGeo(coords.lat, coords.lng, {
-              formatted_address: place.formatted_address ?? undefined,
-              place_id: (place as google.maps.places.PlaceResult).place_id ?? undefined,
-              place_name: place.name ?? undefined,
-              postal_code,
-            });
-            onPlaceSelected(coords, address);
-          } else {
-            console.warn('Invalid coordinates from place selection:', place.geometry.location);
-          }
-        }
-      });
-
-      setIsLoading(false);
-    } catch (err) {
-      console.error('Failed to initialize autocomplete:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load address search');
-      setIsLoading(false);
-    }
-  }, [country, onPlaceSelected]);
-
-  // Handle manual search (fallback) using Geocoder to avoid deprecated PlacesService
-  const handleKeyDown = useCallback(async (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && inputRef.current?.value) {
-      e.preventDefault();
       try {
+        setIsLoading(true);
+        setError(null);
+
         await loadGoogleMaps();
-        const geocoder = new google.maps.Geocoder();
-        const countryRestrict = Array.isArray(country) ? country[0] : country;
-        geocoder.geocode(
-          {
-            address: inputRef.current.value,
-            // Narrow results to country if provided
-            componentRestrictions: { country: countryRestrict },
-          },
-          (results, status) => {
-            if (status === 'OK' && results && results[0] && results[0].geometry?.location) {
-              const coords = extractLatLng(results[0].geometry.location);
-              if (coords && !isNaN(coords.lat) && !isNaN(coords.lng)) {
-                const address = results[0].formatted_address || inputRef.current!.value;
-                // Attempt to extract postal_code from geocoder result (typed)
-                const geocoderComponents: google.maps.GeocoderAddressComponent[] | undefined =
-                  (results[0].address_components as unknown as google.maps.GeocoderAddressComponent[]) || undefined;
-                const postalComp = geocoderComponents?.find((comp) => Array.isArray(comp.types) && comp.types.includes('postal_code'));
-                const postal_code = postalComp?.long_name;
-                setDestinationGeo(coords.lat, coords.lng, {
-                  formatted_address: results[0].formatted_address ?? undefined,
-                  postal_code,
-                });
-                onPlaceSelected(coords, address);
-              } else {
-                console.warn('Invalid coordinates from geocoder search:', results[0].geometry.location);
-              }
-            } else if (status !== 'OK') {
-              console.warn('Geocoder search failed:', status);
+
+        if (!mounted || !containerRef.current) return;
+
+        const countryList = Array.isArray(country) ? country : [country];
+
+        const placeElement = new google.maps.places.PlaceAutocompleteElement({
+          componentRestrictions: { country: countryList },
+          types: ['establishment', 'geocode'],
+        });
+
+        placeElement.setAttribute('placeholder', placeholder);
+        if (value) placeElement.setAttribute('value', value);
+
+        elementRef.current = placeElement;
+        containerRef.current.appendChild(placeElement);
+
+        placeElement.addEventListener('gmp-select', async (e: Event) => {
+          const { placePrediction } = e as unknown as { placePrediction: google.maps.places.PlacePrediction };
+
+          try {
+            const place = await placePrediction.toPlace();
+            await place.fetchFields({
+              fields: ['location', 'formattedAddress', 'addressComponents', 'displayName', 'id'],
+            });
+
+            const loc = place.location;
+            if (loc) {
+              const coords = { lat: loc.lat(), lng: loc.lng() };
+              const address = place.formattedAddress || place.displayName || '';
+
+              const postalComponent = place.addressComponents?.find(
+                (comp) => comp.types.includes('postal_code')
+              );
+
+              setDestinationGeo(coords.lat, coords.lng, {
+                formatted_address: place.formattedAddress ?? undefined,
+                place_id: place.id,
+                place_name: place.displayName ?? undefined,
+                postal_code: postalComponent?.longText ?? undefined,
+              });
+
+              onPlaceSelected(coords, address);
+            } else {
+              console.warn('[AddressSearch] No location in place selection');
             }
+          } catch (err) {
+            console.error('[AddressSearch] fetchFields failed:', err);
           }
-        );
+        });
+
+        setIsLoading(false);
       } catch (err) {
-        console.error('Failed to search place:', err);
+        console.error('Failed to initialize autocomplete:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load address search');
+        setIsLoading(false);
       }
     }
-  }, [onPlaceSelected, country]);
 
-  // Sync external value prop with internal state
-  useEffect(() => {
-    setInputValue(value);
-  }, [value]);
-
-  useEffect(() => {
-    initializeAutocomplete();
+    init();
 
     return () => {
-      if (autocompleteRef.current) {
-        google.maps.event.clearInstanceListeners(autocompleteRef.current);
+      mounted = false;
+      if (elementRef.current && containerRef.current?.contains(elementRef.current)) {
+        containerRef.current.removeChild(elementRef.current);
       }
+      elementRef.current = null;
     };
-  }, [initializeAutocomplete]);
+  }, [country, onPlaceSelected, placeholder]);
+
+  // Sync external value into the element's input (best-effort)
+  useEffect(() => {
+    if (elementRef.current && value !== undefined) {
+      elementRef.current.setAttribute('value', value);
+    }
+  }, [value]);
 
   return (
     <div className={`relative autocomplete-wrapper pointer-events-auto ${className}`}>
-      <Input
-        ref={inputRef}
-        value={inputValue}
-        onChange={(e) => setInputValue(e.target.value)}
-        placeholder={placeholder}
-        onKeyDown={handleKeyDown}
-        disabled={isLoading}
-        autoComplete="off"
-        className="autocomplete-input w-full bg-white/90 backdrop-blur-sm border-white/20 text-gray-900 placeholder:text-gray-500"
-      />
-      
       {isLoading && (
-        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 z-10">
           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
         </div>
       )}
-      
+      <div ref={containerRef} className="w-full" />
       {error && (
         <p className="text-xs text-red-400 mt-1">{error}</p>
       )}

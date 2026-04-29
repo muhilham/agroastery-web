@@ -1,22 +1,5 @@
 import { z } from 'zod'
 
-export type ShippingCalcParams = {
-  originPostalCode: string | number;
-  destinationPostalCode?: string | number;
-  quantity: number;
-  price: number; // IDR per unit
-  name: string;
-  description?: string;
-  length?: number; 
-  width?: number; 
-  height?: number;
-  weightGrams: number; // from variant.shipWeightGrams
-  couriers?: string; // comma separated
-  // Optional geolocation for destination; if provided, use these over postal code
-  destinationLatitude?: number | null;
-  destinationLongitude?: number | null;
-};
-
 export type ShippingItem = {
   name: string;
   description?: string;
@@ -26,6 +9,27 @@ export type ShippingItem = {
   height: number;
   weight: number;
   quantity: number;
+};
+
+export type ShippingCalcItem = ShippingItem;
+
+export type ShippingCalcParams = {
+  originPostalCode: string | number;
+  destinationPostalCode?: string | number;
+  quantity: number;
+  price: number; // IDR per unit
+  name: string;
+  description?: string;
+  length?: number;
+  width?: number;
+  height?: number;
+  weightGrams: number; // from variant.shipWeightGrams
+  couriers?: string; // comma separated
+  // Optional geolocation for destination; if provided, use these over postal code
+  destinationLatitude?: number | null;
+  destinationLongitude?: number | null;
+  // Optional: when provided, sent directly instead of building from scalar fields above
+  items?: ShippingCalcItem[];
 };
 
 export type ShippingRateRequest = {

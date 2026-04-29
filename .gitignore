@@ -1,5 +1,15 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+# Superpowers brainstorm sessions
+.superpowers/
+
+# OpenCode MCP configuration (contains secrets)
+.opencode/
+
+# Claude Code configuration (contains secrets)
+.claude/claude.json
+.claude/settings.local.json
+
 # dependencies
 /node_modules
 /.pnp
@@ -41,3 +51,4 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+.claude-context/

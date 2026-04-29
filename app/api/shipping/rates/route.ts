@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
 
 // We proxy Biteship as-is and do not transform the response shape.
@@ -28,58 +27,41 @@ const BodySchema = z.object({
 });
 
 export async function POST(req: Request) {
-  const parsed = BodySchema.safeParse(await req.json());
-  if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid payload", issues: parsed.error.flatten() }, { status: 400 });
-  }
-  const body = parsed.data;
+  try {
+    const parsed = BodySchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Invalid payload", issues: parsed.error.flatten() }, { status: 400 });
+    }
+    const body = parsed.data;
 
-  // Validate location: allow either lat/lng pair OR destination_postal_code
-  const hasGeo =
-    typeof body.destination_latitude === 'number' && Number.isFinite(body.destination_latitude) &&
-    typeof body.destination_longitude === 'number' && Number.isFinite(body.destination_longitude);
+    // Validate location: allow either lat/lng pair OR destination_postal_code
+    const hasGeo =
+      typeof body.destination_latitude === 'number' && Number.isFinite(body.destination_latitude) &&
+      typeof body.destination_longitude === 'number' && Number.isFinite(body.destination_longitude);
 
-  const hasPostal = body.destination_postal_code !== undefined &&
-    Number.isFinite(Number(body.destination_postal_code));
+    const hasPostal = body.destination_postal_code !== undefined &&
+      Number.isFinite(Number(body.destination_postal_code));
 
-  if (!hasGeo && !hasPostal) {
-    return NextResponse.json({
-      error: "Destination must include either a valid latitude/longitude pair or a destination_postal_code",
-    }, { status: 400 });
-  }
+    if (!hasGeo && !hasPostal) {
+      return NextResponse.json({
+        error: "Destination must include either a valid latitude/longitude pair or a destination_postal_code",
+      }, { status: 400 });
+    }
 
-  // Include origin coordinates as well (env-overridable), default to provided coordinates
-  const DEFAULT_ORIGIN_LAT = -6.263450138760574;
-  const DEFAULT_ORIGIN_LNG = 106.81945752406575;
-  const originLatitude = Number(process.env.ORIGIN_LATITUDE ?? DEFAULT_ORIGIN_LAT);
-  const originLongitude = Number(process.env.ORIGIN_LONGITUDE ?? DEFAULT_ORIGIN_LNG);
-  const includeOriginGeo = Number.isFinite(originLatitude) && Number.isFinite(originLongitude);
+    // Check for required API key
+    if (!process.env.BITESHIP_API_KEY) {
+      console.error("[shipping/rates] BITESHIP_API_KEY is not configured");
+      return NextResponse.json({ error: "Shipping service unavailable" }, { status: 503 });
+    }
 
-  const res = await fetch("https://api.biteship.com/v1/rates/couriers", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.BITESHIP_API_KEY}`,
-    },
-    body: JSON.stringify({
-      origin_postal_code: Number(body.origin_postal_code),
-      ...(includeOriginGeo ? { origin_latitude: originLatitude, origin_longitude: originLongitude } : {}),
-      couriers: body.couriers,
-      items: body.items,
-      ...(hasGeo
-        ? {
-            destination_latitude: body.destination_latitude,
-            destination_longitude: body.destination_longitude,
-          }
-        : {
-            destination_postal_code: Number(body.destination_postal_code!),
-          }),
-    }),
-  });
+    // Include origin coordinates as well (env-overridable), default to provided coordinates
+    const DEFAULT_ORIGIN_LAT = -6.263450138760574;
+    const DEFAULT_ORIGIN_LNG = 106.81945752406575;
+    const originLatitude = Number(process.env.ORIGIN_LATITUDE ?? DEFAULT_ORIGIN_LAT);
+    const originLongitude = Number(process.env.ORIGIN_LONGITUDE ?? DEFAULT_ORIGIN_LNG);
+    const includeOriginGeo = Number.isFinite(originLatitude) && Number.isFinite(originLongitude);
 
-  if (!res.ok && includeOriginGeo) {
-    // Retry once without origin geo in case Biteship rejects these fields
-    const retryRes = await fetch("https://api.biteship.com/v1/rates/couriers", {
+    const res = await fetch("https://api.biteship.com/v1/rates/couriers", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -87,6 +69,7 @@ export async function POST(req: Request) {
       },
       body: JSON.stringify({
         origin_postal_code: Number(body.origin_postal_code),
+        ...(includeOriginGeo ? { origin_latitude: originLatitude, origin_longitude: originLongitude } : {}),
         couriers: body.couriers,
         items: body.items,
         ...(hasGeo
@@ -100,18 +83,15 @@ export async function POST(req: Request) {
       }),
     });
 
-    if (!retryRes.ok) {
-      const text = await retryRes.text();
+    if (!res.ok) {
+      const text = await res.text();
+      console.error("[shipping/rates] Biteship error:", res.status, text);
       return NextResponse.json({ error: "Biteship error", details: text }, { status: 502 });
     }
-    const retryData = await retryRes.json();
-    return NextResponse.json(retryData, { headers: { "Cache-Control": "no-store" } });
+    const data = await res.json();
+    return NextResponse.json(data, { headers: { "Cache-Control": "no-store" } });
+  } catch (error) {
+    console.error("[shipping/rates] Unexpected error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
-
-  if (!res.ok) {
-    const text = await res.text();
-    return NextResponse.json({ error: "Biteship error", details: text }, { status: 502 });
-  }
-  const data = await res.json();
-  return NextResponse.json(data, { headers: { "Cache-Control": "no-store" } });
 }

@@ -1,13 +1,6 @@
 import type { Metadata } from "next";
-import { Montserrat } from "next/font/google";
 import "./globals.css";
 import "../style/embla.css";
-
-const montserrat = Montserrat({
-  variable: "--font-montserrat",
-  subsets: ["latin"],
-  weight: ["100", "200", "300", "400", "500", "600", "700", "800"],
-});
 
 export const metadata: Metadata = {
   title: "Agroastery",
@@ -30,7 +23,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Agroastery",
     description:
-      "At AGROASTERY w`e are passionate about sourcing and roasting the highest quality coffee beans from around the world. Our mission is to bring you the perfect cup of coffee every time.",
+      "At AGROASTERY we are passionate about sourcing and roasting the highest quality coffee beans from around the world. Our mission is to bring you the perfect cup of coffee every time.",
     images: [
       "https://github.com/user-attachments/assets/79b22a6a-f341-40f6-ac74-27c6af123b7e",
     ],
@@ -43,7 +36,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${montserrat.variable} bg-background `}>
+      <head>
+        {/* Preconnect to third-party origins used at checkout */}
+        <link rel="preconnect" href="https://maps.googleapis.com" />
+        <link rel="dns-prefetch" href="https://maps.gstatic.com" />
+      </head>
+      <body className="bg-background" style={{ fontFamily: "Montserrat, system-ui, sans-serif" }}>
         {children}
       </body>
     </html>

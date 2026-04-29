@@ -12,6 +12,16 @@
   }
 }
 
+.rich-text p { margin-bottom: 0.75rem; }
+.rich-text ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 0.75rem; }
+.rich-text ol { list-style-type: decimal; padding-left: 1.5rem; margin-bottom: 0.75rem; }
+.rich-text li { margin-bottom: 0.25rem; }
+.rich-text strong { font-weight: 700; }
+.rich-text em { font-style: italic; }
+.rich-text h1, .rich-text h2, .rich-text h3 { font-weight: 700; margin-bottom: 0.5rem; }
+.rich-text a { text-decoration: underline; }
+.rich-text blockquote { border-left: 3px solid; padding-left: 1rem; opacity: 0.8; margin-bottom: 0.75rem; }
+
 .thin-border {
   border-bottom: 1px solid rgba(245, 235, 201, 0.25);
 }
@@ -39,25 +49,31 @@
   }
 }
 
-/* Google Places Autocomplete dropdown fix */
-/* Ensure the legacy .pac-container renders above dialog overlays and accepts clicks */
-.pac-container {
-  z-index: 99999 !important; /* Above Radix Dialog overlay/content (z-50) */
-  pointer-events: auto !important;
+/* Google Places PlaceAutocompleteElement styling */
+gmp-place-autocomplete {
+  width: 100%;
+  display: block;
 }
 
-.pac-item,
-.pac-item span {
-  pointer-events: auto !important;
+gmp-place-autocomplete::part(input) {
+  height: 3rem;
+  width: 100%;
+  border-radius: 0.75rem;
+  background-color: #242424;
+  padding: 0.25rem 0.75rem;
+  font-size: 1rem;
+  font-family: "Montserrat", sans-serif;
+  color: rgba(204, 196, 169, 0.5);
+  border: none;
+  outline: none;
+  box-shadow: var(--tw-shadow, 0 1px 2px 0 rgb(0 0 0 / 0.05));
 }
 
-/* If rendered within dialog content, prevent clipping */
-[data-radix-dialog-content] .pac-container {
-  position: absolute;
+gmp-place-autocomplete::part(input)::placeholder {
+  color: rgba(204, 196, 169, 0.5);
 }
 
-/* Prevent clipping by local wrappers */
-.autocomplete-wrapper,
-.autocomplete-input {
+/* Prevent clipping by local wrapper */
+.autocomplete-wrapper {
   overflow: visible !important;
 }
