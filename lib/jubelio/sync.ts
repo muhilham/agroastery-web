@@ -188,7 +188,7 @@ async function upsertVariantWithGrind(
       // Update stock and price
       await supabase
         .from("product_variants")
-        .update({ price, stock_quantity: Math.max(0, stockQty) })
+        .update({ price, stock_quantity: Math.max(0, stockQty), ship_weight_grams: shipWeightGrams })
         .eq("id", existingVariant.id);
       variantId = existingVariant.id as string;
     } else {
