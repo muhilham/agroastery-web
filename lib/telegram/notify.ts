@@ -38,28 +38,22 @@ function formatIdr(amount: number): string {
 }
 
 async function logNotification({
-  type,
   orderId,
   orderNumber,
-  message,
   status,
   error,
 }: {
-  type: string;
   orderId: string;
   orderNumber: string;
-  message: string;
   status: "sent" | "failed" | "skipped";
   error?: string;
 }) {
   try {
     const supabase = createSupabaseAdminClient();
-    await supabase.from("ecom_notification_logs").insert({
-      type,
+    await supabase.from("notification_logs").insert({
       channel: "telegram",
       order_id: orderId,
       order_number: orderNumber,
-      message,
       status,
       error: error ?? null,
     });
@@ -161,10 +155,8 @@ export async function sendOrderNotification(params: OrderNotificationParams): Pr
   const skipped = sendError?.includes("not configured");
 
   await logNotification({
-    type: "order_created",
     orderId: params.orderId,
     orderNumber: params.orderNumber,
-    message: text,
     status: skipped ? "skipped" : sendError ? "failed" : "sent",
     error: skipped ? undefined : sendError ?? undefined,
   });
@@ -203,10 +195,8 @@ export async function sendPaymentNotification(params: PaymentNotificationParams)
   const skipped = sendError?.includes("not configured");
 
   await logNotification({
-    type: "payment_confirmed",
     orderId: params.orderId,
     orderNumber: params.orderNumber,
-    message: text,
     status: skipped ? "skipped" : sendError ? "failed" : "sent",
     error: skipped ? undefined : sendError ?? undefined,
   });
