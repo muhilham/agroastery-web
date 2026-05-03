@@ -119,7 +119,7 @@ describe('POST /api/webhooks/biteship', () => {
       makeRequest({
         event: 'order.status',
         order_id: 'bs-new-after-confirm',
-        reference_id: 'AGR-20260427-ABC',
+        reference_id: 'ecom-order-uuid-99',
         status: 'confirmed',
       })
     );

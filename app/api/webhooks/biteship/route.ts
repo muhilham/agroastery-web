@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
     const byRef = await supabase
       .from('ecom_orders')
       .update(update)
-      .eq('order_number', referenceId)
+      .eq('id', referenceId)
       .select('id')
       .single();
     if (!byRef.data) {

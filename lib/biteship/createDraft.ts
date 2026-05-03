@@ -18,7 +18,7 @@ export async function createBiteshipDraft(orderId: string): Promise<void> {
   const { data: order, error: orderError } = await supabase
     .from('ecom_orders')
     .select(
-      'id, order_number, customer_name, customer_phone, customer_email, shipping_address, shipping_courier, shipping_service, notes'
+      'id, customer_name, customer_phone, customer_email, shipping_address, shipping_courier, shipping_service, notes'
     )
     .eq('id', orderId)
     .single();
