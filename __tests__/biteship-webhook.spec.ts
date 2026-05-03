@@ -88,7 +88,7 @@ describe('POST /api/webhooks/biteship', () => {
   });
 
   it('falls back to reference_id lookup when biteship_order_id miss, then persists order_id', async () => {
-    // First update by biteship_order_id returns no row → handler must lookup by order_number
+    // First update by biteship_order_id returns no row → handler must lookup by order id (reference_id)
     const noMatch = { data: null, error: null };
     const matched = { data: { id: 'ecom-99' }, error: null };
 
