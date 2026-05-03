@@ -80,7 +80,7 @@ export async function createBiteshipDraft(orderId: string): Promise<void> {
     courier_type: order.shipping_service,
     delivery_type: 'now',
     ...(order.notes ? { order_note: order.notes } : {}),
-    reference_id: order.order_number,
+    reference_id: orderId,
 
     items: items.map((item) => ({
       name: item.product_name,
@@ -115,14 +115,14 @@ export async function createBiteshipDraft(orderId: string): Promise<void> {
   // Idempotent recovery: reference_id already taken (Pivot retried)
   if (!res.ok && data.code === 42211015) {
     const lookupRes = await fetch(
-      `https://api.biteship.com/v1/draft_orders?reference_id=${encodeURIComponent(order.order_number)}`,
+      `https://api.biteship.com/v1/draft_orders?reference_id=${encodeURIComponent(orderId)}`,
       { method: 'GET', headers }
     );
     const lookup = (await lookupRes.json()) as BiteshipDraftLookupResponse;
-    const found = lookup.drafts?.find((d) => d.reference_id === order.order_number);
+    const found = lookup.drafts?.find((d) => d.reference_id === orderId);
     if (!found?.id) {
       throw new Error(
-        `[createBiteshipDraft] Reference ID ${order.order_number} taken but lookup found no matching draft`
+        `[createBiteshipDraft] Reference ID ${orderId} taken but lookup found no matching draft`
       );
     }
     console.warn(
