@@ -131,12 +131,16 @@ jobs:
         with:
           ref: ${{ github.event.inputs.ref || github.ref }}
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          cache: 'pnpm'
 
-      - run: npm ci
+      - run: pnpm install
 
       - name: Install Railway CLI
         run: npm install -g @railway/cli
