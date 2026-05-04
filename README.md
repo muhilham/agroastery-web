@@ -216,3 +216,4 @@ Tailwind: `sm:min-w-[280px]`
 .footer-section { padding: 32px 24px; flex-direction: column; gap: 40px; }
 ```
 Tailwind: `sm:p-8 sm:flex-col sm:gap-10`
+
