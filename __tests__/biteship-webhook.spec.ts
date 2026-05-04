@@ -88,7 +88,7 @@ describe('POST /api/webhooks/biteship', () => {
   });
 
   it('falls back to reference_id lookup when biteship_order_id miss, then persists order_id', async () => {
-    // First update by biteship_order_id returns no row → handler must lookup by order_number
+    // First update by biteship_order_id returns no row → handler must lookup by order id (reference_id)
     const noMatch = { data: null, error: null };
     const matched = { data: { id: 'ecom-99' }, error: null };
 
@@ -119,7 +119,7 @@ describe('POST /api/webhooks/biteship', () => {
       makeRequest({
         event: 'order.status',
         order_id: 'bs-new-after-confirm',
-        reference_id: 'AGR-20260427-ABC',
+        reference_id: 'ecom-order-uuid-99',
         status: 'confirmed',
       })
     );

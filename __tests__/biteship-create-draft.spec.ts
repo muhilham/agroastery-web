@@ -99,7 +99,7 @@ describe('createBiteshipDraft', () => {
     expect(payload.courier_company).toBe('jne');
     expect(payload.courier_type).toBe('reg');
     expect(payload.delivery_type).toBe('now');
-    expect(payload.reference_id).toBe('AGR-20260427-ABC');
+    expect(payload.reference_id).toBe('order-1');
     expect(payload.items).toHaveLength(1);
   });
 
@@ -115,7 +115,7 @@ describe('createBiteshipDraft', () => {
         ok: true,
         json: async () => ({
           success: true,
-          drafts: [{ id: 'bs-draft-existing', reference_id: 'AGR-20260427-ABC' }],
+          drafts: [{ id: 'bs-draft-existing', reference_id: 'order-1' }],
         }),
       });
 
@@ -123,7 +123,7 @@ describe('createBiteshipDraft', () => {
 
     expect(mockFetch).toHaveBeenCalledTimes(2);
     const [, lookupOptions] = mockFetch.mock.calls[1] as [string, RequestInit];
-    expect(mockFetch.mock.calls[1][0]).toContain('/v1/draft_orders?reference_id=AGR-20260427-ABC');
+    expect(mockFetch.mock.calls[1][0]).toContain('/v1/draft_orders?reference_id=order-1');
     expect(lookupOptions.method ?? 'GET').toBe('GET');
   });
 
