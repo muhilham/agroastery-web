@@ -2,8 +2,13 @@ import { createSupabaseServerClient, createSupabaseAdminClient } from "@/lib/sup
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
+
+  // Use configured app URL instead of request.url origin —
+  // in containerized environments (Railway, etc.) request.url may resolve
+  // to the internal bind address (e.g. 0.0.0.0:8080) rather than the public domain.
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://agroastery.com";
 
   // Validate next is a safe relative path — prevent open redirect
   const rawNext = searchParams.get("next") ?? "/";
@@ -29,9 +34,9 @@ export async function GET(request: NextRequest) {
         console.error("[auth/callback] Failed to link guest orders:", linkErr);
       }
 
-      return NextResponse.redirect(`${origin}${next}`);
+      return NextResponse.redirect(`${appUrl}${next}`);
     }
   }
 
-  return NextResponse.redirect(`${origin}/login?error=auth_failed`);
+  return NextResponse.redirect(`${appUrl}/login?error=auth_failed`);
 }
