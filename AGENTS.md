@@ -100,7 +100,6 @@ Vitest requires a crypto polyfill — always use `pnpm test` (not `vitest` direc
 ## Deployment Notes
 
 - Railway uses standalone output (configured in `next.config.ts` and `railway.toml`)
-- Cloudflare deployment docs exist but Railway is primary
 - Uses `trailingSlash: true` in Next.js config
 
 ## Dependencies to Know

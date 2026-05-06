@@ -61,7 +61,7 @@ Deployed on **Railway** (Node.js runtime). Shares Supabase database with ops adm
 - **Why**: Supabase SSR (`@supabase/ssr`) needs cookie access, which works best with Node.js runtime. Railway runs Node.js natively.
 - **Tasks**:
   - Remove `export const runtime = 'edge'` from all existing API routes
-  - Remove Cloudflare-specific config (`wrangler.toml`, `@cloudflare/next-on-pages`)
+  - ~~Remove Cloudflare-specific config (`wrangler.toml`, `@cloudflare/next-on-pages`)~~ ✅ Done
   - Update `next.config.ts` — remove Cloudflare adapter, set `output: 'standalone'` for Railway
   - Add `Dockerfile` or `Procfile` for Railway deployment (or use Railway's nixpacks auto-detect)
   - Update `.env.example` with new environment variables
@@ -414,7 +414,7 @@ pnpm add xendit-node
 
 ### 6.6 Cleanup
 - Remove WhatsApp order flow code (`message-builder.ts`, `store-phone-number.ts`, `purchase-dialog/`)
-- Remove Cloudflare deployment files
+- ~~Remove Cloudflare deployment files~~ ✅ Done
 - Update README
 
 ---
@@ -507,7 +507,7 @@ This file is for reference / manual execution. The actual migration will be coor
 | `constant/store-phone-number.ts` | WhatsApp no longer used |
 | `components/purchase-dialog/` | Old purchase dialog |
 | `app/api/catalog/[...slug]/route.ts` | CDN proxy no longer needed |
-| `wrangler.toml` (if exists) | Cloudflare config |
+| ~~`wrangler.toml`~~ | ~~Cloudflare config~~ | ✅ Removed
 
 ---
 
