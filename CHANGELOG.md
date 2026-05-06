@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/muhilham/agroastery-web/compare/v0.2.0...v0.2.1) (2026-05-06)
+
+
+### Bug Fixes
+
+* **auth:** use NEXT_PUBLIC_APP_URL for callback redirects ([3fa4c5c](https://github.com/muhilham/agroastery-web/commit/3fa4c5c8846063170f1bdaf9fd17d7ceba602ba5))
+
 ## [0.2.0](https://github.com/muhilham/agroastery-web/compare/v0.1.0...v0.2.0) (2026-05-04)
 
 
