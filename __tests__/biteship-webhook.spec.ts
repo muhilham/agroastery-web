@@ -87,6 +87,32 @@ describe('POST /api/webhooks/biteship', () => {
     expect(mockUpdate).not.toHaveBeenCalled();
   });
 
+  it('returns 200 for empty body without secret (registration probe)', async () => {
+    delete process.env.BITESHIP_WEBHOOK_SECRET;
+    const { POST } = await import('@/app/api/webhooks/biteship/route');
+    const res = await POST(
+      new NextRequest('http://localhost/api/webhooks/biteship', {
+        method: 'POST',
+        body: '',
+        headers: { 'Content-Type': 'application/json' },
+      })
+    );
+    expect(res.status).toBe(200);
+  });
+
+  it('returns 401 for real webhook without secret when env var is set', async () => {
+    process.env.BITESHIP_WEBHOOK_SECRET = 'test-secret';
+    const { POST } = await import('@/app/api/webhooks/biteship/route');
+    const res = await POST(
+      new NextRequest('http://localhost/api/webhooks/biteship', {
+        method: 'POST',
+        body: JSON.stringify({ event: 'order.status', order_id: 'bs-123', status: 'picked' }),
+        headers: { 'Content-Type': 'application/json' },
+      })
+    );
+    expect(res.status).toBe(401);
+  });
+
   it('falls back to reference_id lookup when biteship_order_id miss, then persists order_id', async () => {
     // First update by biteship_order_id returns no row → handler must lookup by order id (reference_id)
     const noMatch = { data: null, error: null };

@@ -32,15 +32,29 @@ function verifySecret(request: NextRequest): boolean {
 }
 
 export async function POST(request: NextRequest) {
-  if (!verifySecret(request)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
+  // Accept empty body for Biteship registration test
   let body: Record<string, unknown>;
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+    body = {};
+  }
+
+  const secret = request.nextUrl.searchParams.get('secret') ?? '';
+  const expected = process.env.BITESHIP_WEBHOOK_SECRET ?? '';
+
+  // If both secret and expected are present, validate
+  if (secret && expected) {
+    if (!verifySecret(request)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+  } else if (expected && !secret) {
+    // Env var is set but request has no secret.
+    // Allow empty-body registration probes; reject real webhooks without secret.
+    const hasEventData = body.event || body.order_id;
+    if (hasEventData) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
   }
 
   const event = body.event as string;

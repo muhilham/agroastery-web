@@ -85,4 +85,44 @@ describe("TrackingTimeline", () => {
       expect(screen.getByText("Tidak dapat memuat info pengiriman")).toBeTruthy()
     );
   });
+
+  it("shows courier tracking link when link is present", async () => {
+    vi.spyOn(global, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        dispatched: true,
+        status: "shipped",
+        waybill_id: "JNE000123456",
+        courier: "JNE",
+        link: "https://tracking.jne.co.id/JNE000123456",
+        history: [],
+      }),
+    } as Response);
+    await renderTimeline();
+    await waitFor(() => {
+      const link = screen.getByText("Lacak di JNE");
+      expect(link).toBeTruthy();
+      expect(link.closest("a")?.getAttribute("href")).toBe(
+        "https://tracking.jne.co.id/JNE000123456"
+      );
+    });
+  });
+
+  it("does not show courier tracking link when link is absent", async () => {
+    vi.spyOn(global, "fetch").mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        dispatched: true,
+        status: "shipped",
+        waybill_id: "JNE000123456",
+        courier: "JNE",
+        history: [],
+      }),
+    } as Response);
+    await renderTimeline();
+    await waitFor(() => {
+      expect(screen.getByText("JNE000123456")).toBeTruthy();
+    });
+    expect(screen.queryByText("Lacak di JNE")).toBeNull();
+  });
 });
