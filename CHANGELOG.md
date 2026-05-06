@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/muhilham/agroastery-web/compare/v0.2.1...v0.2.2) (2026-05-06)
+
+
+### Bug Fixes
+
+* **biteship:** allow empty body and no-secret for webhook registration probe ([68ed596](https://github.com/muhilham/agroastery-web/commit/68ed596c86fc1cd55dbdd46bc6c97411dc27db29))
+
 ## [0.2.1](https://github.com/muhilham/agroastery-web/compare/v0.2.0...v0.2.1) (2026-05-06)
 
 
