@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.3.0](https://github.com/muhilham/agroastery-web/compare/v0.2.3...v0.3.0) (2026-05-08)
+
+
+### Features
+
+* **biteship:** accept overrideReferenceId in createDraft ([c2aa40e](https://github.com/muhilham/agroastery-web/commit/c2aa40ec7abec5ef59ec9cf9a9c75f6c1142bcf6))
+* **biteship:** add retryDraft with Telegram alerts ([2820459](https://github.com/muhilham/agroastery-web/commit/28204597caaaacfdbe0c13ed552773871c82f5a3))
+* **webhook:** handle courier_not_found with retry + history fallback ([cd7faa1](https://github.com/muhilham/agroastery-web/commit/cd7faa1c9178e5a36bb3b4bc2dd91dd7700d1b84))
+
+
+### Bug Fixes
+
+* **biteship:** separate draft creation from status update in retryDraft ([246c7d6](https://github.com/muhilham/agroastery-web/commit/246c7d66a47873051893611356dd7d3e4b40e5d0))
+* **biteship:** use referenceId consistently and verify POST payload in test ([cfd8ed9](https://github.com/muhilham/agroastery-web/commit/cfd8ed9a88e7de460fca5c0da2c5498fd942d265))
+* **webhook:** add error checks and strengthen courier_not_found tests ([646884b](https://github.com/muhilham/agroastery-web/commit/646884b5fb5a934f086a6861d10e07f642fccab6))
+
+
+### Documentation
+
+* add Biteship courierNotFound auto-retry design spec ([c7ab655](https://github.com/muhilham/agroastery-web/commit/c7ab655951136f7c9e34da900a4e6140f89364de))
+* add implementation plan for Biteship courierNotFound auto-retry ([2a8fd1f](https://github.com/muhilham/agroastery-web/commit/2a8fd1f11fc79d738669dfdf7802d6027a16afd6))
+* fix plan v2 review issues ([8580770](https://github.com/muhilham/agroastery-web/commit/8580770304776d0f8fa3c0edf6c878eb48455d54))
+* fix plan v4 review issues ([ee017b1](https://github.com/muhilham/agroastery-web/commit/ee017b177c5f781d6c6baea2f294ffec438054c1))
+* fix plan v5 — idempotent recovery find filter ([1cbe02e](https://github.com/muhilham/agroastery-web/commit/1cbe02e4c99931db37c0ccc9cfbc155637096d44))
+* fix spec issues from review ([86e8bcc](https://github.com/muhilham/agroastery-web/commit/86e8bcc8b8b07cdfac8791f05c10765fe566d490))
+* fix v2 review issues ([0bb25a7](https://github.com/muhilham/agroastery-web/commit/0bb25a73daa833aa43b064d87e33237819711d5e))
+
 ## [0.2.3](https://github.com/muhilham/agroastery-web/compare/v0.2.2...v0.2.3) (2026-05-08)
 
 
