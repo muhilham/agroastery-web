@@ -156,6 +156,9 @@ describe('createBiteshipDraft', () => {
     await createBiteshipDraft('order-1', 'order-1--retry-0');
 
     expect(mockFetch).toHaveBeenCalledTimes(2);
+    const [, postOptions] = mockFetch.mock.calls[0] as [string, RequestInit];
+    const postPayload = JSON.parse(postOptions.body as string);
+    expect(postPayload.reference_id).toBe('order-1--retry-0');
     const [lookupUrl] = mockFetch.mock.calls[1] as [string, RequestInit];
     expect(lookupUrl).toContain('/v1/draft_orders?reference_id=order-1--retry-0');
   });
