@@ -12,7 +12,10 @@ type BiteshipDraftLookupResponse = {
   drafts?: Array<{ id: string; reference_id?: string }>;
 };
 
-export async function createBiteshipDraft(orderId: string): Promise<void> {
+export async function createBiteshipDraft(
+  orderId: string,
+  overrideReferenceId?: string
+): Promise<void> {
   const supabase = createSupabaseAdminClient();
 
   const { data: order, error: orderError } = await supabase
@@ -80,7 +83,7 @@ export async function createBiteshipDraft(orderId: string): Promise<void> {
     courier_type: order.shipping_service,
     delivery_type: 'now',
     ...(order.notes ? { order_note: order.notes } : {}),
-    reference_id: orderId,
+    reference_id: overrideReferenceId ?? orderId,
 
     items: items.map((item) => ({
       name: item.product_name,
@@ -115,11 +118,11 @@ export async function createBiteshipDraft(orderId: string): Promise<void> {
   // Idempotent recovery: reference_id already taken (Pivot retried)
   if (!res.ok && data.code === 42211015) {
     const lookupRes = await fetch(
-      `https://api.biteship.com/v1/draft_orders?reference_id=${encodeURIComponent(orderId)}`,
+      `https://api.biteship.com/v1/draft_orders?reference_id=${encodeURIComponent(overrideReferenceId ?? orderId)}`,
       { method: 'GET', headers }
     );
     const lookup = (await lookupRes.json()) as BiteshipDraftLookupResponse;
-    const found = lookup.drafts?.find((d) => d.reference_id === orderId);
+    const found = lookup.drafts?.find((d) => d.reference_id === (overrideReferenceId ?? orderId));
     if (!found?.id) {
       throw new Error(
         `[createBiteshipDraft] Reference ID ${orderId} taken but lookup found no matching draft`

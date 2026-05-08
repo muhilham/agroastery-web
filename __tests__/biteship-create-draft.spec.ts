@@ -136,4 +136,27 @@ describe('createBiteshipDraft', () => {
     });
     await expect(createBiteshipDraft('order-1')).rejects.toThrow(/Biteship/);
   });
+
+  it('uses overrideReferenceId in payload and recovery lookup', async () => {
+    const { createBiteshipDraft } = await import('@/lib/biteship/createDraft');
+    setupHappyPathMocks();
+    mockFetch
+      .mockResolvedValueOnce({
+        ok: false,
+        json: async () => ({ success: false, code: 42211015, error: 'Reference ID taken' }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          drafts: [{ id: 'bs-draft-override', reference_id: 'order-1--retry-0' }],
+        }),
+      });
+
+    await createBiteshipDraft('order-1', 'order-1--retry-0');
+
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    const [lookupUrl] = mockFetch.mock.calls[1] as [string, RequestInit];
+    expect(lookupUrl).toContain('/v1/draft_orders?reference_id=order-1--retry-0');
+  });
 });
