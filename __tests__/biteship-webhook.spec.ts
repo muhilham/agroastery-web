@@ -13,7 +13,7 @@ vi.mock('@/lib/supabase/server', () => ({
 }));
 
 // Returns a Supabase chain that is both awaitable and supports .eq/.select/.single
-function makeChain(resolvedValue = { data: null, error: null }) {
+function makeChain(resolvedValue: { data: unknown; error: unknown } = { data: null, error: null }) {
   const single = vi.fn().mockResolvedValue(resolvedValue);
   const selectChain = { single };
   const select = vi.fn().mockReturnValue(selectChain);
@@ -36,6 +36,7 @@ describe('POST /api/webhooks/biteship', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.BITESHIP_WEBHOOK_SECRET = 'test-secret';
+    delete process.env.BITESHIP_API_KEY;
     makeChain();
   });
 
@@ -71,6 +72,48 @@ describe('POST /api/webhooks/biteship', () => {
     const res = await POST(makeRequest({ event: 'order.waybill_id', order_id: 'bs-123', courier_waybill_id: 'JNE-9999' }));
     expect(res.status).toBe(200);
     expect(mockUpdate).toHaveBeenCalledWith({ tracking_number: 'JNE-9999' });
+  });
+
+  it('saves courier_tracking_id from order.status event', async () => {
+    const matched = { data: { id: 'ecom-99' }, error: null };
+    makeChain(matched);
+
+    const { POST } = await import('@/app/api/webhooks/biteship/route');
+    const res = await POST(
+      makeRequest({
+        event: 'order.status',
+        order_id: 'bs-123',
+        status: 'picked',
+        courier_tracking_id: 'track-abc',
+      })
+    );
+
+    expect(res.status).toBe(200);
+    expect(mockUpdate).toHaveBeenCalledWith({
+      status: 'shipped',
+      courier_tracking_id: 'track-abc',
+    });
+  });
+
+  it('saves courier_tracking_id from order.waybill_id event', async () => {
+    const matched = { data: { id: 'ecom-99' }, error: null };
+    makeChain(matched);
+
+    const { POST } = await import('@/app/api/webhooks/biteship/route');
+    const res = await POST(
+      makeRequest({
+        event: 'order.waybill_id',
+        order_id: 'bs-123',
+        courier_waybill_id: 'JNE-9999',
+        courier_tracking_id: 'track-xyz',
+      })
+    );
+
+    expect(res.status).toBe(200);
+    expect(mockUpdate).toHaveBeenCalledWith({
+      tracking_number: 'JNE-9999',
+      courier_tracking_id: 'track-xyz',
+    });
   });
 
   it('returns 200 for order.price event without calling update', async () => {
@@ -113,8 +156,9 @@ describe('POST /api/webhooks/biteship', () => {
     expect(res.status).toBe(401);
   });
 
-  it('falls back to reference_id lookup when biteship_order_id miss, then persists order_id', async () => {
-    // First update by biteship_order_id returns no row → handler must lookup by order id (reference_id)
+  it('falls back to Biteship API fetch when biteship_order_id miss, then persists order_id', async () => {
+    process.env.BITESHIP_API_KEY = 'test-key';
+
     const noMatch = { data: null, error: null };
     const matched = { data: { id: 'ecom-99' }, error: null };
 
@@ -123,7 +167,7 @@ describe('POST /api/webhooks/biteship', () => {
         select: vi.fn().mockReturnValue({ single: vi.fn().mockResolvedValue(noMatch) }),
       }),
     });
-    const updateByRef = vi.fn().mockReturnValue({
+    const updateByDraftId = vi.fn().mockReturnValue({
       eq: vi.fn().mockReturnValue({
         select: vi.fn().mockReturnValue({ single: vi.fn().mockResolvedValue(matched) }),
       }),
@@ -136,27 +180,41 @@ describe('POST /api/webhooks/biteship', () => {
     mockFrom.mockImplementation(() => {
       call++;
       if (call === 1) return { update: updateByOrderId };
-      if (call === 2) return { update: updateByRef };
+      if (call === 2) return { update: updateByDraftId };
       return { update: updateAttachOrderId };
     });
+
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ draft_order_id: 'bs-draft-uuid' }),
+    });
+    global.fetch = mockFetch as unknown as typeof fetch;
 
     const { POST } = await import('@/app/api/webhooks/biteship/route');
     const res = await POST(
       makeRequest({
         event: 'order.status',
         order_id: 'bs-new-after-confirm',
-        reference_id: 'ecom-order-uuid-99',
         status: 'confirmed',
       })
     );
 
     expect(res.status).toBe(200);
     expect(updateByOrderId).toHaveBeenCalledWith({ status: 'processing' });
-    expect(updateByRef).toHaveBeenCalledWith({ status: 'processing' });
+    expect(updateByDraftId).toHaveBeenCalledWith({ status: 'processing' });
     expect(updateAttachOrderId).toHaveBeenCalledWith({ biteship_order_id: 'bs-new-after-confirm' });
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://api.biteship.com/v1/orders/bs-new-after-confirm',
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: 'Bearer test-key',
+        }),
+      })
+    );
   });
 
-  it('does not call reference_id fallback when biteship_order_id matches', async () => {
+  it('does not call Biteship API when biteship_order_id matches', async () => {
     const matched = { data: { id: 'ecom-99' }, error: null };
     const updateByOrderId = vi.fn().mockReturnValue({
       eq: vi.fn().mockReturnValue({
