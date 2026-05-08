@@ -1,18 +1,5 @@
 Read the implementation plan at:
 
-agroastery-web/docs/superpowers/plans/2026-04-27-biteship-draft-order.md
+docs/superpowers/plans/2026-05-08-order-detail-tracking-link.md
 
-Do NOT execute anything yet.
-
-Your job:
-1. Extract concrete tasks
-2. Identify affected files
-3. Identify missing details or ambiguities
-4. Detect risks (breaking changes, unclear assumptions)
-
-Then convert it into:
-
-- A step-by-step execution plan
-- With strict scope boundaries
-
-Wait for approval before making any code changes.
+use superpowers subagent-driven-development executing-plans
