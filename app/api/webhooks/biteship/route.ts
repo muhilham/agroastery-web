@@ -177,14 +177,17 @@ export async function POST(request: NextRequest) {
         .maybeSingle();
 
       if (orderRow) {
-        await supabase.from('ecom_order_biteship_history').insert({
+        const { error: historyError } = await supabase.from('ecom_order_biteship_history').insert({
           order_id: orderRow.id,
           biteship_order_id: bsOrderId,
           biteship_draft_id: orderRow.biteship_draft_id,
           biteship_status: 'courier_not_found',
         });
+        if (historyError) {
+          console.error(`[biteship-webhook] Failed to archive history for order ${orderRow.id}:`, historyError);
+        }
 
-        await supabase
+        const { error: clearError } = await supabase
           .from('ecom_orders')
           .update({
             biteship_order_id: null,
@@ -194,6 +197,9 @@ export async function POST(request: NextRequest) {
             status: 'cancelled',
           })
           .eq('id', orderRow.id);
+        if (clearError) {
+          console.error(`[biteship-webhook] Failed to clear Biteship IDs for order ${orderRow.id}:`, clearError);
+        }
 
         // HACK: using paymentMethod field to carry ops alert text
         sendPaymentNotification({

@@ -12,6 +12,16 @@ vi.mock('@/lib/supabase/server', () => ({
   createSupabaseAdminClient: () => ({ from: mockFrom }),
 }));
 
+const mockRetryDraft = vi.fn().mockResolvedValue(undefined);
+vi.mock('@/lib/biteship/retryDraft', () => ({
+  retryBiteshipDraft: mockRetryDraft,
+}));
+
+const mockNotify = vi.fn().mockResolvedValue(undefined);
+vi.mock('@/lib/telegram/notify', () => ({
+  sendPaymentNotification: mockNotify,
+}));
+
 // Returns a Supabase chain that is both awaitable and supports .eq/.select/.single
 function makeChain(resolvedValue: { data: unknown; error: unknown } = { data: null, error: null }) {
   const single = vi.fn().mockResolvedValue(resolvedValue);
@@ -284,6 +294,10 @@ describe('POST /api/webhooks/biteship', () => {
       courier_tracking_id: null,
       status: 'cancelled',
     });
+    expect(mockRetryDraft).toHaveBeenCalledWith('ecom-99');
+    expect(mockNotify).toHaveBeenCalledWith(
+      expect.objectContaining({ paymentMethod: '⚠️ BITESHIP COURIER NOT FOUND — mencoba ulang' })
+    );
   });
 
   it('history fallback skips status updates from dead orders', async () => {
