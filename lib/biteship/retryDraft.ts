@@ -38,26 +38,28 @@ export async function retryBiteshipDraft(
   try {
     await createBiteshipDraft(orderId, referenceId);
     console.log(`[retryBiteshipDraft] Retry ${attempt + 1} succeeded for order ${orderId} with ref ${referenceId}`);
-
-    const { data: order } = await supabase
-      .from('ecom_orders')
-      .update({ status: 'processing' })
-      .eq('id', orderId)
-      .select('order_number, customer_name, customer_phone, total')
-      .single();
-
-    // HACK: using paymentMethod field to carry ops alert text
-    await sendPaymentNotification({
-      orderId,
-      orderNumber: order?.order_number ?? 'UNKNOWN',
-      customerName: order?.customer_name ?? 'UNKNOWN',
-      customerPhone: order?.customer_phone ?? 'UNKNOWN',
-      paymentMethod: '✅ BITESHIP DRAFT BERHASIL DIBUAT ULANG',
-      total: order?.total ?? 0,
-      paidAt: new Date().toISOString(),
-    }).catch(() => {});
   } catch (err) {
     console.error(`[retryBiteshipDraft] Retry ${attempt + 1} failed for order ${orderId}:`, err);
     await retryBiteshipDraft(orderId, attempt + 1);
+    return;
   }
+
+  // Non-retryable: status update and notification
+  const { data: order } = await supabase
+    .from('ecom_orders')
+    .update({ status: 'processing' })
+    .eq('id', orderId)
+    .select('order_number, customer_name, customer_phone, total')
+    .single();
+
+  // HACK: using paymentMethod field to carry ops alert text
+  await sendPaymentNotification({
+    orderId,
+    orderNumber: order?.order_number ?? 'UNKNOWN',
+    customerName: order?.customer_name ?? 'UNKNOWN',
+    customerPhone: order?.customer_phone ?? 'UNKNOWN',
+    paymentMethod: '✅ BITESHIP DRAFT BERHASIL DIBUAT ULANG',
+    total: order?.total ?? 0,
+    paidAt: new Date().toISOString(),
+  }).catch(() => {});
 }
