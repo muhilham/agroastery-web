@@ -4,7 +4,7 @@ import Navigation from "@/components/navigation";
 import { Footer } from "@/components/ui/footer";
 import Link from "next/link";
 import { numberToIdr } from "@/lib/numberToIdr";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ExternalLink } from "lucide-react";
 
 const STATUS_LABELS: Record<string, string> = {
   pending_payment: "Menunggu Pembayaran",
@@ -129,7 +129,9 @@ export default async function OrderDetailPage({ params }: PageProps) {
         )}
 
         {/* Shipping details */}
-        {(order.shipping_courier || order.tracking_number) && (
+        {(order.shipping_courier ||
+          order.tracking_number ||
+          order.biteship_order_id) && (
           <div className="bg-[#1a1a1a] border border-white/10 rounded-xl p-4 mb-4">
             <h2 className="text-primary font-medium mb-2">Info Pengiriman</h2>
             {order.shipping_courier && (
@@ -146,6 +148,19 @@ export default async function OrderDetailPage({ params }: PageProps) {
               <p className="text-secondary text-sm">
                 No. Resi: <span className="text-primary font-mono break-all">{order.tracking_number as string}</span>
               </p>
+            )}
+            {order.tracking_number && (
+              <div className="pt-3 mt-3 border-t border-white/10">
+                <Link
+                  href={`/track/${id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-sm text-cyan-400 hover:text-cyan-300 transition-colors"
+                >
+                  Lacak Pesanan
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </Link>
+              </div>
             )}
           </div>
         )}
