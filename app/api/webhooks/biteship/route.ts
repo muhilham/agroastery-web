@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { timingSafeEqual } from 'crypto';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
+import { retryBiteshipDraft } from '@/lib/biteship/retryDraft';
+import { sendPaymentNotification } from '@/lib/telegram/notify';
 
 // Maps Biteship order status to ecom_orders.status
 const BITESHIP_STATUS_MAP: Record<string, string> = {
@@ -118,24 +120,100 @@ export async function POST(request: NextRequest) {
       .select('id')
       .single();
 
-    if (!byDraftId.data) {
-      console.warn(
-        `[biteship-webhook] No order found for biteship_draft_id=${draftOrderId} (biteship order_id=${bsOrderId}) (${label})`
-      );
-      return false;
+    if (byDraftId.data) {
+      // Persist biteship_order_id so future webhooks skip the Biteship API fetch
+      await supabase
+        .from('ecom_orders')
+        .update({ biteship_order_id: bsOrderId })
+        .eq('id', byDraftId.data.id);
+
+      return true;
     }
 
-    // Persist biteship_order_id so future webhooks skip the Biteship API fetch
-    await supabase
-      .from('ecom_orders')
-      .update({ biteship_order_id: bsOrderId })
-      .eq('id', byDraftId.data.id);
+    console.warn(
+      `[biteship-webhook] No order found for biteship_draft_id=${draftOrderId} (biteship order_id=${bsOrderId}) (${label})`
+    );
 
-    return true;
+    // History fallback: match dead Biteship orders
+    const byHistory = await supabase
+      .from('ecom_order_biteship_history')
+      .select('order_id')
+      .eq('biteship_order_id', bsOrderId)
+      .maybeSingle();
+
+    if (byHistory.data) {
+      const safeUpdate = { ...update };
+      delete safeUpdate.status;
+
+      if (Object.keys(safeUpdate).length === 0) {
+        console.log(`[biteship-webhook] History match ${byHistory.data.order_id} — nothing to update (status-only event skipped)`);
+        return true;
+      }
+
+      const historyUpdate = await supabase
+        .from('ecom_orders')
+        .update(safeUpdate)
+        .eq('id', byHistory.data.order_id)
+        .select('id')
+        .single();
+      if (historyUpdate.data) {
+        console.log(`[biteship-webhook] Matched via history for order ${byHistory.data.order_id} (status skipped)`);
+        return true;
+      }
+    }
+
+    return false;
   }
 
   if (event === 'order.status') {
     const rawStatus = body.status as string | undefined;
+
+    // Handle courier_not_found: archive, clear, notify, retry
+    if (rawStatus === 'courier_not_found') {
+      const { data: orderRow } = await supabase
+        .from('ecom_orders')
+        .select('id, order_number, customer_name, customer_phone, total, biteship_order_id, biteship_draft_id')
+        .eq('biteship_order_id', bsOrderId)
+        .maybeSingle();
+
+      if (orderRow) {
+        await supabase.from('ecom_order_biteship_history').insert({
+          order_id: orderRow.id,
+          biteship_order_id: bsOrderId,
+          biteship_draft_id: orderRow.biteship_draft_id,
+          biteship_status: 'courier_not_found',
+        });
+
+        await supabase
+          .from('ecom_orders')
+          .update({
+            biteship_order_id: null,
+            biteship_draft_id: null,
+            tracking_number: null,
+            courier_tracking_id: null,
+            status: 'cancelled',
+          })
+          .eq('id', orderRow.id);
+
+        // HACK: using paymentMethod field to carry ops alert text
+        sendPaymentNotification({
+          orderId: orderRow.id,
+          orderNumber: orderRow.order_number,
+          customerName: orderRow.customer_name,
+          customerPhone: orderRow.customer_phone,
+          paymentMethod: '⚠️ BITESHIP COURIER NOT FOUND — mencoba ulang',
+          total: orderRow.total,
+          paidAt: new Date().toISOString(),
+        }).catch(() => {});
+
+        retryBiteshipDraft(orderRow.id).catch((err) =>
+          console.error(`[biteship-webhook] Retry failed for order ${orderRow.id}:`, err)
+        );
+      }
+
+      return NextResponse.json({ received: true });
+    }
+
     const ecomStatus = rawStatus ? BITESHIP_STATUS_MAP[rawStatus] : undefined;
     const courierWaybillId = body.courier_waybill_id as string | undefined;
 

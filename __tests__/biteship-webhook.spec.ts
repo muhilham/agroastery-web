@@ -238,4 +238,117 @@ describe('POST /api/webhooks/biteship', () => {
     expect(updateByOrderId).toHaveBeenCalledOnce();
     expect(updateByOrderId).toHaveBeenCalledWith({ status: 'shipped' });
   });
+
+  it('handles courier_not_found: archives, clears IDs, and triggers retry', async () => {
+    const matched = { data: { id: 'ecom-99', order_number: 'AGR-001', customer_name: 'Budi', customer_phone: '08111', total: 100000, biteship_draft_id: 'bs-draft-old' }, error: null };
+    const updateClear = vi.fn().mockReturnValue({
+      eq: vi.fn().mockResolvedValue({ data: null, error: null }),
+    });
+    const insertHistory = vi.fn().mockResolvedValue({ data: null, error: null });
+
+    let call = 0;
+    mockFrom.mockImplementation(() => {
+      call++;
+      if (call === 1) return {
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            maybeSingle: vi.fn().mockResolvedValue(matched),
+          }),
+        }),
+      };
+      if (call === 2) return { insert: insertHistory };
+      if (call === 3) return { update: updateClear };
+      return { update: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ data: null, error: null }) }) };
+    });
+
+    const { POST } = await import('@/app/api/webhooks/biteship/route');
+    const res = await POST(
+      makeRequest({
+        event: 'order.status',
+        order_id: 'bs-123',
+        status: 'courier_not_found',
+      })
+    );
+
+    expect(res.status).toBe(200);
+    expect(insertHistory).toHaveBeenCalledWith({
+      order_id: 'ecom-99',
+      biteship_order_id: 'bs-123',
+      biteship_draft_id: 'bs-draft-old',
+      biteship_status: 'courier_not_found',
+    });
+    expect(updateClear).toHaveBeenCalledWith({
+      biteship_order_id: null,
+      biteship_draft_id: null,
+      tracking_number: null,
+      courier_tracking_id: null,
+      status: 'cancelled',
+    });
+  });
+
+  it('history fallback skips status updates from dead orders', async () => {
+    process.env.BITESHIP_API_KEY = 'test-key';
+
+    const noMatch = { data: null, error: null };
+    const historyMatch = { data: { order_id: 'ecom-99' }, error: null };
+
+    const updateByOrderId = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({ single: vi.fn().mockResolvedValue(noMatch) }),
+      }),
+    });
+
+    const slowPathMiss = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({ data: null, error: null }),
+        }),
+      }),
+    });
+
+    const historyUpdateMock = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({ data: { id: 'ecom-99' }, error: null }),
+        }),
+      }),
+    });
+
+    let call = 0;
+    mockFrom.mockImplementation(() => {
+      call++;
+      if (call === 1) return { update: updateByOrderId };           // fast path: miss
+      if (call === 2) return { update: slowPathMiss };              // slow path byDraftId: miss
+      if (call === 3) return {
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            maybeSingle: vi.fn().mockResolvedValue(historyMatch),   // history select: hit
+          }),
+        }),
+      };
+      return { update: historyUpdateMock };                          // history update
+    });
+
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ draft_order_id: 'bs-draft-old' }),
+    });
+    global.fetch = mockFetch as unknown as typeof fetch;
+
+    const { POST } = await import('@/app/api/webhooks/biteship/route');
+    const res = await POST(
+      makeRequest({
+        event: 'order.status',
+        order_id: 'bs-dead-order',
+        status: 'cancelled',
+        courier_tracking_id: 'track-dead',
+      })
+    );
+
+    expect(res.status).toBe(200);
+    expect(mockFrom).toHaveBeenCalledWith('ecom_order_biteship_history');
+    expect(historyUpdateMock).toHaveBeenCalledWith(
+      expect.not.objectContaining({ status: expect.anything() })
+    );
+  });
 });
