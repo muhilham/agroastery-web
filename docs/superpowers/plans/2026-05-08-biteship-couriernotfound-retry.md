@@ -60,7 +60,7 @@ Add to `__tests__/biteship-create-draft.spec.ts` after the last existing test:
     await createBiteshipDraft('order-1', 'order-1--retry-0');
 
     expect(mockFetch).toHaveBeenCalledTimes(2);
-    const [, lookupUrl] = mockFetch.mock.calls[1] as [string, RequestInit];
+    const [lookupUrl] = mockFetch.mock.calls[1] as [string, RequestInit];
     expect(lookupUrl).toContain('/v1/draft_orders?reference_id=order-1--retry-0');
   });
 ```
@@ -393,6 +393,14 @@ Add to `__tests__/biteship-webhook.spec.ts` before the closing `});` of the desc
       }),
     });
 
+    const slowPathMiss = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({ data: null, error: null }),
+        }),
+      }),
+    });
+
     const historyUpdateMock = vi.fn().mockReturnValue({
       eq: vi.fn().mockReturnValue({
         select: vi.fn().mockReturnValue({
@@ -404,15 +412,16 @@ Add to `__tests__/biteship-webhook.spec.ts` before the closing `});` of the desc
     let call = 0;
     mockFrom.mockImplementation(() => {
       call++;
-      if (call === 1) return { update: updateByOrderId };
-      return {
+      if (call === 1) return { update: updateByOrderId };           // fast path: miss
+      if (call === 2) return { update: slowPathMiss };              // slow path byDraftId: miss
+      if (call === 3) return {
         select: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
-            maybeSingle: vi.fn().mockResolvedValue(historyMatch),
+            maybeSingle: vi.fn().mockResolvedValue(historyMatch),   // history select: hit
           }),
         }),
-        update: historyUpdateMock,
       };
+      return { update: historyUpdateMock };                          // history update
     });
 
     const mockFetch = vi.fn().mockResolvedValue({
@@ -524,9 +533,46 @@ Replace with:
     const ecomStatus = rawStatus ? BITESHIP_STATUS_MAP[rawStatus] : undefined;
 ```
 
-**C. Add history fallback to `applyUpdate`:**
+**C. Restructure slow path tail + add history fallback to `applyUpdate`:**
 
-Find the end of `applyUpdate` (before the final `return false;`). After the slow path (draft_order_id via Biteship API), add:
+The current slow path has an early `return false` that blocks the history fallback. First, restructure the slow path tail from:
+
+```typescript
+    if (!byDraftId.data) {
+      console.warn(
+        `[biteship-webhook] No order found for biteship_draft_id=${draftOrderId} (biteship order_id=${bsOrderId}) (${label})`
+      );
+      return false;
+    }
+
+    // Persist biteship_order_id so future webhooks skip the Biteship API fetch
+    await supabase
+      .from('ecom_orders')
+      .update({ biteship_order_id: bsOrderId })
+      .eq('id', byDraftId.data.id);
+
+    return true;
+```
+
+To:
+
+```typescript
+    if (byDraftId.data) {
+      // Persist biteship_order_id so future webhooks skip the Biteship API fetch
+      await supabase
+        .from('ecom_orders')
+        .update({ biteship_order_id: bsOrderId })
+        .eq('id', byDraftId.data.id);
+
+      return true;
+    }
+
+    console.warn(
+      `[biteship-webhook] No order found for biteship_draft_id=${draftOrderId} (biteship order_id=${bsOrderId}) (${label})`
+    );
+```
+
+Then add the history fallback block after the slow path (before the final `return false;`):
 
 ```typescript
   // History fallback: match dead Biteship orders
