@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.3](https://github.com/muhilham/agroastery-web/compare/v0.2.2...v0.2.3) (2026-05-08)
+
+
+### Documentation
+
+* add order detail tracking link design spec ([487a3df](https://github.com/muhilham/agroastery-web/commit/487a3df23951df5cfd8234af3b345f817896dbc1))
+* add order detail tracking link implementation plan ([0af06bb](https://github.com/muhilham/agroastery-web/commit/0af06bbde09a217e0c63a53d7e74a1eff32ae5d9))
+
 ## [0.2.2](https://github.com/muhilham/agroastery-web/compare/v0.2.1...v0.2.2) (2026-05-06)
 
 
