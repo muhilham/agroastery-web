@@ -168,18 +168,6 @@ function resolvedChain(data: unknown, error: unknown = null) {
   return result;
 }
 
-function countChain(count: number) {
-  return {
-    select: vi.fn().mockReturnValue({
-      eq: vi.fn().mockReturnValue(
-        Object.assign(Promise.resolve({ count, error: null }), {
-          single: vi.fn().mockResolvedValue({ count, error: null }),
-        })
-      ),
-    }),
-  };
-}
-
 const ORDER_ROW = {
   order_number: 'AGR-20260427-ABC',
   customer_name: 'Budi',
@@ -194,11 +182,8 @@ describe('retryBiteshipDraft', () => {
 
   it('calls createBiteshipDraft with suffixed reference_id on success', async () => {
     mockCreateDraft.mockResolvedValue(undefined);
-    mockFrom
-      .mockReturnValueOnce(countChain(0))
-      .mockReturnValueOnce({
-        update: vi.fn().mockReturnValue(resolvedChain(ORDER_ROW)),
-      });
+    const updateMock = vi.fn().mockReturnValue(resolvedChain(ORDER_ROW));
+    mockFrom.mockReturnValue({ update: updateMock });
 
     const { retryBiteshipDraft } = await import('@/lib/biteship/retryDraft');
     await retryBiteshipDraft('order-1');
@@ -213,7 +198,13 @@ describe('retryBiteshipDraft', () => {
 
   it('recursively retries up to MAX_RETRIES then alerts', async () => {
     mockCreateDraft.mockRejectedValue(new Error('Biteship error'));
-    mockFrom.mockReturnValue(countChain(0));
+    mockFrom.mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({ data: ORDER_ROW, error: null }),
+        }),
+      }),
+    });
 
     const { retryBiteshipDraft } = await import('@/lib/biteship/retryDraft');
     await retryBiteshipDraft('order-1');
@@ -227,9 +218,7 @@ describe('retryBiteshipDraft', () => {
   it('sets status to processing on retry success', async () => {
     mockCreateDraft.mockResolvedValue(undefined);
     const updateMock = vi.fn().mockReturnValue(resolvedChain(ORDER_ROW));
-    mockFrom
-      .mockReturnValueOnce(countChain(0))
-      .mockReturnValueOnce({ update: updateMock });
+    mockFrom.mockReturnValue({ update: updateMock });
 
     const { retryBiteshipDraft } = await import('@/lib/biteship/retryDraft');
     await retryBiteshipDraft('order-1');
@@ -347,11 +336,6 @@ Add to `__tests__/biteship-webhook.spec.ts` before the closing `});` of the desc
 ```typescript
   it('handles courier_not_found: archives, clears IDs, and triggers retry', async () => {
     const matched = { data: { id: 'ecom-99', order_number: 'AGR-001', customer_name: 'Budi', customer_phone: '08111', total: 100000, biteship_draft_id: 'bs-draft-old' }, error: null };
-    const updateByOrderId = vi.fn().mockReturnValue({
-      eq: vi.fn().mockReturnValue({
-        select: vi.fn().mockReturnValue({ single: vi.fn().mockResolvedValue(matched) }),
-      }),
-    });
     const updateClear = vi.fn().mockReturnValue({
       eq: vi.fn().mockResolvedValue({ data: null, error: null }),
     });
@@ -360,7 +344,13 @@ Add to `__tests__/biteship-webhook.spec.ts` before the closing `});` of the desc
     let call = 0;
     mockFrom.mockImplementation(() => {
       call++;
-      if (call === 1) return { update: updateByOrderId };
+      if (call === 1) return {
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            maybeSingle: vi.fn().mockResolvedValue(matched),
+          }),
+        }),
+      };
       if (call === 2) return { insert: insertHistory };
       if (call === 3) return { update: updateClear };
       return { update: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ data: null, error: null }) }) };
@@ -403,6 +393,14 @@ Add to `__tests__/biteship-webhook.spec.ts` before the closing `});` of the desc
       }),
     });
 
+    const historyUpdateMock = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({ data: { id: 'ecom-99' }, error: null }),
+        }),
+      }),
+    });
+
     let call = 0;
     mockFrom.mockImplementation(() => {
       call++;
@@ -413,11 +411,7 @@ Add to `__tests__/biteship-webhook.spec.ts` before the closing `});` of the desc
             maybeSingle: vi.fn().mockResolvedValue(historyMatch),
           }),
         }),
-        update: vi.fn().mockReturnValue({
-          eq: vi.fn().mockReturnValue({
-            select: vi.fn().mockReturnValue({ single: vi.fn().mockResolvedValue({ data: { id: 'ecom-99' }, error: null }) }),
-          }),
-        }),
+        update: historyUpdateMock,
       };
     });
 
@@ -438,12 +432,11 @@ Add to `__tests__/biteship-webhook.spec.ts` before the closing `});` of the desc
     );
 
     expect(res.status).toBe(200);
-    // Status should NOT be in the update when matched via history
-    const historyUpdateCall = mockFrom.mock.results.find(
-      (r) => r.value && typeof r.value.update === 'function'
-    );
-    // The safeUpdate strips status; verify no status was passed
     expect(mockFrom).toHaveBeenCalledWith('ecom_order_biteship_history');
+    // Verify safeUpdate stripped status from the update payload
+    expect(historyUpdateMock).toHaveBeenCalledWith(
+      expect.not.objectContaining({ status: expect.anything() })
+    );
   });
 ```
 
@@ -600,13 +593,9 @@ pnpm lint
 
 Expected: no errors in modified files.
 
-### Step 3: Commit if clean
+### Step 3: Verify clean
 
-If tests and lint pass:
-
-```bash
-git commit --allow-empty -m "test: verify full suite passes after courierNotFound retry"
-```
+If tests and lint pass, no commit needed — this is a verification step only.
 
 ---
 
