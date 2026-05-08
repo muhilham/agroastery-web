@@ -67,14 +67,13 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = createSupabaseAdminClient();
-
-  // At this point biteshipOrderId is guaranteed to be defined (checked above)
-  const bsOrderId = biteshipOrderId as string;
+  const bsOrderId = biteshipOrderId;
 
   async function applyUpdate(
     update: Record<string, unknown>,
     label: string
   ): Promise<boolean> {
+    // Fast path: biteship_order_id already persisted from a previous webhook
     const byOrderId = await supabase
       .from('ecom_orders')
       .update(update)
@@ -83,47 +82,83 @@ export async function POST(request: NextRequest) {
       .single();
     if (byOrderId.data) return true;
 
-    const referenceId = body.reference_id as string | undefined;
-    if (!referenceId) {
-      console.warn(
-        `[biteship-webhook] No order found for biteship_order_id=${bsOrderId} and no reference_id fallback (${label})`
-      );
+    // Slow path: first webhook for this order — draft_order_id != order_id in Biteship,
+    // so we fetch the confirmed order from Biteship to get draft_order_id, then match
+    // against our biteship_draft_id column.
+    const apiKey = process.env.BITESHIP_API_KEY;
+    if (!apiKey) {
+      console.warn(`[biteship-webhook] Missing BITESHIP_API_KEY, cannot resolve order ${bsOrderId} (${label})`);
       return false;
     }
 
-    const byRef = await supabase
+    let draftOrderId: string | undefined;
+    try {
+      const biteshipRes = await fetch(`https://api.biteship.com/v1/orders/${bsOrderId}`, {
+        headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      });
+      if (biteshipRes.ok) {
+        const biteshipOrder = await biteshipRes.json() as Record<string, unknown>;
+        draftOrderId = biteshipOrder.draft_order_id as string | undefined;
+      } else {
+        console.warn(`[biteship-webhook] Biteship GET /v1/orders/${bsOrderId} returned ${biteshipRes.status} (${label})`);
+      }
+    } catch (err) {
+      console.warn(`[biteship-webhook] Failed to fetch order ${bsOrderId} from Biteship (${label}):`, err);
+    }
+
+    if (!draftOrderId) {
+      console.warn(`[biteship-webhook] No draft_order_id from Biteship for order ${bsOrderId} (${label})`);
+      return false;
+    }
+
+    const byDraftId = await supabase
       .from('ecom_orders')
       .update(update)
-      .eq('id', referenceId)
+      .eq('biteship_draft_id', draftOrderId)
       .select('id')
       .single();
-    if (!byRef.data) {
+
+    if (!byDraftId.data) {
       console.warn(
-        `[biteship-webhook] No order found for biteship_order_id=${bsOrderId} or reference_id=${referenceId} (${label})`
+        `[biteship-webhook] No order found for biteship_draft_id=${draftOrderId} (biteship order_id=${bsOrderId}) (${label})`
       );
       return false;
     }
 
-    // Lazily persist biteship_order_id so future webhooks match by it directly.
+    // Persist biteship_order_id so future webhooks skip the Biteship API fetch
     await supabase
       .from('ecom_orders')
       .update({ biteship_order_id: bsOrderId })
-      .eq('id', byRef.data.id);
+      .eq('id', byDraftId.data.id);
+
     return true;
   }
 
   if (event === 'order.status') {
     const rawStatus = body.status as string | undefined;
     const ecomStatus = rawStatus ? BITESHIP_STATUS_MAP[rawStatus] : undefined;
-    if (ecomStatus) {
-      await applyUpdate({ status: ecomStatus }, `order.status=${rawStatus}`);
+    const courierWaybillId = body.courier_waybill_id as string | undefined;
+
+    const courierTrackingId = body.courier_tracking_id as string | undefined;
+
+    const update: Record<string, unknown> = {};
+    if (ecomStatus) update.status = ecomStatus;
+    if (courierWaybillId) update.tracking_number = courierWaybillId;
+    if (courierTrackingId) update.courier_tracking_id = courierTrackingId;
+
+    if (Object.keys(update).length > 0) {
+      await applyUpdate(update, `order.status=${rawStatus}`);
     } else {
       console.log(`[biteship-webhook] Unrecognised Biteship status "${rawStatus}" — no DB update`);
     }
   } else if (event === 'order.waybill_id') {
     const waybillId = body.courier_waybill_id as string | undefined;
-    if (waybillId) {
-      await applyUpdate({ tracking_number: waybillId }, 'order.waybill_id');
+    const trackingId = body.courier_tracking_id as string | undefined;
+    const update: Record<string, unknown> = {};
+    if (waybillId) update.tracking_number = waybillId;
+    if (trackingId) update.courier_tracking_id = trackingId;
+    if (Object.keys(update).length > 0) {
+      await applyUpdate(update, 'order.waybill_id');
     }
   } else {
     console.log(`[biteship-webhook] Unhandled event "${event}" for Biteship order ${bsOrderId}`);
