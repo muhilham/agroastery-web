@@ -437,6 +437,7 @@ export type Database = {
       ecom_orders: {
         Row: {
           biteship_order_id: string | null
+          courier_tracking_id: string | null
           created_at: string | null
           customer_email: string | null
           customer_name: string
@@ -468,6 +469,7 @@ export type Database = {
         }
         Insert: {
           biteship_order_id?: string | null
+          courier_tracking_id?: string | null
           created_at?: string | null
           customer_email?: string | null
           customer_name: string
@@ -499,6 +501,7 @@ export type Database = {
         }
         Update: {
           biteship_order_id?: string | null
+          courier_tracking_id?: string | null
           created_at?: string | null
           customer_email?: string | null
           customer_name?: string

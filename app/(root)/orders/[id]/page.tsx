@@ -5,7 +5,6 @@ import { Footer } from "@/components/ui/footer";
 import Link from "next/link";
 import { numberToIdr } from "@/lib/numberToIdr";
 import { ArrowLeft, ExternalLink } from "lucide-react";
-import { TRACKABLE_STATUSES } from "./trackable-statuses";
 
 const STATUS_LABELS: Record<string, string> = {
   pending_payment: "Menunggu Pembayaran",
@@ -132,7 +131,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
         {/* Shipping details */}
         {(order.shipping_courier ||
           order.tracking_number ||
-          TRACKABLE_STATUSES.includes(order.status as (typeof TRACKABLE_STATUSES)[number])) && (
+          order.biteship_order_id) && (
           <div className="bg-[#1a1a1a] border border-white/10 rounded-xl p-4 mb-4">
             <h2 className="text-primary font-medium mb-2">Info Pengiriman</h2>
             {order.shipping_courier && (
@@ -150,7 +149,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
                 No. Resi: <span className="text-primary font-mono break-all">{order.tracking_number as string}</span>
               </p>
             )}
-            {TRACKABLE_STATUSES.includes(order.status as (typeof TRACKABLE_STATUSES)[number]) && (
+            {order.tracking_number && (
               <div className="pt-3 mt-3 border-t border-white/10">
                 <Link
                   href={`/track/${id}`}
