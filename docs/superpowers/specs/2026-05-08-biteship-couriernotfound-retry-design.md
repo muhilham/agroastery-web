@@ -39,8 +39,8 @@ This only updates `ecom_orders.status`. It does not:
 - Webhook payload does **not** include `reference_id` — only `order_id`
 - Webhook handler must return `200` quickly to avoid Biteship retries
 - `ecom_orders.status` CHECK constraint is fixed: `('pending_payment', 'paid', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded')`
-  - We reuse `'processing'` for retry-in-progress state
-  - We reuse `'cancelled'` for max-retries-failed state
+  - `courier_not_found` sets status to `'cancelled'` (existing BITESHIP_STATUS_MAP behavior)
+  - Successful retry sets status back to `'processing'` immediately
 
 ---
 
@@ -81,17 +81,17 @@ After migration ships in agr-ops, regenerate Supabase types in this repo.
    └─ Fire-and-forget: retryBiteshipDraft(orderId)
        │
        │ 3. retryBiteshipDraft(orderId, attempt=0):
-       │    ├─ reference_id = `${orderId}--retry-${attempt}`
+       │    ├─ reference_id = `${orderId}--retry-${Date.now()}-${attempt}`
        │    ├─ Call POST /v1/draft_orders with same courier
-       │    ├─ On success: store new biteship_draft_id, send Telegram alert: "✅ BITESHIP DRAFT BERHASIL DIBUAT ULANG"
+       │    ├─ On success: store new biteship_draft_id, set status='processing', send Telegram alert: "✅ BITESHIP DRAFT BERHASIL DIBUAT ULANG"
        │    └─ On failure:
        │         ├─ attempt < 2: call retryBiteshipDraft(orderId, attempt+1)
-       │         └─ attempt >= 2: send Telegram alert: "⚠️ BITESHIP GAGAL 3x — perlu tindakan manual", keep status='cancelled'
+       │         └─ attempt >= 2: send Telegram alert: "⚠️ BITESHIP GAGAL 3x — perlu tindakan manual"
        │
 4. Webhook returns 200 to Biteship immediately (step 2 is fire-and-forget)
 ```
 
-**Key insight:** We keep the status as `'cancelled'` from the webhook status map, but we clear the Biteship IDs so a new draft can be created. On success, the new draft's webhooks will update status back to `'processing'`.
+**Key insight:** We keep the status as `'cancelled'` from the webhook status map, but we clear the Biteship IDs so a new draft can be created. On retry success, `retryBiteshipDraft` immediately sets status back to `'processing'` so the order doesn't appear cancelled to customers/staff while waiting for Biteship webhooks.
 
 ---
 
@@ -123,7 +123,7 @@ if (event === 'order.status') {
   if (rawStatus === 'courier_not_found') {
     const { data: orderRow } = await supabase
       .from('ecom_orders')
-      .select('id, biteship_order_id, biteship_draft_id')
+      .select('id, order_number, customer_name, customer_phone, total, biteship_order_id, biteship_draft_id')
       .eq('biteship_order_id', bsOrderId)
       .maybeSingle();
     
@@ -149,13 +149,14 @@ if (event === 'order.status') {
         .eq('id', orderRow.id);
       
       // Notify Telegram about courier not found
+      // HACK: using paymentMethod field to carry ops alert text
       sendPaymentNotification({
         orderId: orderRow.id,
-        orderNumber: 'UNKNOWN', // fetch from DB
-        customerName: 'UNKNOWN',
-        customerPhone: 'UNKNOWN',
+        orderNumber: orderRow.order_number,
+        customerName: orderRow.customer_name,
+        customerPhone: orderRow.customer_phone,
         paymentMethod: '⚠️ BITESHIP COURIER NOT FOUND — mencoba ulang',
-        total: 0,
+        total: orderRow.total,
         paidAt: new Date().toISOString(),
       }).catch(() => {});
       
@@ -227,14 +228,18 @@ async function applyUpdate(update: Record<string, unknown>, label: string): Prom
     .maybeSingle();
 
   if (byHistory.data) {
+    // Never apply status updates from dead orders — they could override a live retried order
+    const safeUpdate = { ...update };
+    delete safeUpdate.status;
+    
     const historyUpdate = await supabase
       .from('ecom_orders')
-      .update(update)
+      .update(safeUpdate)
       .eq('id', byHistory.data.order_id)
       .select('id')
       .single();
     if (historyUpdate.data) {
-      console.log(`[biteship-webhook] Matched via history for order ${byHistory.data.order_id}`);
+      console.log(`[biteship-webhook] Matched via history for order ${byHistory.data.order_id} (status skipped)`);
       return true;
     }
   }
@@ -270,6 +275,7 @@ export async function retryBiteshipDraft(
       .eq('id', orderId)
       .single();
 
+    // HACK: using paymentMethod field to carry ops alert text
     await sendPaymentNotification({
       orderId,
       orderNumber: order?.order_number ?? 'UNKNOWN',
@@ -284,13 +290,20 @@ export async function retryBiteshipDraft(
     return;
   }
 
-  const referenceId = `${orderId}--retry-${attempt}`;
+  const referenceId = `${orderId}--retry-${Date.now()}-${attempt}`;
 
   try {
     await createBiteshipDraft(orderId, referenceId);
     console.log(`[retryBiteshipDraft] Retry ${attempt + 1} succeeded for order ${orderId} with ref ${referenceId}`);
     
+    // Set status back to processing so order doesn't appear cancelled
+    await supabase
+      .from('ecom_orders')
+      .update({ status: 'processing' })
+      .eq('id', orderId);
+    
     // Notify Telegram about successful retry
+    // HACK: using paymentMethod field to carry ops alert text
     const { data: order } = await supabase
       .from('ecom_orders')
       .select('order_number, customer_name, customer_phone, total')
@@ -337,6 +350,18 @@ export async function createBiteshipDraft(
   // ... rest of existing function ...
 }
 ```
+
+**Also update the idempotent recovery block** (error `42211015` — reference_id already taken):
+
+```typescript
+// Before
+`/v1/draft_orders?reference_id=${encodeURIComponent(orderId)}`
+
+// After
+`/v1/draft_orders?reference_id=${encodeURIComponent(overrideReferenceId ?? orderId)}`
+```
+
+This ensures the recovery lookup uses the correct `reference_id` when an override is provided.
 
 ---
 
