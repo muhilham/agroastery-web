@@ -108,6 +108,16 @@ Change the idempotent recovery lookup URL (around line 118):
       `https://api.biteship.com/v1/draft_orders?reference_id=${encodeURIComponent(overrideReferenceId ?? orderId)}`,
 ```
 
+Also update the `find` filter that validates the lookup result (around line 123):
+
+```typescript
+// Before
+      const found = lookup.drafts?.find((d) => d.reference_id === orderId);
+
+// After
+      const found = lookup.drafts?.find((d) => d.reference_id === (overrideReferenceId ?? orderId));
+```
+
 ### Step 4: Run test to verify it passes
 
 ```bash
