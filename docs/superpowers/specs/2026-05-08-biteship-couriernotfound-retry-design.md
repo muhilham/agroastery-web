@@ -231,7 +231,12 @@ async function applyUpdate(update: Record<string, unknown>, label: string): Prom
     // Never apply status updates from dead orders — they could override a live retried order
     const safeUpdate = { ...update };
     delete safeUpdate.status;
-    
+
+    if (Object.keys(safeUpdate).length === 0) {
+      console.log(`[biteship-webhook] History match ${byHistory.data.order_id} — nothing to update (status-only event skipped)`);
+      return true;
+    }
+
     const historyUpdate = await supabase
       .from('ecom_orders')
       .update(safeUpdate)
@@ -295,21 +300,17 @@ export async function retryBiteshipDraft(
   try {
     await createBiteshipDraft(orderId, referenceId);
     console.log(`[retryBiteshipDraft] Retry ${attempt + 1} succeeded for order ${orderId} with ref ${referenceId}`);
-    
-    // Set status back to processing so order doesn't appear cancelled
-    await supabase
-      .from('ecom_orders')
-      .update({ status: 'processing' })
-      .eq('id', orderId);
-    
-    // Notify Telegram about successful retry
-    // HACK: using paymentMethod field to carry ops alert text
+
+    // Set status back to processing and fetch order details in one call
     const { data: order } = await supabase
       .from('ecom_orders')
-      .select('order_number, customer_name, customer_phone, total')
+      .update({ status: 'processing' })
       .eq('id', orderId)
+      .select('order_number, customer_name, customer_phone, total')
       .single();
-    
+
+    // Notify Telegram about successful retry
+    // HACK: using paymentMethod field to carry ops alert text
     await sendPaymentNotification({
       orderId,
       orderNumber: order?.order_number ?? 'UNKNOWN',
@@ -390,7 +391,7 @@ Unchanged from existing `BITESHIP_STATUS_MAP`:
 | Max retries sends Telegram alert | `__tests__/biteship-retry.spec.ts` | After 3 failures, sends alert |
 | Late webhook matches via history table | `__tests__/biteship-webhook.spec.ts` | Old `order_id` hits history fallback, updates correct order |
 | `createBiteshipDraft` accepts override `reference_id` | `__tests__/biteship-create-draft.spec.ts` | Optional param overrides default `orderId` |
-| Retry success clears old history count | `__tests__/biteship-retry.spec.ts` | New draft created, no alert sent |
+| Retry success clears old history count | `__tests__/biteship-retry.spec.ts` | New draft created, status set to processing, no failure alert sent |
 
 ---
 
