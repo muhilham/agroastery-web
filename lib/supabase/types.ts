@@ -358,6 +358,41 @@ export type Database = {
           },
         ]
       }
+      ecom_order_biteship_history: {
+        Row: {
+          biteship_draft_id: string | null
+          biteship_order_id: string
+          biteship_status: string | null
+          created_at: string | null
+          id: string
+          order_id: string | null
+        }
+        Insert: {
+          biteship_draft_id?: string | null
+          biteship_order_id: string
+          biteship_status?: string | null
+          created_at?: string | null
+          id?: string
+          order_id?: string | null
+        }
+        Update: {
+          biteship_draft_id?: string | null
+          biteship_order_id?: string
+          biteship_status?: string | null
+          created_at?: string | null
+          id?: string
+          order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ecom_order_biteship_history_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "ecom_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employees: {
         Row: {
           created_at: string

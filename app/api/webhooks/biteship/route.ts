@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
       .eq('biteship_order_id', bsOrderId)
       .maybeSingle();
 
-    if (byHistory.data) {
+    if (byHistory.data?.order_id) {
       const safeUpdate = { ...update };
       delete safeUpdate.status;
 
