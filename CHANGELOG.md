@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/muhilham/agroastery-web/compare/v0.3.0...v0.3.1) (2026-05-10)
+
+
+### Bug Fixes
+
+* **types:** add missing ecom_order_biteship_history to supabase types and tighten null guard ([0050b91](https://github.com/muhilham/agroastery-web/commit/0050b9161f7f1d3293a8ed17d600a2ec6fbd1e2a))
+
 ## [0.3.0](https://github.com/muhilham/agroastery-web/compare/v0.2.3...v0.3.0) (2026-05-08)
 
 
