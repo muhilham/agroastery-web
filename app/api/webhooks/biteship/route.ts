@@ -84,6 +84,26 @@ export async function POST(request: NextRequest) {
       .single();
     if (byOrderId.data) return true;
 
+    // Fallback: Biteship may include reference_id in webhook payload.
+    // We send our order UUID as reference_id when creating the draft.
+    const referenceId = body.reference_id as string | undefined;
+    if (referenceId) {
+      const byRef = await supabase
+        .from('ecom_orders')
+        .update(update)
+        .eq('id', referenceId)
+        .select('id')
+        .single();
+      if (byRef.data) {
+        // Persist biteship_order_id so future webhooks skip lookups
+        await supabase
+          .from('ecom_orders')
+          .update({ biteship_order_id: bsOrderId })
+          .eq('id', byRef.data.id);
+        return true;
+      }
+    }
+
     // Slow path: first webhook for this order — draft_order_id != order_id in Biteship,
     // so we fetch the confirmed order from Biteship to get draft_order_id, then match
     // against our biteship_draft_id column.
@@ -96,13 +116,19 @@ export async function POST(request: NextRequest) {
     let draftOrderId: string | undefined;
     try {
       const biteshipRes = await fetch(`https://api.biteship.com/v1/orders/${bsOrderId}`, {
-        headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+        headers: { Authorization: `Bearer ${apiKey}` },
       });
       if (biteshipRes.ok) {
         const biteshipOrder = await biteshipRes.json() as Record<string, unknown>;
         draftOrderId = biteshipOrder.draft_order_id as string | undefined;
       } else {
-        console.warn(`[biteship-webhook] Biteship GET /v1/orders/${bsOrderId} returned ${biteshipRes.status} (${label})`);
+        let resBody: unknown;
+        try {
+          resBody = await biteshipRes.json();
+        } catch {
+          resBody = await biteshipRes.text();
+        }
+        console.warn(`[biteship-webhook] Biteship GET /v1/orders/${bsOrderId} returned ${biteshipRes.status} (${label}):`, resBody);
       }
     } catch (err) {
       console.warn(`[biteship-webhook] Failed to fetch order ${bsOrderId} from Biteship (${label}):`, err);

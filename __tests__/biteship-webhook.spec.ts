@@ -249,6 +249,52 @@ describe('POST /api/webhooks/biteship', () => {
     expect(updateByOrderId).toHaveBeenCalledWith({ status: 'shipped' });
   });
 
+  it('falls back to reference_id when biteship_order_id miss, then persists order_id', async () => {
+    const noMatch = { data: null, error: null };
+    const matched = { data: { id: 'ecom-99' }, error: null };
+
+    const updateByOrderId = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({ single: vi.fn().mockResolvedValue(noMatch) }),
+      }),
+    });
+    const updateByRef = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({ single: vi.fn().mockResolvedValue(matched) }),
+      }),
+    });
+    const updateAttachOrderId = vi.fn().mockReturnValue({
+      eq: vi.fn().mockResolvedValue({ data: null, error: null }),
+    });
+
+    let call = 0;
+    mockFrom.mockImplementation(() => {
+      call++;
+      if (call === 1) return { update: updateByOrderId };
+      if (call === 2) return { update: updateByRef };
+      return { update: updateAttachOrderId };
+    });
+
+    const mockFetch = vi.fn();
+    global.fetch = mockFetch as unknown as typeof fetch;
+
+    const { POST } = await import('@/app/api/webhooks/biteship/route');
+    const res = await POST(
+      makeRequest({
+        event: 'order.status',
+        order_id: 'bs-new-after-confirm',
+        reference_id: 'ecom-order-uuid-99',
+        status: 'confirmed',
+      })
+    );
+
+    expect(res.status).toBe(200);
+    expect(updateByOrderId).toHaveBeenCalledWith({ status: 'processing' });
+    expect(updateByRef).toHaveBeenCalledWith({ status: 'processing' });
+    expect(updateAttachOrderId).toHaveBeenCalledWith({ biteship_order_id: 'bs-new-after-confirm' });
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
   it('handles courier_not_found: archives, clears IDs, and triggers retry', async () => {
     const matched = { data: { id: 'ecom-99', order_number: 'AGR-001', customer_name: 'Budi', customer_phone: '08111', total: 100000, biteship_draft_id: 'bs-draft-old' }, error: null };
     const updateClear = vi.fn().mockReturnValue({
