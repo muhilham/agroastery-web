@@ -160,6 +160,30 @@ export async function POST(request: NextRequest) {
       `[biteship-webhook] No order found for biteship_draft_id=${draftOrderId} (biteship order_id=${bsOrderId}) (${label})`
     );
 
+    // Tracking number fallback: Biteship API may reject GET /v1/orders/{id}
+    // but webhooks for waybill-assigned orders always include courier_waybill_id.
+    // The waybill webhook fires before status updates, so tracking_number is
+    // already in our DB by the time picking_up/picked/delivered events arrive.
+    const waybillId = body.courier_waybill_id as string | undefined;
+    if (waybillId) {
+      const byWaybill = await supabase
+        .from('ecom_orders')
+        .update(update)
+        .eq('tracking_number', waybillId)
+        .select('id')
+        .single();
+      if (byWaybill.data) {
+        console.log(`[biteship-webhook] Matched via tracking_number=${waybillId} for order ${byWaybill.data.id}`);
+        // Persist biteship_order_id so future webhooks skip lookups
+        await supabase
+          .from('ecom_orders')
+          .update({ biteship_order_id: bsOrderId })
+          .eq('id', byWaybill.data.id);
+        return true;
+      }
+      console.warn(`[biteship-webhook] No order for tracking_number=${waybillId} (${label})`);
+    }
+
     // History fallback: match dead Biteship orders
     const byHistory = await supabase
       .from('ecom_order_biteship_history')
