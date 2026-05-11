@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.2](https://github.com/muhilham/agroastery-web/compare/v0.3.1...v0.3.2) (2026-05-11)
+
+
+### Bug Fixes
+
+* **biteship:** add tracking_number fallback for webhook resolution ([7dcea3c](https://github.com/muhilham/agroastery-web/commit/7dcea3cca3e5a79e595eb55b5ba344ee36961642))
+* **biteship:** remove Content-Type from GET request and add reference_id fallback ([9598da8](https://github.com/muhilham/agroastery-web/commit/9598da8a881231d65c7e44b254afd4b461626130))
+
 ## [0.3.1](https://github.com/muhilham/agroastery-web/compare/v0.3.0...v0.3.1) (2026-05-10)
 
 
