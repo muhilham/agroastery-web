@@ -1,5 +1,6 @@
 import { ProductCard } from "@/components/ui/product-card";
 import { getMinPrice, getMinOriginalPrice, getProductImageUrl } from "@/lib/supabase/queries/productUtils";
+import { stripHtml } from "@/lib/utils";
 import type { SupabaseProduct } from "@/types/product";
 
 interface ProductGridProps {
@@ -22,7 +23,7 @@ export default function ProductGrid({ supabaseProducts }: ProductGridProps) {
               key={item.slug}
               productSlug={item.slug}
               productTitle={item.name}
-              productDescription={item.short_description ?? item.description ?? ""}
+              productDescription={stripHtml(item.short_description ?? item.description ?? "")}
               productImage={getProductImageUrl(item)}
               productPrice={minPrice}
               originalPrice={minOriginalPrice > minPrice ? minOriginalPrice : undefined}

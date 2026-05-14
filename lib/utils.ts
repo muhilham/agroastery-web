@@ -11,3 +11,11 @@ export const slugify = (slug: string) =>
     .trim()
     .replace(/[^\w\s-]/g, '')
     .replace(/\s+/g, '-');
+
+/**
+ * Strip HTML tags from a string and return plain text.
+ * Safe for use in JSX where HTML should not be rendered.
+ */
+export function stripHtml(html: string): string {
+  return html.replace(/<[^>]*>/g, '');
+}
