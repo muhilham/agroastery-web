@@ -278,8 +278,7 @@ export async function POST(request: NextRequest) {
     const update: Record<string, unknown> = {};
     if (ecomStatus) update.status = ecomStatus;
     if (courierWaybillId) update.tracking_number = courierWaybillId;
-    // NOTE: courier_tracking_id column missing in production — skip until migration applied
-    // if (courierTrackingId) update.courier_tracking_id = courierTrackingId;
+    if (courierTrackingId) update.courier_tracking_id = courierTrackingId;
 
     if (Object.keys(update).length > 0) {
       await applyUpdate(update, `order.status=${rawStatus}`);
@@ -291,8 +290,7 @@ export async function POST(request: NextRequest) {
     const trackingId = body.courier_tracking_id as string | undefined;
     const update: Record<string, unknown> = {};
     if (waybillId) update.tracking_number = waybillId;
-    // NOTE: courier_tracking_id column missing in production — skip until migration applied
-    // if (trackingId) update.courier_tracking_id = trackingId;
+    if (trackingId) update.courier_tracking_id = trackingId;
     if (Object.keys(update).length > 0) {
       await applyUpdate(update, 'order.waybill_id');
     }
