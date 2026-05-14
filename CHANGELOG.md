@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.3](https://github.com/muhilham/agroastery-web/compare/v0.3.2...v0.3.3) (2026-05-14)
+
+
+### Bug Fixes
+
+* **biteship-webhook:** re-enable courier_tracking_id updates ([ce65a58](https://github.com/muhilham/agroastery-web/commit/ce65a589603367b1fbb7e178af1f665634581c00))
+* **biteship-webhook:** skip courier_tracking_id until column is added to production schema ([9244ad7](https://github.com/muhilham/agroastery-web/commit/9244ad77bfed1227356880af8f81b903baf819dc))
+
 ## [0.3.2](https://github.com/muhilham/agroastery-web/compare/v0.3.1...v0.3.2) (2026-05-11)
 
 
