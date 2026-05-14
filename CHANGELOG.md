@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.4](https://github.com/muhilham/agroastery-web/compare/v0.3.3...v0.3.4) (2026-05-14)
+
+
+### Bug Fixes
+
+* **katalog:** strip HTML tags from product description in product grid ([4bc51ae](https://github.com/muhilham/agroastery-web/commit/4bc51ae1718e2bff07c88db63e221fd018e3f7c3))
+
 ## [0.3.3](https://github.com/muhilham/agroastery-web/compare/v0.3.2...v0.3.3) (2026-05-14)
 
 
