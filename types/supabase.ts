@@ -388,6 +388,7 @@ export type Database = {
           product_name: string
           quantity: number
           ship_weight_grams: number
+          sku: string | null
           subtotal: number
           unit_price: number
           variant_description: string
@@ -400,6 +401,7 @@ export type Database = {
           product_name: string
           quantity: number
           ship_weight_grams: number
+          sku?: string | null
           subtotal: number
           unit_price: number
           variant_description: string
@@ -412,6 +414,7 @@ export type Database = {
           product_name?: string
           quantity?: number
           ship_weight_grams?: number
+          sku?: string | null
           subtotal?: number
           unit_price?: number
           variant_description?: string
@@ -436,6 +439,7 @@ export type Database = {
       }
       ecom_orders: {
         Row: {
+          biteship_draft_id: string | null
           biteship_order_id: string | null
           courier_tracking_id: string | null
           created_at: string | null
@@ -468,6 +472,7 @@ export type Database = {
           xendit_payment_method: string | null
         }
         Insert: {
+          biteship_draft_id?: string | null
           biteship_order_id?: string | null
           courier_tracking_id?: string | null
           created_at?: string | null
@@ -500,6 +505,7 @@ export type Database = {
           xendit_payment_method?: string | null
         }
         Update: {
+          biteship_draft_id?: string | null
           biteship_order_id?: string | null
           courier_tracking_id?: string | null
           created_at?: string | null

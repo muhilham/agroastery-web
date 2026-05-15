@@ -196,12 +196,12 @@ export type Database = {
       }
       ecom_order_items: {
         Row: {
-          created_at: string | null
           id: string
           order_id: string | null
           product_name: string
           quantity: number
           ship_weight_grams: number
+          sku: string | null
           subtotal: number
           unit_price: number
           variant_description: string
@@ -214,6 +214,7 @@ export type Database = {
           product_name: string
           quantity: number
           ship_weight_grams: number
+          sku?: string | null
           subtotal: number
           unit_price: number
           variant_description: string
@@ -226,6 +227,7 @@ export type Database = {
           product_name?: string
           quantity?: number
           ship_weight_grams?: number
+          sku?: string | null
           subtotal?: number
           unit_price?: number
           variant_description?: string

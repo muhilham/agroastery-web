@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
     if (byOrderId.data) return true;
 
     // Fallback: Biteship may include reference_id in webhook payload.
-    // We send our order UUID as reference_id when creating the draft.
+    // New drafts use order UUID; old drafts used order_number (AGR-...).
     const referenceId = body.reference_id as string | undefined;
     if (referenceId) {
       const byRef = await supabase
@@ -100,6 +100,22 @@ export async function POST(request: NextRequest) {
           .from('ecom_orders')
           .update({ biteship_order_id: bsOrderId })
           .eq('id', byRef.data.id);
+        return true;
+      }
+
+      // Old orders: reference_id may be order_number (pre-UUID change)
+      const byOrderNumber = await supabase
+        .from('ecom_orders')
+        .update(update)
+        .eq('order_number', referenceId)
+        .select('id')
+        .single();
+      if (byOrderNumber.data) {
+        console.log(`[biteship-webhook] Matched old order by order_number=${referenceId} for order ${byOrderNumber.data.id}`);
+        await supabase
+          .from('ecom_orders')
+          .update({ biteship_order_id: bsOrderId })
+          .eq('id', byOrderNumber.data.id);
         return true;
       }
     }
@@ -154,6 +170,26 @@ export async function POST(request: NextRequest) {
         .eq('id', byDraftId.data.id);
 
       return true;
+    }
+
+    // Biteship may echo our reference_id (UUID) as draft_order_id for some orders.
+    // Try matching directly by order id if draftOrderId looks like a UUID.
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (UUID_RE.test(draftOrderId)) {
+      const byUuid = await supabase
+        .from('ecom_orders')
+        .update(update)
+        .eq('id', draftOrderId)
+        .select('id')
+        .single();
+      if (byUuid.data) {
+        console.log(`[biteship-webhook] Matched by UUID draft_order_id=${draftOrderId} for order ${byUuid.data.id}`);
+        await supabase
+          .from('ecom_orders')
+          .update({ biteship_order_id: bsOrderId })
+          .eq('id', byUuid.data.id);
+        return true;
+      }
     }
 
     console.warn(
