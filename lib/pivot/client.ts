@@ -81,7 +81,7 @@ export async function createQrisPaymentSession(
   const { orderId, orderNumber, total, customerName, customerEmail, customerPhone } = params;
   const phone = formatPhoneForPivot(customerPhone);
 
-  const expiryAt = new Date(Date.now() + 15 * 60 * 1000).toISOString(); // 15 min from now
+  const expiryAt = new Date(Date.now() + 5 * 60 * 1000).toISOString(); // 5 min — upstream hard max
 
   const body = {
     clientReferenceId: orderId.replace(/-/g, "").slice(0, 36),
