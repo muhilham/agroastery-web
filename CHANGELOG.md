@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/muhilham/agroastery-web/compare/v0.3.4...v0.4.0) (2026-05-15)
+
+
+### Features
+
+* **checkout:** store sku on ecom_order_items for jubelio sync ([153f80c](https://github.com/muhilham/agroastery-web/commit/153f80cd9c1aba227e7622eacbdc5cbef7e4cea3))
+
 ## [0.3.4](https://github.com/muhilham/agroastery-web/compare/v0.3.3...v0.3.4) (2026-05-14)
 
 
