@@ -137,6 +137,7 @@ export async function POST(request: NextRequest) {
       variantDescription: string;
       discountedPrice: number;
       shipWeightGrams: number;
+      sku: string | null;
     }
 
     const itemsWithDiscounts: ItemWithDiscount[] = data.items.map((item) => {
@@ -164,6 +165,7 @@ export async function POST(request: NextRequest) {
         variantDescription,
         discountedPrice,
         shipWeightGrams: dbVariant.ship_weight_grams as number,
+        sku: dbVariant.sku,
       };
     });
 
@@ -207,13 +209,14 @@ export async function POST(request: NextRequest) {
     const total = subtotal + data.shippingCost;
 
     // Build verified items from pre-computed discounted prices
-    const verifiedItems = itemsWithDiscounts.map(({ item, productName, variantDescription, discountedPrice, shipWeightGrams }) => ({
+    const verifiedItems = itemsWithDiscounts.map(({ item, productName, variantDescription, discountedPrice, shipWeightGrams, sku }) => ({
       variantId: item.variantId,
       productName,
       variantDescription,
       unitPrice: discountedPrice,
       quantity: item.quantity,
       shipWeightGrams,
+      sku,
     }));
 
     // Atomically decrement stock for all items in one DB transaction.
@@ -314,6 +317,7 @@ export async function POST(request: NextRequest) {
       quantity: item.quantity,
       subtotal: item.unitPrice * item.quantity,
       ship_weight_grams: item.shipWeightGrams,
+      sku: item.sku,
     }));
 
     const { error: itemsError } = await admin
