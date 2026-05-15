@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/muhilham/agroastery-web/compare/v0.4.0...v0.4.1) (2026-05-15)
+
+
+### Bug Fixes
+
+* **biteship-webhook:** add fallback lookups for old orders with order_number reference_id ([cac90a1](https://github.com/muhilham/agroastery-web/commit/cac90a18bda51a6d59be270ac17d3238f4014808))
+
 ## [0.4.0](https://github.com/muhilham/agroastery-web/compare/v0.3.4...v0.4.0) (2026-05-15)
 
 
