@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.2](https://github.com/muhilham/agroastery-web/compare/v0.4.1...v0.4.2) (2026-05-16)
+
+
+### Bug Fixes
+
+* **biteship-webhook:** match orders by reference_id from Biteship API ([f1497bd](https://github.com/muhilham/agroastery-web/commit/f1497bd1764d218011787e3aa247aa9da0842f95))
+
 ## [0.4.1](https://github.com/muhilham/agroastery-web/compare/v0.4.0...v0.4.1) (2026-05-15)
 
 
