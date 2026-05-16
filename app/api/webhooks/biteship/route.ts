@@ -130,6 +130,7 @@ export async function POST(request: NextRequest) {
     }
 
     let draftOrderId: string | undefined;
+    let apiReferenceId: string | undefined;
     try {
       const biteshipRes = await fetch(`https://api.biteship.com/v1/orders/${bsOrderId}`, {
         headers: { Authorization: `Bearer ${apiKey}` },
@@ -137,6 +138,7 @@ export async function POST(request: NextRequest) {
       if (biteshipRes.ok) {
         const biteshipOrder = await biteshipRes.json() as Record<string, unknown>;
         draftOrderId = biteshipOrder.draft_order_id as string | undefined;
+        apiReferenceId = biteshipOrder.reference_id as string | undefined;
       } else {
         let resBody: unknown;
         try {
@@ -172,22 +174,36 @@ export async function POST(request: NextRequest) {
       return true;
     }
 
-    // Biteship may echo our reference_id (UUID) as draft_order_id for some orders.
-    // Try matching directly by order id if draftOrderId looks like a UUID.
-    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (UUID_RE.test(draftOrderId)) {
-      const byUuid = await supabase
+    // Fallback: Biteship API response includes reference_id (what we sent on draft creation).
+    // New orders: reference_id is our order UUID. Old orders: reference_id is order_number.
+    if (apiReferenceId) {
+      const byRefId = await supabase
         .from('ecom_orders')
         .update(update)
-        .eq('id', draftOrderId)
+        .eq('id', apiReferenceId)
         .select('id')
         .single();
-      if (byUuid.data) {
-        console.log(`[biteship-webhook] Matched by UUID draft_order_id=${draftOrderId} for order ${byUuid.data.id}`);
+      if (byRefId.data) {
+        console.log(`[biteship-webhook] Matched by Biteship API reference_id=${apiReferenceId} (UUID) for order ${byRefId.data.id}`);
         await supabase
           .from('ecom_orders')
           .update({ biteship_order_id: bsOrderId })
-          .eq('id', byUuid.data.id);
+          .eq('id', byRefId.data.id);
+        return true;
+      }
+
+      const byRefOrderNumber = await supabase
+        .from('ecom_orders')
+        .update(update)
+        .eq('order_number', apiReferenceId)
+        .select('id')
+        .single();
+      if (byRefOrderNumber.data) {
+        console.log(`[biteship-webhook] Matched by Biteship API reference_id=${apiReferenceId} (order_number) for order ${byRefOrderNumber.data.id}`);
+        await supabase
+          .from('ecom_orders')
+          .update({ biteship_order_id: bsOrderId })
+          .eq('id', byRefOrderNumber.data.id);
         return true;
       }
     }
@@ -195,6 +211,8 @@ export async function POST(request: NextRequest) {
     console.warn(
       `[biteship-webhook] No order found for biteship_draft_id=${draftOrderId} (biteship order_id=${bsOrderId}) (${label})`
     );
+    console.warn(`[biteship-webhook] Debug payload:`, JSON.stringify(body));
+    console.warn(`[biteship-webhook] Debug Biteship API reference_id:`, apiReferenceId ?? 'not available');
 
     // Tracking number fallback: Biteship API may reject GET /v1/orders/{id}
     // but webhooks for waybill-assigned orders always include courier_waybill_id.
