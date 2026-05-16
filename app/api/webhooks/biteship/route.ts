@@ -208,12 +208,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.warn(
-      `[biteship-webhook] No order found for biteship_draft_id=${draftOrderId} (biteship order_id=${bsOrderId}) (${label})`
-    );
-    console.warn(`[biteship-webhook] Debug payload:`, JSON.stringify(body));
-    console.warn(`[biteship-webhook] Debug Biteship API reference_id:`, apiReferenceId ?? 'not available');
-
     // Tracking number fallback: Biteship API may reject GET /v1/orders/{id}
     // but webhooks for waybill-assigned orders always include courier_waybill_id.
     // The waybill webhook fires before status updates, so tracking_number is
@@ -265,6 +259,12 @@ export async function POST(request: NextRequest) {
         return true;
       }
     }
+
+    console.warn(
+      `[biteship-webhook] No order found for biteship_draft_id=${draftOrderId} (biteship order_id=${bsOrderId}) (${label})`
+    );
+    console.warn(`[biteship-webhook] Debug payload:`, JSON.stringify(body));
+    console.warn(`[biteship-webhook] Debug Biteship API reference_id:`, apiReferenceId ?? 'not available');
 
     return false;
   }

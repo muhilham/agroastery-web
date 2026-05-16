@@ -353,6 +353,131 @@ describe('POST /api/webhooks/biteship', () => {
     expect(updateAttachOrderId).toHaveBeenCalledWith({ biteship_order_id: 'bs-new-after-confirm' });
   });
 
+  it('falls back to Biteship API reference_id (UUID) when draft_id miss', async () => {
+    process.env.BITESHIP_API_KEY = 'test-key';
+
+    const noMatch = { data: null, error: null };
+    const matched = { data: { id: 'ecom-99' }, error: null };
+
+    const updateByOrderId = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({ single: vi.fn().mockResolvedValue(noMatch) }),
+      }),
+    });
+    const updateByDraftId = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({ single: vi.fn().mockResolvedValue(noMatch) }),
+      }),
+    });
+    const updateByRefId = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({ single: vi.fn().mockResolvedValue(matched) }),
+      }),
+    });
+    const updateAttachOrderId = vi.fn().mockReturnValue({
+      eq: vi.fn().mockResolvedValue({ data: null, error: null }),
+    });
+
+    let call = 0;
+    mockFrom.mockImplementation(() => {
+      call++;
+      if (call === 1) return { update: updateByOrderId };
+      if (call === 2) return { update: updateByDraftId };
+      if (call === 3) return { update: updateByRefId };
+      return { update: updateAttachOrderId };
+    });
+
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        draft_order_id: 'bs-draft-uuid',
+        reference_id: 'ecom-99',
+      }),
+    });
+    global.fetch = mockFetch as unknown as typeof fetch;
+
+    const { POST } = await import('@/app/api/webhooks/biteship/route');
+    const res = await POST(
+      makeRequest({
+        event: 'order.status',
+        order_id: 'bs-new-after-confirm',
+        status: 'confirmed',
+      })
+    );
+
+    expect(res.status).toBe(200);
+    expect(updateByOrderId).toHaveBeenCalledWith({ status: 'processing' });
+    expect(updateByDraftId).toHaveBeenCalledWith({ status: 'processing' });
+    expect(updateByRefId).toHaveBeenCalledWith({ status: 'processing' });
+    expect(updateAttachOrderId).toHaveBeenCalledWith({ biteship_order_id: 'bs-new-after-confirm' });
+  });
+
+  it('falls back to Biteship API reference_id (order_number) when draft_id miss', async () => {
+    process.env.BITESHIP_API_KEY = 'test-key';
+
+    const noMatch = { data: null, error: null };
+    const matched = { data: { id: 'ecom-99' }, error: null };
+
+    const updateByOrderId = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({ single: vi.fn().mockResolvedValue(noMatch) }),
+      }),
+    });
+    const updateByDraftId = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({ single: vi.fn().mockResolvedValue(noMatch) }),
+      }),
+    });
+    const updateByRefId = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({ single: vi.fn().mockResolvedValue(noMatch) }),
+      }),
+    });
+    const updateByRefOrderNumber = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({ single: vi.fn().mockResolvedValue(matched) }),
+      }),
+    });
+    const updateAttachOrderId = vi.fn().mockReturnValue({
+      eq: vi.fn().mockResolvedValue({ data: null, error: null }),
+    });
+
+    let call = 0;
+    mockFrom.mockImplementation(() => {
+      call++;
+      if (call === 1) return { update: updateByOrderId };
+      if (call === 2) return { update: updateByDraftId };
+      if (call === 3) return { update: updateByRefId };
+      if (call === 4) return { update: updateByRefOrderNumber };
+      return { update: updateAttachOrderId };
+    });
+
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        draft_order_id: 'bs-draft-uuid',
+        reference_id: 'AGR-20260319-OLD',
+      }),
+    });
+    global.fetch = mockFetch as unknown as typeof fetch;
+
+    const { POST } = await import('@/app/api/webhooks/biteship/route');
+    const res = await POST(
+      makeRequest({
+        event: 'order.status',
+        order_id: 'bs-new-after-confirm',
+        status: 'confirmed',
+      })
+    );
+
+    expect(res.status).toBe(200);
+    expect(updateByOrderId).toHaveBeenCalledWith({ status: 'processing' });
+    expect(updateByDraftId).toHaveBeenCalledWith({ status: 'processing' });
+    expect(updateByRefId).toHaveBeenCalledWith({ status: 'processing' });
+    expect(updateByRefOrderNumber).toHaveBeenCalledWith({ status: 'processing' });
+    expect(updateAttachOrderId).toHaveBeenCalledWith({ biteship_order_id: 'bs-new-after-confirm' });
+  });
+
   it('handles courier_not_found: archives, clears IDs, and triggers retry', async () => {
     const matched = { data: { id: 'ecom-99', order_number: 'AGR-001', customer_name: 'Budi', customer_phone: '08111', total: 100000, biteship_draft_id: 'bs-draft-old' }, error: null };
     const updateClear = vi.fn().mockReturnValue({
