@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.3](https://github.com/muhilham/agroastery-web/compare/v0.4.2...v0.4.3) (2026-05-16)
+
+
+### Bug Fixes
+
+* **biteship-webhook:** move debug logs after all fallbacks + add tests ([9b22b5d](https://github.com/muhilham/agroastery-web/commit/9b22b5d1bdbc322604f335876478e0c84ae4bc66))
+
 ## [0.4.2](https://github.com/muhilham/agroastery-web/compare/v0.4.1...v0.4.2) (2026-05-16)
 
 
