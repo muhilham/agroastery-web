@@ -31,7 +31,7 @@ export function Footer() {
         <div className="flex flex-col gap-2 sm:gap-1">
           <h6 className="text-xs font-bold text-[#ccc4a9]">PHONE / WHATSAPP</h6>
           <p className="font-extralight leading-relaxed text-[#ccc4a9]">
-            +62 823-2866-4557
+            +62 897-9092-726
           </p>
         </div>
         <div className="flex flex-col gap-2 sm:gap-1">
