@@ -449,6 +449,8 @@ export type Database = {
           email_sent_at: string | null
           id: string
           idempotency_key: string | null
+          jubelio_salesorder_id: number | null
+          jubelio_invoice_no: string | null
           notes: string | null
           order_number: string
           paid_at: string | null
@@ -482,6 +484,8 @@ export type Database = {
           email_sent_at?: string | null
           id?: string
           idempotency_key?: string | null
+          jubelio_salesorder_id?: number | null
+          jubelio_invoice_no?: string | null
           notes?: string | null
           order_number: string
           paid_at?: string | null
@@ -515,6 +519,8 @@ export type Database = {
           email_sent_at?: string | null
           id?: string
           idempotency_key?: string | null
+          jubelio_salesorder_id?: number | null
+          jubelio_invoice_no?: string | null
           notes?: string | null
           order_number?: string
           paid_at?: string | null

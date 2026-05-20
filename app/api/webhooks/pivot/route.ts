@@ -4,6 +4,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { sendPaymentNotification } from "@/lib/telegram/notify";
 import { createBiteshipDraft } from '@/lib/biteship/createDraft';
 import { sendOrderEmail } from "@/lib/resend/sendOrderEmail";
+import { createJubelioOrderFromEcom } from "@/lib/jubelio/orders";
 
 function verifyPivotCallback(request: NextRequest): boolean {
   const apiKey = request.headers.get("x-api-key") ?? "";
@@ -121,6 +122,25 @@ export async function POST(request: NextRequest) {
           err
         )
       );
+
+      // Fire-and-forget: push order to Jubelio (must never block the webhook)
+      createJubelioOrderFromEcom(updatedOrder.id as string).catch((err: unknown) => {
+        const message = err instanceof Error ? err.message : String(err);
+        console.error(
+          `[pivot-webhook] Jubelio order sync failed for order ${updatedOrder.id}:`,
+          message
+        );
+        // Alert ops immediately — customer paid but Jubelio sync failed.
+        sendPaymentNotification({
+          orderId: updatedOrder.id as string,
+          orderNumber: updatedOrder.order_number as string,
+          customerName: updatedOrder.customer_name as string,
+          customerPhone: updatedOrder.customer_phone as string,
+          paymentMethod: `⚠️ JUBELIO GAGAL — ${message.slice(0, 200)}`,
+          total: updatedOrder.total as number,
+          paidAt: new Date().toISOString(),
+        }).catch(() => {});
+      });
     }
   } else if (event === "PAYMENT.EXPIRED" || event === "PAYMENT.CANCELLED") {
     // Idempotently cancel the order (use neq to act as a lock)
