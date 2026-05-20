@@ -88,7 +88,7 @@ function buildJubelioPayload(
     salesorder_no: "[auto]",
     contact_id: 0, // 0 = generic customer (Pelanggan Umum) in Jubelio
     customer_name: (order.customer_name as string) ?? "Pelanggan Umum",
-    transaction_date: new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Jakarta' }).replace(' ', 'T'),
+    transaction_date: new Date().toISOString(),
     sub_total: subtotal,
     total_disc: 0,
     total_tax: 0,
@@ -115,7 +115,9 @@ function buildJubelioPayload(
 
 /**
  * Create a Jubelio Sales Order + Invoice from an e-commerce order.
- * This function is idempotent — if jubelio_salesorder_id is already set, it skips.
+ * This function is idempotent — if both jubelio_salesorder_id and jubelio_invoice_no
+ * are already set, it skips. If only the SO ID is set (invoice step previously failed),
+ * it resumes from the invoice conversion step.
  * All errors are thrown so the caller can decide what to do (log / alert).
  */
 export async function createJubelioOrderFromEcom(orderId: string): Promise<void> {
@@ -124,69 +126,89 @@ export async function createJubelioOrderFromEcom(orderId: string): Promise<void>
   // Idempotency guard (best-effort, not atomic — see comment below)
   const { data: existing } = await admin
     .from("ecom_orders")
-    .select("jubelio_salesorder_id, order_number")
+    .select("jubelio_salesorder_id, jubelio_invoice_no, order_number")
     .eq("id", orderId)
     .single();
 
   // NOTE: This read-check-write is not atomic. In the extremely unlikely event that
   // two webhook requests for the same order fire simultaneously, both could pass
   // this guard before either writes the SO ID, resulting in a duplicate Sales Order.
-  // Pivot webhooks do not typically retry overlappingly, and the SO ID is written
-  // immediately after SO creation (before invoice conversion), making the window
-  // very small. If duplicates occur, ops must cancel the duplicate in Jubelio dashboard.
-  if (existing?.jubelio_salesorder_id) {
-    console.log(`[Jubelio] Order ${existing.order_number} already synced (SO ${existing.jubelio_salesorder_id})`);
+  // Pivot webhooks do not typically retry overlappingly, making the window very small.
+  // If duplicates occur, ops must cancel the duplicate in Jubelio dashboard.
+  if (existing?.jubelio_salesorder_id && existing?.jubelio_invoice_no) {
+    console.log(
+      `[Jubelio] Order ${existing.order_number} already synced (SO ${existing.jubelio_salesorder_id}, INV ${existing.jubelio_invoice_no})`
+    );
     return;
   }
 
-  // Fetch order + items
-  const { order, items } = await getEcomOrderWithItems(orderId);
+  let salesorderId: number;
 
-  if (items.length === 0) {
-    throw new Error("No items in order");
-  }
+  if (existing?.jubelio_salesorder_id && !existing?.jubelio_invoice_no) {
+    // Previous run created SO but failed on invoice conversion — resume from there.
+    salesorderId = existing.jubelio_salesorder_id;
+  } else {
+    // Full flow: fetch order, build payload, create SO
+    const { order, items } = await getEcomOrderWithItems(orderId);
 
-  // Lookup each SKU in Jubelio (parallelized)
-  const skuLookups = await Promise.all(
-    items.map(async (item) => {
-      const sku = item.sku as string | null;
-      if (!sku) {
-        throw new Error(`Order item missing SKU: ${item.id}`);
-      }
+    if (items.length === 0) {
+      throw new Error("No items in order");
+    }
 
-      const jubelioItem = await fetchJubelioItemBySku(sku);
-      if (!jubelioItem) {
-        throw new Error(`SKU not found in Jubelio: ${sku}`);
-      }
+    // Lookup each SKU in Jubelio (parallelized)
+    const skuLookups = await Promise.all(
+      items.map(async (item) => {
+        const sku = item.sku as string | null;
+        if (!sku) {
+          throw new Error(`Order item missing SKU: ${item.id}`);
+        }
 
-      return { sku, jubelioItem };
-    })
-  );
+        const jubelioItem = await fetchJubelioItemBySku(sku);
+        if (!jubelioItem) {
+          throw new Error(`SKU not found in Jubelio: ${sku}`);
+        }
 
-  const jubelioItemMap = new Map(
-    skuLookups.map(({ sku, jubelioItem }) => [sku, jubelioItem])
-  );
-
-  // Build payload
-  const payload = buildJubelioPayload(order, items, jubelioItemMap);
-
-  // Create Sales Order
-  const salesorderId = await createJubelioSalesOrder(payload);
-
-  // Persist SO ID immediately (before invoice conversion) to prevent duplicates on retry
-  const { error: updateError } = await admin
-    .from("ecom_orders")
-    .update({ jubelio_salesorder_id: salesorderId })
-    .eq("id", orderId);
-
-  if (updateError) {
-    throw new Error(
-      `Jubelio SO created (${salesorderId}) but failed to persist on ecom_orders: ${updateError.message}`
+        return { sku, jubelioItem };
+      })
     );
+
+    const jubelioItemMap = new Map(
+      skuLookups.map(({ sku, jubelioItem }) => [sku, jubelioItem])
+    );
+
+    // Build payload
+    const payload = buildJubelioPayload(order, items, jubelioItemMap);
+
+    // Create Sales Order
+    salesorderId = await createJubelioSalesOrder(payload);
+
+    // Persist SO ID immediately (before invoice conversion) to prevent duplicate SOs on retry
+    const { error: updateError } = await admin
+      .from("ecom_orders")
+      .update({ jubelio_salesorder_id: salesorderId })
+      .eq("id", orderId);
+
+    if (updateError) {
+      throw new Error(
+        `Jubelio SO created (${salesorderId}) but failed to persist on ecom_orders: ${updateError.message}`
+      );
+    }
   }
 
   // Convert to Invoice + Payment
-  await convertJubelioToInvoicePayment(salesorderId);
+  const invoiceNo = await convertJubelioToInvoicePayment(salesorderId);
 
-  console.log(`[Jubelio] Order ${order.order_number} synced (SO ${salesorderId})`);
+  // Persist invoice number so future retries know both steps succeeded
+  const { error: invoiceUpdateError } = await admin
+    .from("ecom_orders")
+    .update({ jubelio_invoice_no: invoiceNo })
+    .eq("id", orderId);
+
+  if (invoiceUpdateError) {
+    throw new Error(
+      `Jubelio invoice created (${invoiceNo}) but failed to persist on ecom_orders: ${invoiceUpdateError.message}`
+    );
+  }
+
+  console.log(`[Jubelio] Order ${existing?.order_number ?? orderId} synced (SO ${salesorderId}, INV ${invoiceNo})`);
 }

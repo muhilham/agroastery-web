@@ -942,6 +942,8 @@ CREATE TABLE IF NOT EXISTS "public"."ecom_orders" (
     "pivot_qr_url" "text",
     "pivot_qr_expires_at" timestamp with time zone,
     "pivot_qr_string" "text",
+    "jubelio_salesorder_id" bigint,
+    "jubelio_invoice_no" "text",
     CONSTRAINT "ecom_orders_payment_status_check" CHECK (("payment_status" = ANY (ARRAY['unpaid'::"text", 'paid'::"text", 'expired'::"text", 'refunded'::"text"]))),
     CONSTRAINT "ecom_orders_status_check" CHECK (("status" = ANY (ARRAY['pending_payment'::"text", 'paid'::"text", 'processing'::"text", 'shipped'::"text", 'delivered'::"text", 'cancelled'::"text", 'refunded'::"text"])))
 );

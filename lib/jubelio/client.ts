@@ -112,7 +112,7 @@ export async function fetchJubelioItemBySku(
 
   const token = await getToken();
   const res = await fetch(
-    `${JUBELIO_BASE}/inventory/items/?q=${encodeURIComponent(sku)}&pageSize=10`,
+    `${JUBELIO_BASE}/inventory/items/?q=${encodeURIComponent(sku)}&pageSize=50`,
     { headers: { Authorization: token }, signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) }
   );
 

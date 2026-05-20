@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
           orderNumber: updatedOrder.order_number as string,
           customerName: updatedOrder.customer_name as string,
           customerPhone: updatedOrder.customer_phone as string,
-          paymentMethod: `⚠️ JUBELIO GAGAL — ${message}`,
+          paymentMethod: `⚠️ JUBELIO GAGAL — ${message.slice(0, 200)}`,
           total: updatedOrder.total as number,
           paidAt: new Date().toISOString(),
         }).catch(() => {});

@@ -61,13 +61,17 @@ function setupHappyPathMocks() {
       orderCallIndex++;
       if (orderCallIndex === 1) {
         // First call: idempotency check
-        return { select: vi.fn().mockReturnValue(resolvedChain({ jubelio_salesorder_id: null, order_number: 'AGR-20260427-ABC' })) };
+        return { select: vi.fn().mockReturnValue(resolvedChain({ jubelio_salesorder_id: null, jubelio_invoice_no: null, order_number: 'AGR-20260427-ABC' })) };
       }
       if (orderCallIndex === 2) {
         // Second call: fetch full order details
         return { select: vi.fn().mockReturnValue(resolvedChain(ORDER_ROW)) };
       }
-      // Third call: update jubelio_salesorder_id
+      if (orderCallIndex === 3) {
+        // Third call: update jubelio_salesorder_id
+        return { update: vi.fn().mockReturnValue(resolvedChain(null)) };
+      }
+      // Fourth call: update jubelio_invoice_no
       return { update: vi.fn().mockReturnValue(resolvedChain(null)) };
     }
     if (table === 'ecom_order_items') {
@@ -87,14 +91,55 @@ describe('createJubelioOrderFromEcom', () => {
     process.env.JUBELIO_MOCK = 'false';
   });
 
-  it('skips sync if jubelio_salesorder_id already set', async () => {
+  it('skips sync if both jubelio_salesorder_id and jubelio_invoice_no are set', async () => {
     const { createJubelioOrderFromEcom } = await import('@/lib/jubelio/orders');
     mockFrom.mockReturnValue({
-      select: vi.fn().mockReturnValue(resolvedChain({ jubelio_salesorder_id: 12345, order_number: 'AGR-20260427-ABC' })),
+      select: vi.fn().mockReturnValue(resolvedChain({ jubelio_salesorder_id: 12345, jubelio_invoice_no: 'INV-000001', order_number: 'AGR-20260427-ABC' })),
     });
 
     await createJubelioOrderFromEcom('order-1');
     expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it('resumes invoice conversion if SO exists but invoice is missing', async () => {
+    const { createJubelioOrderFromEcom } = await import('@/lib/jubelio/orders');
+    let orderCallIndex = 0;
+    mockFrom.mockImplementation((table: string) => {
+      if (table === 'ecom_orders') {
+        orderCallIndex++;
+        if (orderCallIndex === 1) {
+          return { select: vi.fn().mockReturnValue(resolvedChain({ jubelio_salesorder_id: 12345, jubelio_invoice_no: null, order_number: 'AGR-20260427-ABC' })) };
+        }
+        return { update: vi.fn().mockReturnValue(resolvedChain(null)) };
+      }
+      return { select: vi.fn().mockReturnValue(resolvedChain(null)) };
+    });
+
+    mockFetch.mockImplementation((url: string) => {
+      if (url.includes('/login')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({ token: 'test-token' }) });
+      }
+      if (url.includes('/create-invoice-payment')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({ invoice_no: 'INV-RESUME-001' }) });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+    });
+
+    await createJubelioOrderFromEcom('order-1');
+
+    // Should NOT create a new SO
+    const createSoCall = mockFetch.mock.calls.find((call) => {
+      const [callUrl, callInit] = call;
+      return (callUrl as string).includes('/sales/orders/') && (callInit as RequestInit)?.method === 'POST';
+    });
+    expect(createSoCall).toBeUndefined();
+
+    // Should call invoice conversion
+    const invoiceCall = mockFetch.mock.calls.find((call) => {
+      const [callUrl] = call;
+      return (callUrl as string).includes('/create-invoice-payment');
+    });
+    expect(invoiceCall).toBeDefined();
   });
 
   it('throws if SKU not found in Jubelio', async () => {
@@ -164,9 +209,13 @@ describe('createJubelioOrderFromEcom', () => {
     });
     expect(invoiceCall).toBeDefined();
 
-    // Verify update to ecom_orders was called (exact assertion on payload
-    // is hard with this mock style; the important thing is update was invoked)
+    // Verify update to ecom_orders was called twice (SO + invoice)
     expect(mockFrom).toHaveBeenCalledWith('ecom_orders');
+    const ecomCalls = mockFrom.mock.calls
+      .map((call, i) => ({ call, result: mockFrom.mock.results[i] }))
+      .filter(({ call }) => call[0] === 'ecom_orders');
+    const updateCalls = ecomCalls.filter(({ result }) => result.value && 'update' in result.value);
+    expect(updateCalls.length).toBe(2);
   });
 
   it('throws if SO created but DB update fails', async () => {
@@ -176,7 +225,7 @@ describe('createJubelioOrderFromEcom', () => {
       if (table === 'ecom_orders') {
         orderCallIndex++;
         if (orderCallIndex === 1) {
-          return { select: vi.fn().mockReturnValue(resolvedChain({ jubelio_salesorder_id: null, order_number: 'AGR-20260427-ABC' })) };
+          return { select: vi.fn().mockReturnValue(resolvedChain({ jubelio_salesorder_id: null, jubelio_invoice_no: null, order_number: 'AGR-20260427-ABC' })) };
         }
         if (orderCallIndex === 2) {
           return { select: vi.fn().mockReturnValue(resolvedChain(ORDER_ROW)) };
@@ -215,7 +264,7 @@ describe('createJubelioOrderFromEcom', () => {
     const { createJubelioOrderFromEcom } = await import('@/lib/jubelio/orders');
     mockFrom.mockImplementation((table: string) => {
       if (table === 'ecom_orders') {
-        return { select: vi.fn().mockReturnValue(resolvedChain({ jubelio_salesorder_id: null, order_number: 'AGR-20260427-ABC' })) };
+        return { select: vi.fn().mockReturnValue(resolvedChain({ jubelio_salesorder_id: null, jubelio_invoice_no: null, order_number: 'AGR-20260427-ABC' })) };
       }
       if (table === 'ecom_order_items') {
         return { select: vi.fn().mockReturnValue(resolvedChain([])) };
@@ -230,7 +279,7 @@ describe('createJubelioOrderFromEcom', () => {
     const { createJubelioOrderFromEcom } = await import('@/lib/jubelio/orders');
     mockFrom.mockImplementation((table: string) => {
       if (table === 'ecom_orders') {
-        return { select: vi.fn().mockReturnValue(resolvedChain({ jubelio_salesorder_id: null, order_number: 'AGR-20260427-ABC' })) };
+        return { select: vi.fn().mockReturnValue(resolvedChain({ jubelio_salesorder_id: null, jubelio_invoice_no: null, order_number: 'AGR-20260427-ABC' })) };
       }
       if (table === 'ecom_order_items') {
         return { select: vi.fn().mockReturnValue(resolvedChain([{ id: 'item-1', sku: null }])) };
