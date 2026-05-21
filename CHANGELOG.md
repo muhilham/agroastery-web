@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.4](https://github.com/muhilham/agroastery-web/compare/v0.4.3...v0.4.4) (2026-05-21)
+
+
+### Bug Fixes
+
+* **jubelio:** correct SKU lookup and contact_id for Jubelio sync ([e8b6e85](https://github.com/muhilham/agroastery-web/commit/e8b6e8508b4b345373941cf1d5f408f032dc1570))
+
 ## [0.4.3](https://github.com/muhilham/agroastery-web/compare/v0.4.2...v0.4.3) (2026-05-16)
 
 
