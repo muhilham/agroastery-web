@@ -907,6 +907,7 @@ CREATE TABLE IF NOT EXISTS "public"."ecom_order_items" (
     "quantity" integer NOT NULL,
     "subtotal" bigint NOT NULL,
     "ship_weight_grams" integer NOT NULL,
+    "sku" "text",
     "created_at" timestamp with time zone DEFAULT "now"()
 );
 
@@ -1449,6 +1450,7 @@ CREATE INDEX "idx_ecom_notification_logs_type" ON "public"."ecom_notification_lo
 
 
 CREATE INDEX "idx_ecom_order_items_order" ON "public"."ecom_order_items" USING "btree" ("order_id");
+CREATE INDEX "idx_ecom_order_items_sku" ON "public"."ecom_order_items" USING "btree" ("sku");
 
 
 

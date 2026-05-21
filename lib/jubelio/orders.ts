@@ -86,7 +86,7 @@ function buildJubelioPayload(
   return {
     salesorder_id: 0,
     salesorder_no: "[auto]",
-    contact_id: 0, // 0 = generic customer (Pelanggan Umum) in Jubelio
+    contact_id: -1, // -1 = generic customer (Pelanggan Umum) in Jubelio
     customer_name: (order.customer_name as string) ?? "Pelanggan Umum",
     transaction_date: new Date().toISOString(),
     sub_total: subtotal,

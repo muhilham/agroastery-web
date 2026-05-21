@@ -122,16 +122,24 @@ export async function fetchJubelioItemBySku(
   }
 
   const data = await res.json();
-  const items: Array<{ item_id: number; item_code: string; item_name: string }> =
-    data.data ?? [];
+  const groups: JubelioProductGroup[] = data.data ?? [];
 
-  const match = items.find((i) => i.item_code === sku);
-  if (!match) {
-    console.warn(`[Jubelio] SKU not found: ${sku}`);
-    return null;
+  // Search inside each product group's variants array — the top-level group
+  // does not have item_code; it's on the variant level.
+  for (const group of groups) {
+    for (const variant of group.variants) {
+      if (variant.item_code === sku) {
+        return {
+          item_id: variant.item_id,
+          item_code: variant.item_code,
+          item_name: variant.item_name,
+        };
+      }
+    }
   }
 
-  return match;
+  console.warn(`[Jubelio] SKU not found: ${sku}`);
+  return null;
 }
 
 export type JubelioSalesOrderItem = {
