@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.5](https://github.com/muhilham/agroastery-web/compare/v0.4.4...v0.4.5) (2026-05-21)
+
+
+### Bug Fixes
+
+* **jubelio:** auto-discover bundles via api.jubelio.com/item-bundles ([1a1e4eb](https://github.com/muhilham/agroastery-web/commit/1a1e4ebb0a5d73b6beaebb42542469791f251eb0))
+
 ## [0.4.4](https://github.com/muhilham/agroastery-web/compare/v0.4.3...v0.4.4) (2026-05-21)
 
 
