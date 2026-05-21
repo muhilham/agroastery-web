@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.6](https://github.com/muhilham/agroastery-web/compare/v0.4.5...v0.4.6) (2026-05-21)
+
+
+### Bug Fixes
+
+* **build:** exclude scripts/ from TypeScript compilation ([6213566](https://github.com/muhilham/agroastery-web/commit/621356698e7c006171b0267c139ff0aa4c5ff2e2))
+
 ## [0.4.5](https://github.com/muhilham/agroastery-web/compare/v0.4.4...v0.4.5) (2026-05-21)
 
 
