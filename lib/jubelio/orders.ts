@@ -165,7 +165,10 @@ export async function createJubelioOrderFromEcom(orderId: string): Promise<void>
 
         const jubelioItem = await fetchJubelioItemBySku(sku);
         if (!jubelioItem) {
-          throw new Error(`SKU not found in Jubelio: ${sku}`);
+          throw new Error(
+            `SKU not found in Jubelio: ${sku}. ` +
+            `If it is a test product, add the SKU to UNSYNCABLE_SKUS in lib/jubelio/client.ts.`
+          );
         }
 
         return { sku, jubelioItem };

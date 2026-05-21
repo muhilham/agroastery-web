@@ -99,8 +99,12 @@ export type JubelioItemSearchResult = {
   item_name: string;
 };
 
+// SKUs that should never sync to Jubelio (test products, etc.)
+const UNSYNCABLE_SKUS = new Set(['test']);
+
 /**
  * Search Jubelio inventory by SKU and return the exact match.
+ * Tries regular items first, then falls back to bundle endpoint.
  * Returns null if not found or on API error (caller decides what to do).
  */
 export async function fetchJubelioItemBySku(
@@ -110,7 +114,15 @@ export async function fetchJubelioItemBySku(
     return { item_id: 999999, item_code: sku, item_name: `Mock ${sku}` };
   }
 
+  // 1. Skip known unsyncable SKUs (test products, etc.)
+  if (UNSYNCABLE_SKUS.has(sku)) {
+    console.warn(`[Jubelio] SKU "${sku}" is in unsyncable list; skipping sync.`);
+    return null;
+  }
+
   const token = await getToken();
+
+  // 2. Search regular inventory items
   const res = await fetch(
     `${JUBELIO_BASE}/inventory/items/?q=${encodeURIComponent(sku)}&pageSize=50`,
     { headers: { Authorization: token }, signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) }
@@ -124,11 +136,38 @@ export async function fetchJubelioItemBySku(
   const data = await res.json();
   const groups: JubelioProductGroup[] = data.data ?? [];
 
-  // Search inside each product group's variants array — the top-level group
-  // does not have item_code; it's on the variant level.
+  // Search inside each product group's variants array
   for (const group of groups) {
     for (const variant of group.variants) {
       if (variant.item_code === sku) {
+        return {
+          item_id: variant.item_id,
+          item_code: variant.item_code,
+          item_name: variant.item_name,
+        };
+      }
+    }
+  }
+
+  // 3. Fallback: search bundle endpoint (api.jubelio.com accepts the same api2 token)
+  console.log(`[Jubelio] SKU "${sku}" not found in regular items, trying bundle endpoint...`);
+  const bundleRes = await fetch(
+    `https://api.jubelio.com/inventory/item-bundles/?q=${encodeURIComponent(sku)}&pageSize=50`,
+    { headers: { Authorization: token }, signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) }
+  );
+
+  if (!bundleRes.ok) {
+    console.warn(`[Jubelio] Bundle lookup failed for ${sku}: ${bundleRes.status}`);
+    return null;
+  }
+
+  const bundleData = await bundleRes.json();
+  const bundleGroups: JubelioProductGroup[] = bundleData.data ?? [];
+
+  for (const group of bundleGroups) {
+    for (const variant of group.variants) {
+      if (variant.item_code === sku) {
+        console.log(`[Jubelio] SKU "${sku}" found in bundles (item_id=${variant.item_id}).`);
         return {
           item_id: variant.item_id,
           item_code: variant.item_code,
