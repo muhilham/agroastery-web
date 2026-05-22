@@ -12,6 +12,11 @@
   }
 }
 
+.rich-text {
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
 .rich-text p { margin-bottom: 0.75rem; }
 .rich-text ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 0.75rem; }
 .rich-text ol { list-style-type: decimal; padding-left: 1.5rem; margin-bottom: 0.75rem; }

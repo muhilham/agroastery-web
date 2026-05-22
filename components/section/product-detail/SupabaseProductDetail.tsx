@@ -139,7 +139,7 @@ const SupabaseProductDetail = ({ product }: Props) => {
           fallbackAlt={product.name}
         />
 
-        <section className="flex-1">
+        <section className="flex-1 min-w-0">
           <div className="px-4 tablet:px-6 mb-8 flex flex-col gap-1 mt-2">
             <div className="flex items-baseline gap-2">
               <span className="text-lg tablet:text-xl desktop:text-2xl font-extrabold text-secondary">
