@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.5.0](https://github.com/muhilham/agroastery-web/compare/v0.4.6...v0.5.0) (2026-05-22)
+
+
+### Features
+
+* add download QR button to payment page ([9a938a0](https://github.com/muhilham/agroastery-web/commit/9a938a00353ea30b72b783948bce7ae65ecf3799))
+
+
+### Bug Fixes
+
+* hide download QR button when QR is loading ([4d61dbb](https://github.com/muhilham/agroastery-web/commit/4d61dbbad8ef7e0334020cc135b3de7b2917b34f))
+* improve download QR button contrast on white card ([6193626](https://github.com/muhilham/agroastery-web/commit/6193626fe9ac07971bde55a04fed21990a18eba7))
+* **product-detail:** prevent long &nbsp;-filled descriptions from pushing sidebar off-screen ([d31f8f9](https://github.com/muhilham/agroastery-web/commit/d31f8f9f5db87865a689f0011fa846bd3f3a41cd))
+
+
+### Tests
+
+* add tests for download QR button ([6b006c9](https://github.com/muhilham/agroastery-web/commit/6b006c9a30c9ea8a0992c74951fc2ff726cb14cc))
+
+
+### Documentation
+
+* plan download qris button ([bd25a1b](https://github.com/muhilham/agroastery-web/commit/bd25a1bb809bafb659190516bb2232a89ce0c5f1))
+
 ## [0.4.6](https://github.com/muhilham/agroastery-web/compare/v0.4.5...v0.4.6) (2026-05-21)
 
 
