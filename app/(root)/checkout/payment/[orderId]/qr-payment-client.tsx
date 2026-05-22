@@ -231,15 +231,17 @@ export default function QrPaymentClient({
               </div>
             )}
 
-            <Button
-              onClick={handleDownload}
-              variant="outline"
-              size="sm"
-              className="mt-2"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Download QR
-            </Button>
+            {qrString && (
+              <Button
+                onClick={handleDownload}
+                variant="outline"
+                size="sm"
+                className="mt-2"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Download QR
+              </Button>
+            )}
 
             {!isExpired && (
               <CountdownRing secondsLeft={secondsLeft} totalSeconds={totalSeconds} />
