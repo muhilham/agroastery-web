@@ -16,7 +16,6 @@ import {
   clearSearch,
 } from "@/lib/stores/search";
 import { numberToIdr } from "@/lib/numberToIdr";
-import { SHOPEE, TOKOPEDIA } from "@/constant/resource-and-link";
 import { ShoppingCart, User, LogOut } from "lucide-react";
 import { useCart } from "@/lib/hooks/useCart";
 import { useAuth } from "@/lib/hooks/useAuth";
@@ -178,16 +177,6 @@ export default function Navigation() {
         )}
 
         <ul className="hidden desktop:flex text-primary font-normal py-16 space-x-4 text-base items-center">
-          <li>
-            <a href={TOKOPEDIA} target="_blank" className="hover:underline">
-              Tokopedia
-            </a>
-          </li>
-          <li>
-            <a href={SHOPEE} target="_blank" className="hover:underline">
-              Shopee
-            </a>
-          </li>
           <li>
             <a href="/katalog" className="hover:underline">
               Buy now
