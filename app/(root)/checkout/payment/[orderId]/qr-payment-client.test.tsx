@@ -113,3 +113,31 @@ describe("QrPaymentClient — simulate button", () => {
     });
   });
 });
+
+describe("QrPaymentClient — download button", () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["setInterval", "clearInterval", "Date"] });
+    mockFetch({ payment_status: "pending_payment" });
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  it("renders the download QR button", () => {
+    render(<QrPaymentClient {...defaultProps} />);
+
+    expect(
+      screen.getByRole("button", { name: /download qr/i })
+    ).toBeDefined();
+  });
+
+  it("clicking download QR does not throw when SVG is absent", () => {
+    render(<QrPaymentClient {...defaultProps} />);
+
+    const button = screen.getByRole("button", { name: /download qr/i });
+    expect(() => fireEvent.click(button)).not.toThrow();
+  });
+});
