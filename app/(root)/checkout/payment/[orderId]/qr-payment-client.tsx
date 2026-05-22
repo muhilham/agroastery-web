@@ -7,7 +7,7 @@ import Navigation from "@/components/navigation";
 import { Button } from "@/components/ui/button";
 import { numberToIdr } from "@/lib/numberToIdr";
 import { useCart } from "@/lib/hooks/useCart";
-import { RefreshCw, Loader2 } from "lucide-react";
+import { RefreshCw, Loader2, Download } from "lucide-react";
 
 interface Props {
   orderId: string;
@@ -82,6 +82,32 @@ export default function QrPaymentClient({
   const [refreshError, setRefreshError] = useState<string | null>(null);
   const [simulateError, setSimulateError] = useState<string | null>(null);
   const [isSimulating, setIsSimulating] = useState(false);
+  const qrRef = useRef<HTMLDivElement>(null);
+
+  const handleDownload = useCallback(() => {
+    const svg = qrRef.current?.querySelector("svg");
+    if (!svg) return;
+
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const img = new Image();
+    img.onload = () => {
+      canvas.width = img.width * 2; // retina scale for crisp image
+      canvas.height = img.height * 2;
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      const a = document.createElement("a");
+      a.download = `qris-${orderNumber}.png`;
+      a.href = canvas.toDataURL("image/png");
+      a.click();
+    };
+    img.src = `data:image/svg+xml;base64,${btoa(svgData)}`;
+  }, [orderNumber]);
 
   const handleSimulate = useCallback(async () => {
     setIsSimulating(true);
@@ -191,7 +217,7 @@ export default function QrPaymentClient({
 
           <div className="bg-white rounded-2xl p-6 shadow-sm flex flex-col items-center gap-4">
             {qrString ? (
-              <div className={`relative transition-opacity duration-300 ${isExpired ? "opacity-30" : "opacity-100"}`}>
+              <div ref={qrRef} className={`relative transition-opacity duration-300 ${isExpired ? "opacity-30" : "opacity-100"}`}>
                 <QRCode value={qrString} size={224} />
                 {isExpired && (
                   <div className="absolute inset-0 flex items-center justify-center bg-white/60">
@@ -204,6 +230,16 @@ export default function QrPaymentClient({
                 <Loader2 className="animate-spin w-8 h-8 text-gray-400" />
               </div>
             )}
+
+            <Button
+              onClick={handleDownload}
+              variant="outline"
+              size="sm"
+              className="mt-2"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Download QR
+            </Button>
 
             {!isExpired && (
               <CountdownRing secondsLeft={secondsLeft} totalSeconds={totalSeconds} />
