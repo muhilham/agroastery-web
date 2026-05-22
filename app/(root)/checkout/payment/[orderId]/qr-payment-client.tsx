@@ -236,7 +236,7 @@ export default function QrPaymentClient({
                 onClick={handleDownload}
                 variant="outline"
                 size="sm"
-                className="mt-2"
+                className="mt-2 !border-gray-400 !text-gray-700 hover:bg-gray-100"
               >
                 <Download className="w-4 h-4 mr-2" />
                 Download QR
