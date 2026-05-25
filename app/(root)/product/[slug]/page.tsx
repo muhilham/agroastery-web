@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 import { getProductBySlug } from "@/lib/supabase/queries/products";
 import { getMinPrice, getProductImageUrl } from "@/lib/supabase/queries/productUtils";
 import { numberToIdr } from "@/lib/numberToIdr";
 import type { SupabaseProduct } from "@/types/product";
 import SupabaseProductDetail from "@/components/section/product-detail/SupabaseProductDetail";
+
+const getCachedProductBySlug = cache(getProductBySlug);
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -13,7 +16,16 @@ type PageProps = {
 const DEFAULT_OG_IMAGE = "https://github.com/user-attachments/assets/79b22a6a-f341-40f6-ac74-27c6af123b7e";
 
 function stripHtml(html: string): string {
-  return html.replace(/<[^>]*>/g, "");
+  const text = html.replace(/<[^>]*>/g, "");
+  const entityMap: Record<string, string> = {
+    "&amp;": "&",
+    "&lt;": "<",
+    "&gt;": ">",
+    "&quot;": '"',
+    "&#39;": "'",
+    "&nbsp;": " ",
+  };
+  return text.replace(/&(?:amp|lt|gt|quot|#39|nbsp);/g, (match) => entityMap[match] ?? match);
 }
 
 function truncateText(text: string, maxLength: number): string {
@@ -47,7 +59,7 @@ function buildProductDescription(product: SupabaseProduct, price: number): strin
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata | null> {
   const { slug } = await params;
-  const product = await getProductBySlug(slug);
+  const product = await getCachedProductBySlug(slug);
 
   if (!product) {
     return null;
@@ -56,7 +68,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata 
   const minPrice = getMinPrice(product.product_variants);
   const description = buildProductDescription(product, minPrice);
   const imageUrl = getProductImageUrl(product);
-  const ogImage = imageUrl.startsWith("http") ? imageUrl : DEFAULT_OG_IMAGE;
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
+  const ogImage = imageUrl.startsWith("http") ? imageUrl : siteUrl ? `${siteUrl}${imageUrl}` : DEFAULT_OG_IMAGE;
 
   return {
     title: `${product.name} | Agroastery`,
@@ -82,7 +95,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata 
 
 export default async function Page({ params }: PageProps) {
   const { slug } = await params;
-  const product = await getProductBySlug(slug);
+  const product = await getCachedProductBySlug(slug);
 
   if (!product) {
     notFound();
