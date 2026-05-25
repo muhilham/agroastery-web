@@ -3,9 +3,11 @@ import {
   fetchJubelioItemBySku,
   createJubelioSalesOrder,
   convertJubelioToInvoicePayment,
+  fetchJubelioSalesOrderByRefNo,
   type JubelioSalesOrderPayload,
   type JubelioSalesOrderItem,
 } from "./client";
+import { sendJubelioSyncNotification } from "@/lib/telegram/notify";
 
 // Hardcoded per project convention (AG KEMANG - Packing)
 const JUBELIO_LOCATION_ID = -1;
@@ -182,8 +184,33 @@ export async function createJubelioOrderFromEcom(orderId: string): Promise<void>
     // Build payload
     const payload = buildJubelioPayload(order, items, jubelioItemMap);
 
-    // Create Sales Order
-    salesorderId = await createJubelioSalesOrder(payload);
+    // Create Sales Order (with recovery for race-condition duplicates)
+    try {
+      salesorderId = await createJubelioSalesOrder(payload);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      if (
+        message.includes("Pesanan sudah dipakai") ||
+        message.includes("sudah dipakai di transaksi lain")
+      ) {
+        console.warn(
+          `[Jubelio] SO creation failed due to duplicate ref_no for ${order.order_number}, searching for existing SO...`
+        );
+        const existingSo = await fetchJubelioSalesOrderByRefNo(
+          order.order_number as string
+        );
+        if (existingSo) {
+          console.log(
+            `[Jubelio] Found existing SO ${existingSo.salesorder_id} for ${order.order_number}, recovering...`
+          );
+          salesorderId = existingSo.salesorder_id;
+        } else {
+          throw err;
+        }
+      } else {
+        throw err;
+      }
+    }
 
     // Persist SO ID immediately (before invoice conversion) to prevent duplicate SOs on retry
     const { error: updateError } = await admin
@@ -214,4 +241,14 @@ export async function createJubelioOrderFromEcom(orderId: string): Promise<void>
   }
 
   console.log(`[Jubelio] Order ${existing?.order_number ?? orderId} synced (SO ${salesorderId}, INV ${invoiceNo})`);
+
+  // Notify Telegram with Jubelio link
+  sendJubelioSyncNotification({
+    orderId,
+    orderNumber: existing?.order_number ?? orderId,
+    jubelioSalesorderId: salesorderId,
+    jubelioInvoiceNo: invoiceNo,
+  }).catch((err) => {
+    console.error("[Jubelio] Failed to send Telegram sync notification:", err);
+  });
 }

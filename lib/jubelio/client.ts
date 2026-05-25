@@ -138,6 +138,7 @@ export async function fetchJubelioItemBySku(
 
   // Search inside each product group's variants array
   for (const group of groups) {
+    if (!group.variants) continue;
     for (const variant of group.variants) {
       if (variant.item_code === sku) {
         return {
@@ -165,6 +166,7 @@ export async function fetchJubelioItemBySku(
   const bundleGroups: JubelioProductGroup[] = bundleData.data ?? [];
 
   for (const group of bundleGroups) {
+    if (!group.variants) continue;
     for (const variant of group.variants) {
       if (variant.item_code === sku) {
         console.log(`[Jubelio] SKU "${sku}" found in bundles (item_id=${variant.item_id}).`);
@@ -178,6 +180,44 @@ export async function fetchJubelioItemBySku(
   }
 
   console.warn(`[Jubelio] SKU not found: ${sku}`);
+  return null;
+}
+
+/**
+ * Search Jubelio sales orders by ref_no and return the exact match.
+ */
+export async function fetchJubelioSalesOrderByRefNo(
+  refNo: string
+): Promise<{ salesorder_id: number; salesorder_no: string } | null> {
+  if (MOCK) {
+    return { salesorder_id: 999999, salesorder_no: "SO-TEST-001" };
+  }
+
+  const token = await getToken();
+
+  const res = await fetch(
+    `${JUBELIO_BASE}/sales/orders/?q=${encodeURIComponent(refNo)}&pageSize=50`,
+    { headers: { Authorization: token }, signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) }
+  );
+
+  if (!res.ok) {
+    console.error(`[Jubelio] SO lookup by ref_no failed for ${refNo}: ${res.status}`);
+    return null;
+  }
+
+  const data = await res.json();
+  const orders: Array<{ salesorder_id: number; salesorder_no: string; ref_no: string }> = data.data ?? [];
+
+  for (const order of orders) {
+    if (order.ref_no === refNo) {
+      return {
+        salesorder_id: order.salesorder_id,
+        salesorder_no: order.salesorder_no,
+      };
+    }
+  }
+
+  console.warn(`[Jubelio] SO not found by ref_no: ${refNo}`);
   return null;
 }
 

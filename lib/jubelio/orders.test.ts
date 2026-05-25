@@ -4,6 +4,10 @@ vi.mock('next/headers', () => ({
   cookies: vi.fn(() => ({ getAll: () => [], set: vi.fn() })),
 }));
 
+vi.mock('@/lib/telegram/notify', () => ({
+  sendJubelioSyncNotification: () => Promise.resolve(),
+}));
+
 const mockFrom = vi.fn();
 vi.mock('@/lib/supabase/server', () => ({
   createSupabaseAdminClient: () => ({ from: mockFrom }),
@@ -173,7 +177,16 @@ describe('createJubelioOrderFromEcom', () => {
       if (url.includes('/inventory/items/')) {
         return Promise.resolve({
           ok: true,
-          json: () => Promise.resolve({ data: [{ item_id: 123, item_code: 'PS-BK-001', item_name: 'Kopi Arabika' }] }),
+          json: () => Promise.resolve({
+            data: [{
+              item_group_id: 1,
+              item_name: 'Kopi',
+              variations: null,
+              item_category_id: 1,
+              thumbnail: null,
+              variants: [{ item_id: 123, item_code: 'PS-BK-001', item_name: 'Kopi Arabika', variation_values: null, sell_price: null, available_qty: null }],
+            }],
+          }),
         });
       }
       if (url.includes('/sales/orders/') && init?.method === 'POST') {
@@ -194,7 +207,7 @@ describe('createJubelioOrderFromEcom', () => {
     });
     expect(createSoCall).toBeDefined();
     const soPayload = JSON.parse((createSoCall![1] as RequestInit).body as string);
-    expect(soPayload.contact_id).toBe(0);
+    expect(soPayload.contact_id).toBe(-1);
     expect(soPayload.customer_name).toBe('Budi');
     expect(soPayload.ref_no).toBe('AGR-20260427-ABC');
     expect(soPayload.grand_total).toBe(255000);
@@ -246,7 +259,16 @@ describe('createJubelioOrderFromEcom', () => {
       if (url.includes('/inventory/items/')) {
         return Promise.resolve({
           ok: true,
-          json: () => Promise.resolve({ data: [{ item_id: 123, item_code: 'PS-BK-001', item_name: 'Kopi Arabika' }] }),
+          json: () => Promise.resolve({
+            data: [{
+              item_group_id: 1,
+              item_name: 'Kopi',
+              variations: null,
+              item_category_id: 1,
+              thumbnail: null,
+              variants: [{ item_id: 123, item_code: 'PS-BK-001', item_name: 'Kopi Arabika', variation_values: null, sell_price: null, available_qty: null }],
+            }],
+          }),
         });
       }
       if (url.includes('/sales/orders/')) {
@@ -288,5 +310,71 @@ describe('createJubelioOrderFromEcom', () => {
     });
 
     await expect(createJubelioOrderFromEcom('order-1')).rejects.toThrow('Order item missing SKU');
+  });
+
+  it('recovers from duplicate ref_no by finding existing SO and converting to invoice', async () => {
+    const { createJubelioOrderFromEcom } = await import('@/lib/jubelio/orders');
+    setupHappyPathMocks();
+
+    mockFetch.mockImplementation((url: string, init?: RequestInit) => {
+      if (url.includes('/login')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({ token: 'test-token' }) });
+      }
+      if (url.includes('/inventory/items/')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({
+            data: [{
+              item_group_id: 1,
+              item_name: 'Kopi',
+              variations: null,
+              item_category_id: 1,
+              thumbnail: null,
+              variants: [{ item_id: 123, item_code: 'PS-BK-001', item_name: 'Kopi Arabika', variation_values: null, sell_price: null, available_qty: null }],
+            }],
+          }),
+        });
+      }
+      if (url.includes('/sales/orders/') && init?.method === 'POST') {
+        return Promise.resolve({
+          ok: false,
+          status: 500,
+          json: () => Promise.resolve({ statusCode: 500, error: 'Internal Server Error', message: 'Pesanan sudah dipakai di transaksi lain. Pesanan: SO-000014975' }),
+          text: () => Promise.resolve('Pesanan sudah dipakai di transaksi lain. Pesanan: SO-000014975'),
+        });
+      }
+      if (url.includes('/sales/orders/') && (!init || init.method !== 'POST')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ data: [{ salesorder_id: 14975, salesorder_no: 'SO-000014975', ref_no: 'AGR-20260427-ABC' }] }),
+        });
+      }
+      if (url.includes('/create-invoice-payment')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({ invoice_no: 'INV-RECOVERED-001' }) });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+    });
+
+    await createJubelioOrderFromEcom('order-1');
+
+    // Should have searched for existing SO
+    const searchCall = mockFetch.mock.calls.find((call) => {
+      const [callUrl] = call;
+      return (callUrl as string).includes('/sales/orders/?q=');
+    });
+    expect(searchCall).toBeDefined();
+
+    // Should still convert to invoice
+    const invoiceCall = mockFetch.mock.calls.find((call) => {
+      const [callUrl] = call;
+      return (callUrl as string).includes('/create-invoice-payment');
+    });
+    expect(invoiceCall).toBeDefined();
+
+    // Should have persisted recovered SO ID
+    const ecomUpdateCalls = mockFrom.mock.calls.filter(
+      (call) => call[0] === 'ecom_orders'
+    );
+    expect(ecomUpdateCalls.length).toBeGreaterThanOrEqual(1);
   });
 });

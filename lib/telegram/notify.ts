@@ -205,3 +205,41 @@ export async function sendPaymentNotification(params: PaymentNotificationParams)
     console.error("Telegram payment notification failed:", sendError);
   }
 }
+
+// ─── Jubelio sync success ───────────────────────────────────────────────────────
+
+type JubelioSyncNotificationParams = {
+  orderId: string;
+  orderNumber: string;
+  jubelioSalesorderId: number;
+  jubelioInvoiceNo: string | null;
+};
+
+export async function sendJubelioSyncNotification(params: JubelioSyncNotificationParams): Promise<void> {
+  const jubelioUrl = `https://v2.jubelio.com/sales/transactions/orders/detail/${params.jubelioSalesorderId}`;
+
+  const text = [
+    `✅ *Pesanan Tersinkron ke Jubelio*`,
+    ``,
+    `*No. Pesanan (Web):* \`${params.orderNumber}\``,
+    `*No. Pesanan (Jubelio):* SO-${params.jubelioSalesorderId}`,
+    params.jubelioInvoiceNo ? `*No. Invoice:* ${params.jubelioInvoiceNo}` : null,
+    `*Link:* ${jubelioUrl}`,
+  ]
+    .filter((line) => line !== null)
+    .join("\n");
+
+  const sendError = await sendTelegramMessage(text);
+  const skipped = sendError?.includes("not configured");
+
+  await logNotification({
+    orderId: params.orderId,
+    orderNumber: params.orderNumber,
+    status: skipped ? "skipped" : sendError ? "failed" : "sent",
+    error: skipped ? undefined : sendError ?? undefined,
+  });
+
+  if (sendError && !skipped) {
+    console.error("Telegram Jubelio sync notification failed:", sendError);
+  }
+}

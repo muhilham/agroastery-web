@@ -23,8 +23,17 @@ describe('Jubelio Client', () => {
           ok: true,
           json: () => Promise.resolve({
             data: [
-              { item_id: 100, item_code: 'PS-BK-001', item_name: 'Kopi Arabika' },
-              { item_id: 101, item_code: 'PS-BK-002', item_name: 'Kopi Robusta' },
+              {
+                item_group_id: 1,
+                item_name: 'Kopi',
+                variations: null,
+                item_category_id: 1,
+                thumbnail: null,
+                variants: [
+                  { item_id: 100, item_code: 'PS-BK-001', item_name: 'Kopi Arabika', variation_values: null, sell_price: null, available_qty: null },
+                  { item_id: 101, item_code: 'PS-BK-002', item_name: 'Kopi Robusta', variation_values: null, sell_price: null, available_qty: null },
+                ],
+              },
             ],
           }),
         });
@@ -42,7 +51,14 @@ describe('Jubelio Client', () => {
         }
         return Promise.resolve({
           ok: true,
-          json: () => Promise.resolve({ data: [{ item_id: 1, item_code: 'OTHER', item_name: 'Other' }] }),
+          json: () => Promise.resolve({ data: [{
+            item_group_id: 1,
+            item_name: 'Other',
+            variations: null,
+            item_category_id: 1,
+            thumbnail: null,
+            variants: [{ item_id: 1, item_code: 'OTHER', item_name: 'Other', variation_values: null, sell_price: null, available_qty: null }],
+          }] }),
         });
       });
 
