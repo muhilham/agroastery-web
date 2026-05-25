@@ -45,12 +45,12 @@ function buildProductDescription(product: SupabaseProduct, price: number): strin
   return `Beli ${product.name} di Agroastery — ${priceStr}`;
 }
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: PageProps): Promise<Metadata | null> {
   const { slug } = await params;
   const product = await getProductBySlug(slug);
 
   if (!product) {
-    return {};
+    return null;
   }
 
   const minPrice = getMinPrice(product.product_variants);
@@ -75,7 +75,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       card: "summary_large_image",
       title: `${product.name} | Agroastery`,
       description,
-      images: [ogImage],
+      images: [{ url: ogImage, alt: product.name }],
     },
   };
 }
