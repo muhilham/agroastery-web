@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/muhilham/agroastery-web/compare/v0.5.0...v0.6.0) (2026-05-25)
+
+
+### Features
+
+* **jubelio:** recover from duplicate SO race condition and send Telegram link ([a40b908](https://github.com/muhilham/agroastery-web/commit/a40b908419bff3cec5f41593bd2d6099346b057d))
+
 ## [0.5.0](https://github.com/muhilham/agroastery-web/compare/v0.4.6...v0.5.0) (2026-05-22)
 
 
