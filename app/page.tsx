@@ -28,6 +28,20 @@ export default function Home() {
                   mission is to bring you the perfect cup of coffee every time.
                 </p>
               </div>
+              <div className="flex items-center">
+                <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#f5ebc9]/10 border border-[#f5ebc9]/30 rounded-full text-sm font-medium text-[#f5ebc9]">
+                  <svg
+                    className="w-4 h-4 text-[#f5ebc9]"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    stroke="currentColor"
+                    strokeWidth="0"
+                  >
+                    <path d="M12 2l2.4 7.2H22l-6 4.4 2.3 7.4L12 16.8 5.7 21l2.3-7.4-6-4.4h7.6z" />
+                  </svg>
+                  Up to 11% cheaper than Shopee/Tokopedia
+                </span>
+              </div>
               <a
                 href="/katalog"
                 className="flex items-center justify-center w-36 h-10 px-4 border border-[#f5ebc9] rounded-full text-sm tracking-wider transition-all duration-700 hover:bg-[#f5ebc9] hover:text-neutral-900"
