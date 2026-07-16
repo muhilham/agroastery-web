@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.7.0](https://github.com/muhilham/agroastery-web/compare/v0.6.0...v0.7.0) (2026-07-16)
+
+
+### Features
+
+* **homepage:** add price comparison badge above Buy Now button ([97396c0](https://github.com/muhilham/agroastery-web/commit/97396c046948b8d3712bb570bf693f8ea4271b45))
+* **product:** add OpenGraph metadata for link sharing ([011abc6](https://github.com/muhilham/agroastery-web/commit/011abc6bf54ed4d5fc15bfc419d901677948db1e))
+
+
+### Bug Fixes
+
+* **links:** update homepage coffee product links to correct paths ([296f9e3](https://github.com/muhilham/agroastery-web/commit/296f9e3f122ac7abcda394208ed8247e01e1bf7c))
+* **product:** improve OG metadata quality ([44fea1f](https://github.com/muhilham/agroastery-web/commit/44fea1f65b5cff080f9a35c9ca9f329b7b493cce))
+* **product:** spec compliance fixes for OG metadata ([72cface](https://github.com/muhilham/agroastery-web/commit/72cface6e9a3d21b905d848af52be1872e758351))
+
 ## [0.6.0](https://github.com/muhilham/agroastery-web/compare/v0.5.0...v0.6.0) (2026-05-25)
 
 
