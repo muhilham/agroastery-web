@@ -13,16 +13,18 @@ export default async function CheckoutSuccessPage({ searchParams }: PageProps) {
 
   let orderNumber: string | null = null;
   let customerEmail: string | null = null;
+  let isPickup = false;
 
   if (orderId) {
     const admin = createSupabaseAdminClient();
     const { data } = await admin
       .from("ecom_orders")
-      .select("order_number, customer_email")
+      .select("order_number, customer_email, shipping_courier")
       .eq("id", orderId)
       .single();
     orderNumber = (data?.order_number as string) ?? null;
     customerEmail = (data?.customer_email as string) ?? null;
+    isPickup = data?.shipping_courier === "pickup";
   }
 
   return (
@@ -82,7 +84,7 @@ export default async function CheckoutSuccessPage({ searchParams }: PageProps) {
               <Link href={`/track/${orderId}`}>
                 <Button className="w-full h-12 gap-2">
                   <MapPin className="w-4 h-4" />
-                  Track My Order
+                  {isPickup ? "Lihat Info Pengambilan" : "Track My Order"}
                 </Button>
               </Link>
             )}
@@ -94,7 +96,7 @@ export default async function CheckoutSuccessPage({ searchParams }: PageProps) {
           </div>
 
           <p className="text-[10px] uppercase tracking-widest text-primary/20 mt-8">
-            Your coffee is on its way
+            {isPickup ? "Pesanan siap diambil setelah diproses" : "Your coffee is on its way"}
           </p>
 
         </div>
