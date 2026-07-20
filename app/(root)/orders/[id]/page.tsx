@@ -12,6 +12,8 @@ const STATUS_LABELS: Record<string, string> = {
   processing: "Diproses",
   shipped: "Dikirim",
   delivered: "Diterima",
+  ready_for_pickup: "Siap Diambil",
+  completed: "Selesai",
   cancelled: "Dibatalkan",
   refunded: "Dikembalikan",
 };
@@ -22,6 +24,8 @@ const STATUS_COLORS: Record<string, string> = {
   processing: "text-blue-400 bg-blue-400/10",
   shipped: "text-cyan-400 bg-cyan-400/10",
   delivered: "text-green-500 bg-green-500/10",
+  ready_for_pickup: "text-purple-400 bg-purple-400/10",
+  completed: "text-green-500 bg-green-500/10",
   cancelled: "text-red-400 bg-red-400/10",
   refunded: "text-orange-400 bg-orange-400/10",
 };
@@ -116,7 +120,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
         </div>
 
         {/* Shipping address */}
-        {shippingAddress && (
+        {shippingAddress && order.shipping_courier !== "pickup" && (
           <div className="bg-[#1a1a1a] border border-white/10 rounded-xl p-4 mb-4">
             <h2 className="text-primary font-medium mb-2">Alamat Pengiriman</h2>
             <p className="text-secondary text-sm">{shippingAddress.recipient_name}</p>
@@ -129,40 +133,48 @@ export default async function OrderDetailPage({ params }: PageProps) {
         )}
 
         {/* Shipping details */}
-        {(order.shipping_courier ||
-          order.tracking_number ||
-          order.biteship_order_id) && (
+        {order.shipping_courier === "pickup" ? (
           <div className="bg-[#1a1a1a] border border-white/10 rounded-xl p-4 mb-4">
-            <h2 className="text-primary font-medium mb-2">Info Pengiriman</h2>
-            {order.shipping_courier && (
-              <p className="text-secondary text-sm">
-                Kurir: <span className="text-primary">{order.shipping_courier as string} {order.shipping_service as string}</span>
-              </p>
-            )}
-            {order.shipping_etd && (
-              <p className="text-secondary text-sm">
-                Estimasi: <span className="text-primary">{order.shipping_etd as string}</span>
-              </p>
-            )}
-            {order.tracking_number && (
-              <p className="text-secondary text-sm">
-                No. Resi: <span className="text-primary font-mono break-all">{order.tracking_number as string}</span>
-              </p>
-            )}
-            {order.tracking_number && (
-              <div className="pt-3 mt-3 border-t border-white/10">
-                <Link
-                  href={`/track/${id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-sm text-cyan-400 hover:text-cyan-300 transition-colors"
-                >
-                  Lacak Pesanan
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </Link>
-              </div>
+            <h2 className="text-primary font-medium mb-2">Ambil Sendiri</h2>
+            <p className="text-secondary text-sm">{shippingAddress?.address_line}</p>
+            {shippingAddress?.hours && (
+              <p className="text-secondary text-sm">{shippingAddress.hours}</p>
             )}
           </div>
+        ) : (
+          (order.shipping_courier || order.tracking_number || order.biteship_order_id) && (
+            <div className="bg-[#1a1a1a] border border-white/10 rounded-xl p-4 mb-4">
+              <h2 className="text-primary font-medium mb-2">Info Pengiriman</h2>
+              {order.shipping_courier && (
+                <p className="text-secondary text-sm">
+                  Kurir: <span className="text-primary">{order.shipping_courier as string} {order.shipping_service as string}</span>
+                </p>
+              )}
+              {order.shipping_etd && (
+                <p className="text-secondary text-sm">
+                  Estimasi: <span className="text-primary">{order.shipping_etd as string}</span>
+                </p>
+              )}
+              {order.tracking_number && (
+                <p className="text-secondary text-sm">
+                  No. Resi: <span className="text-primary font-mono break-all">{order.tracking_number as string}</span>
+                </p>
+              )}
+              {order.tracking_number && (
+                <div className="pt-3 mt-3 border-t border-white/10">
+                  <Link
+                    href={`/track/${id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-sm text-cyan-400 hover:text-cyan-300 transition-colors"
+                  >
+                    Lacak Pesanan
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+              )}
+            </div>
+          )
         )}
 
         {/* Totals */}
