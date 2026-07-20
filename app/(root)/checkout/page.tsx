@@ -78,6 +78,7 @@ export default function CheckoutPage() {
       lat: undefined,
       lng: undefined,
       notes: "",
+      fulfillmentMethod: "delivery",
     },
     mode: "onChange",
   });
@@ -92,6 +93,22 @@ export default function CheckoutPage() {
     calculateShipping,
     resetShipping,
   } = useShippingCalculator();
+
+  const fulfillmentMethod = useWatch({ control: form.control, name: "fulfillmentMethod" });
+  const pickupAvailable = Boolean(
+    process.env.NEXT_PUBLIC_PICKUP_ADDRESS && process.env.NEXT_PUBLIC_PICKUP_HOURS
+  );
+
+  const handleFulfillmentChange = useCallback(
+    (method: "delivery" | "pickup") => {
+      form.setValue("fulfillmentMethod", method, { shouldValidate: true });
+      if (method === "pickup") {
+        setSelectedShipping(null);
+        resetShipping();
+      }
+    },
+    [form, setSelectedShipping, resetShipping]
+  );
 
   const watchedPostalCode = useWatch({ control: form.control, name: "postalCode" });
   const debouncedPostalCode = useDebounce(watchedPostalCode, 800);
@@ -197,7 +214,7 @@ export default function CheckoutPage() {
 
     const postalValid = z.string().length(5).safeParse(debouncedPostalCode);
     if (postalValid.success) {
-      handleCalculateShippingByPostal(debouncedPostalCode);
+      handleCalculateShippingByPostal(postalValid.data);
     } else {
       resetShipping();
     }
@@ -249,7 +266,7 @@ export default function CheckoutPage() {
       console.log("[Checkout] Cart is empty, returning");
       return;
     }
-    if (!selectedShipping) {
+    if (values.fulfillmentMethod === "delivery" && !selectedShipping) {
       console.log("[Checkout] No shipping selected");
       setSubmitError("Pilih opsi pengiriman terlebih dahulu");
       return;
@@ -270,18 +287,27 @@ export default function CheckoutPage() {
           customerName: values.fullName,
           customerEmail: values.email || undefined,
           customerPhone: values.phone,
-          shippingAddress: {
-            recipientName: values.fullName,
-            phone: values.phone,
-            addressLine: values.address,
-            postalCode: values.postalCode || undefined,
-            latitude: values.lat ?? undefined,
-            longitude: values.lng ?? undefined,
-          },
-          shippingCourier: selectedShipping?.raw?.courier_code ?? undefined,
-          shippingService: selectedShipping?.raw?.courier_service_code ?? undefined,
-          shippingCost,
-          shippingEtd: selectedShipping?.eta ?? undefined,
+          fulfillmentMethod: values.fulfillmentMethod,
+          shippingAddress:
+            values.fulfillmentMethod === "pickup"
+              ? {
+                  recipientName: values.fullName,
+                  phone: values.phone,
+                  addressLine: process.env.NEXT_PUBLIC_PICKUP_ADDRESS ?? "",
+                  hours: process.env.NEXT_PUBLIC_PICKUP_HOURS ?? undefined,
+                }
+              : {
+                  recipientName: values.fullName,
+                  phone: values.phone,
+                  addressLine: values.address,
+                  postalCode: values.postalCode || undefined,
+                  latitude: values.lat ?? undefined,
+                  longitude: values.lng ?? undefined,
+                },
+          shippingCourier: values.fulfillmentMethod === "pickup" ? "pickup" : (selectedShipping?.raw?.courier_code ?? undefined),
+          shippingService: values.fulfillmentMethod === "pickup" ? undefined : (selectedShipping?.raw?.courier_service_code ?? undefined),
+          shippingCost: values.fulfillmentMethod === "pickup" ? 0 : shippingCost,
+          shippingEtd: values.fulfillmentMethod === "pickup" ? undefined : (selectedShipping?.eta ?? undefined),
           notes: values.notes || undefined,
           idempotencyKey: idempotencyKey.current,
         }),
@@ -411,7 +437,50 @@ export default function CheckoutPage() {
         {/* Form */}
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {pickupAvailable && (
+              <div className="bg-[#1a1a1a] rounded-xl border border-white/10 p-4 space-y-3">
+                <h2 className="text-primary font-semibold tracking-widest uppercase text-xs">
+                  Metode Pengambilan
+                </h2>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleFulfillmentChange("delivery")}
+                    className={`rounded-lg border p-3 text-sm font-medium transition-colors ${
+                      fulfillmentMethod === "delivery"
+                        ? "border-primary/40 bg-primary/10 text-primary"
+                        : "border-white/10 text-secondary"
+                    }`}
+                  >
+                    Kirim
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleFulfillmentChange("pickup")}
+                    className={`rounded-lg border p-3 text-sm font-medium transition-colors ${
+                      fulfillmentMethod === "pickup"
+                        ? "border-primary/40 bg-primary/10 text-primary"
+                        : "border-white/10 text-secondary"
+                    }`}
+                  >
+                    Ambil Sendiri
+                  </button>
+                </div>
+                {fulfillmentMethod === "pickup" && (
+                  <div className="rounded-xl bg-[#242424] border border-white/10 px-4 py-3 space-y-1">
+                    <p className="text-[#CCC4A9] text-sm font-medium">
+                      {process.env.NEXT_PUBLIC_PICKUP_ADDRESS}
+                    </p>
+                    <p className="text-[#CCC4A9]/60 text-xs">
+                      {process.env.NEXT_PUBLIC_PICKUP_HOURS}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Step 1: Alamat Pengiriman */}
+            {fulfillmentMethod === "delivery" && (
             <div className="bg-[#1a1a1a] rounded-xl border border-white/10 p-4 space-y-4">
               <div className="flex items-center gap-3">
                 <span className="w-5 h-5 rounded-full bg-primary/20 border border-primary/30 text-primary text-[10px] font-bold flex items-center justify-center shrink-0">1</span>
@@ -591,6 +660,7 @@ export default function CheckoutPage() {
                 error={shippingError}
               />
             </div>
+            )}
 
             {/* Step 2: Data Penerima */}
             <div className="bg-[#1a1a1a] rounded-xl border border-white/10 p-4 space-y-4">
@@ -741,7 +811,11 @@ export default function CheckoutPage() {
           <div className="flex justify-between text-sm text-secondary mb-2">
             <span>Pengiriman</span>
             <span className="text-primary">
-              {selectedShipping ? numberToIdr({ nominal: shippingCost }) : "-"}
+              {fulfillmentMethod === "pickup"
+                ? "Gratis (Ambil Sendiri)"
+                : selectedShipping
+                ? numberToIdr({ nominal: shippingCost })
+                : "-"}
             </span>
           </div>
           <div className="flex justify-between font-bold text-primary mb-3">
@@ -760,7 +834,7 @@ export default function CheckoutPage() {
               console.log("[Checkout] cartCount:", cartCount);
               
               // Check if button should be disabled
-              const isDisabled = isSubmitting || isLoadingShipping || !selectedShipping || cartCount === 0;
+              const isDisabled = isSubmitting || cartCount === 0 || (fulfillmentMethod === "delivery" && (isLoadingShipping || !selectedShipping));
               console.log("[Checkout] Button disabled?", isDisabled);
               
               if (!isDisabled) {
@@ -771,7 +845,7 @@ export default function CheckoutPage() {
               }
             }}
             className="w-full h-12"
-            disabled={isSubmitting || isLoadingShipping || !selectedShipping || cartCount === 0}
+            disabled={isSubmitting || cartCount === 0 || (fulfillmentMethod === "delivery" && (isLoadingShipping || !selectedShipping))}
           >
             {isSubmitting ? (
               <><LoaderCircle className="animate-spin w-4 h-4 mr-2" /> Memproses...</>

@@ -33,4 +33,5 @@ export const loggedInFormSchema = baseSchema
 // TForm is derived from the permissive schema so it works for both guest and
 // logged-in users (email?: string | null | undefined). The guest resolver enforces
 // email is required at runtime via Zod — not via the TypeScript type.
-export type TForm = z.infer<typeof loggedInFormSchema>;
+// Use z.input to get the pre-default type so react-hook-form's resolver types align.
+export type TForm = z.input<typeof loggedInFormSchema>;
