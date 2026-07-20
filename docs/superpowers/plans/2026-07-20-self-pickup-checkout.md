@@ -224,18 +224,19 @@ git commit -m "feat(checkout): extract shipping-cost guard into testable functio
 
 ### Task 3: Server request schema + wire the guard + pickup fields in `ecom_orders` insert
 
+**Why a separate schema file:** `app/api/checkout/route.ts` imports `@/lib/supabase/server` (directly) and `@/lib/supabase/queries/discounts` (which also imports `@/lib/supabase/server`). That module imports `next/headers` at the top level. `vitest.setup.ts` only sets up `@testing-library/jest-dom` — there is no global mock for `next/headers` or `@/lib/supabase/server`. Importing `route.ts` unmocked in a test therefore executes the real `next/headers` import in the `jsdom` test environment and throws before any test body runs. Moving the Zod schemas into their own file with zero server-side imports lets the test import them directly with no mocks needed — the same fix the reviewer suggested.
+
 **Files:**
-- Modify: `app/api/checkout/route.ts:14-32` (schemas), `:184-190` (guard), `:259-266` (insert)
+- Create: `app/api/checkout/checkoutSchema.ts`
+- Modify: `app/api/checkout/route.ts` (imports, guard, insert)
 - Test: `app/api/checkout/checkoutSchema.test.ts`
 
 - [ ] **Step 1: Write the failing test**
 
-`CheckoutSchema` isn't exported yet, so this test also drives that change.
-
 ```ts
 // app/api/checkout/checkoutSchema.test.ts
 import { describe, it, expect } from "vitest";
-import { CheckoutSchema } from "./route";
+import { CheckoutSchema } from "./checkoutSchema";
 
 const baseItems = [{ variantId: "11111111-1111-1111-1111-111111111111", quantity: 1 }];
 
@@ -286,13 +287,19 @@ describe("CheckoutSchema", () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run app/api/checkout/checkoutSchema.test.ts`
-Expected: FAIL — `CheckoutSchema` is not exported from `route.ts`, and `hours` is not a recognized field.
+Expected: FAIL with `Cannot find module './checkoutSchema'` (this file doesn't need the crypto polyfill or `pnpm test` — it has no dependency on `crypto.randomUUID`, so `npx vitest run` against this specific path is safe and faster than running the whole suite).
 
-- [ ] **Step 3: Implement — update schemas (route.ts:14-32)**
-
-Replace lines 14-32 of `app/api/checkout/route.ts`:
+- [ ] **Step 3: Create the extracted schema file**
 
 ```ts
+// app/api/checkout/checkoutSchema.ts
+import { z } from "zod";
+
+const CheckoutItemSchema = z.object({
+  variantId: z.string().uuid(),
+  quantity: z.number().int().positive().max(100),
+});
+
 const ShippingAddressSchema = z.object({
   recipientName: z.string().min(1),
   phone: z.string().min(1),
@@ -319,17 +326,75 @@ export const CheckoutSchema = z.object({
 });
 ```
 
-(Only two changes here: `hours` added to `ShippingAddressSchema`, `fulfillmentMethod` added to `CheckoutSchema`, and `const CheckoutSchema` → `export const CheckoutSchema`.)
+- [ ] **Step 4: Run test to verify it passes**
 
-- [ ] **Step 4: Implement — wire the guard (route.ts:184-190)**
+Run: `npx vitest run app/api/checkout/checkoutSchema.test.ts`
+Expected: all 3 tests PASS.
 
-Add the import at the top of the file (near the other `@/lib/...` imports):
+- [ ] **Step 5: Wire `route.ts` to import the extracted schema**
+
+Delete this whole block from the top of `app/api/checkout/route.ts` (everything between the imports and `const MAX_ORDER_NUMBER_RETRIES`):
 
 ```ts
-import { isShippingCostInvalid } from "@/lib/checkout/validateShippingCost";
+const CheckoutItemSchema = z.object({
+  variantId: z.string().uuid(),
+  quantity: z.number().int().positive().max(100),
+});
+
+const ShippingAddressSchema = z.object({
+  recipientName: z.string().min(1),
+  phone: z.string().min(1),
+  addressLine: z.string().min(1),
+  postalCode: z.string().optional(),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
+});
+
+const CheckoutSchema = z.object({
+  items: z.array(CheckoutItemSchema).min(1).max(50),
+  customerName: z.string().min(1),
+  customerEmail: z.string().email().optional().or(z.literal("")),
+  customerPhone: z.string().min(1),
+  shippingAddress: ShippingAddressSchema,
+  shippingCourier: z.string().optional(),
+  shippingService: z.string().optional(),
+  shippingCost: z.number().int().nonnegative().default(0),
+  shippingEtd: z.string().optional(),
+  notes: z.string().max(500).optional(),
+  idempotencyKey: z.string().uuid().optional(),
+});
 ```
 
-Replace lines 184-190:
+Replace the file's import block (the 7 lines at the very top) with:
+
+```ts
+import { NextRequest, NextResponse } from "next/server";
+import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
+import { createQrisPaymentSession } from "@/lib/pivot/client";
+import { sendOrderNotification } from "@/lib/telegram/notify";
+import { getActiveGlobalDiscounts, getActiveProductDiscounts } from "@/lib/supabase/queries/discounts";
+import { calculateDiscountedPrice } from "@/lib/utils/discount";
+import { isShippingCostInvalid } from "@/lib/checkout/validateShippingCost";
+import { CheckoutSchema } from "./checkoutSchema";
+```
+
+(The `import { z } from "zod";` line is dropped — after this change, nothing else in `route.ts` calls `z.` directly. If `tsc` reports an unused-import error here, that confirms it's safe to remove; if anything else in the file does use `z.` directly, keep the import.)
+
+- [ ] **Step 6: Wire the guard**
+
+Find the existing block right after the `totalShipWeight` calculation:
+
+```ts
+    // Reject if shipping cost is 0 but items need shipping and a courier is specified
+    if (data.shippingCost === 0 && data.shippingCourier && totalShipWeight > 0) {
+      return NextResponse.json(
+        { error: "Ongkos kirim tidak valid", code: "INVALID_SHIPPING_COST" },
+        { status: 400 }
+      );
+    }
+```
+
+Replace it with:
 
 ```ts
     // Reject if shipping cost is 0 but items need shipping and a courier is specified.
@@ -349,9 +414,22 @@ Replace lines 184-190:
     }
 ```
 
-- [ ] **Step 5: Implement — carry `hours` into the DB insert (route.ts:259-266)**
+- [ ] **Step 7: Carry `hours` into the DB insert**
 
-Replace lines 259-266 (the `shipping_address` object inside the `.insert({...})` call):
+Find the `shipping_address` object inside the `.insert({...})` call for `ecom_orders`:
+
+```ts
+          shipping_address: {
+            recipient_name: data.shippingAddress.recipientName,
+            phone: data.shippingAddress.phone,
+            address_line: data.shippingAddress.addressLine,
+            postal_code: data.shippingAddress.postalCode ?? null,
+            latitude: data.shippingAddress.latitude ?? null,
+            longitude: data.shippingAddress.longitude ?? null,
+          },
+```
+
+Replace it with:
 
 ```ts
           shipping_address: {
@@ -365,20 +443,20 @@ Replace lines 259-266 (the `shipping_address` object inside the `.insert({...})`
           },
 ```
 
-- [ ] **Step 6: Run test to verify it passes**
+- [ ] **Step 8: Type-check**
 
-Run: `npx vitest run app/api/checkout/checkoutSchema.test.ts`
-Expected: all 3 tests PASS.
+Run: `npx tsc --noEmit`
+Expected: no errors. This also confirms whether removing `import { z } from "zod";` in Step 5 was safe — if `tsc` complains about a missing `z` reference elsewhere in `route.ts`, restore that import instead of leaving it removed.
 
-- [ ] **Step 7: Run the full test suite to check for regressions**
+- [ ] **Step 9: Run the full test suite to check for regressions**
 
-Run: `npx vitest run`
-Expected: all tests PASS (in particular, `checkoutSchemas.test.ts` from Task 1, and any other test importing `app/api/checkout/route.ts`, if one exists — confirm none newly fail).
+Run: `pnpm test`
+Expected: all tests PASS, including `checkoutSchemas.test.ts` (Task 1) and `checkoutSchema.test.ts` (this task). Use `pnpm test` here, not `npx vitest run` — per this repo's convention, `pnpm test` runs through `vitest-runner.js`, which sets up the `crypto` polyfill other existing tests in the suite depend on. `vitest-runner.js` doesn't forward CLI args, so it can only run the whole suite, not a single file — that's why the scoped TDD steps in this plan use `npx vitest run <path>` instead, which is fine for the specific new test files added here since none of them touch `crypto`.
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 10: Commit**
 
 ```bash
-git add app/api/checkout/route.ts app/api/checkout/checkoutSchema.test.ts
+git add app/api/checkout/checkoutSchema.ts app/api/checkout/checkoutSchema.test.ts app/api/checkout/route.ts
 git commit -m "feat(checkout): accept pickup orders in checkout API request schema"
 ```
 
@@ -389,7 +467,7 @@ git commit -m "feat(checkout): accept pickup orders in checkout API request sche
 **Files:**
 - Modify: `app/(root)/checkout/page.tsx`
 
-No automated test for this task — this codebase has no component-level tests for the checkout page (only `qr-payment-client.test.tsx` for the payment sub-page and `TrackingTimeline.test.tsx` for an isolated child component exist). Verify manually per Task 9.
+No automated test for this task — this codebase has no component-level tests for the checkout page (only `qr-payment-client.test.tsx` for the payment sub-page and `TrackingTimeline.test.tsx` for an isolated child component exist). Verify manually per Task 11.
 
 - [ ] **Step 1: Add `fulfillmentMethod` to form defaults and watch it**
 
@@ -412,6 +490,8 @@ In the `useForm<TForm>({ defaultValues: {...} })` call (around line 68), add the
     mode: "onChange",
   });
 ```
+
+`fulfillmentMethod` needs no manual type update anywhere: `TForm` (from `checkoutSchemas.ts`) is `z.infer<typeof loggedInFormSchema>`, and Task 1 already added `fulfillmentMethod: z.enum(["delivery", "pickup"]).default("delivery")` to that schema — so `TForm` already includes it, and `useForm<TForm>` / `useWatch<TForm>` below both pick it up automatically.
 
 Immediately after the `useShippingCalculator()` destructure (around line 92), add:
 
@@ -660,7 +740,7 @@ git commit -m "feat(checkout): add self-pickup toggle to checkout page"
 **Files:**
 - Modify: `app/(root)/orders/[id]/page.tsx`
 
-No automated test — this is a server component with no existing test coverage in this repo; verify manually per Task 9.
+No automated test — this is a server component with no existing test coverage in this repo; verify manually per Task 11.
 
 - [ ] **Step 1: Add the two new status entries**
 
@@ -825,7 +905,7 @@ git commit -m "feat(orders): show pickup location on order detail page"
 **Files:**
 - Modify: `app/(root)/track/[orderId]/page.tsx`
 
-No automated test — same rationale as Task 5; verify manually per Task 9.
+No automated test — same rationale as Task 5; verify manually per Task 11.
 
 - [ ] **Step 1: Add the same two status entries**
 
@@ -1112,8 +1192,8 @@ with:
 
 - [ ] **Step 6: Run the full test suite to check for regressions**
 
-Run: `npx vitest run`
-Expected: all tests PASS.
+Run: `pnpm test`
+Expected: all tests PASS. (Use `pnpm test`, not `npx vitest run`, for whole-suite checks — see the note in Task 3 Step 9 on why: `vitest-runner.js` provides the `crypto` polyfill other tests need and can't target a single file.)
 
 - [ ] **Step 7: Commit**
 
@@ -1298,7 +1378,7 @@ git commit -m "docs(env): document self-pickup env vars"
 
 - [ ] **Step 1: Run the full automated test suite**
 
-Run: `npx vitest run`
+Run: `pnpm test`
 Expected: all tests PASS, including all new tests from Tasks 1, 2, 3, and 7.
 
 - [ ] **Step 2: Type-check the whole project**
