@@ -60,3 +60,43 @@ describe("loggedInFormSchema", () => {
     expect(result.success).toBe(true);
   });
 });
+
+describe("fulfillmentMethod", () => {
+  it("defaults to delivery and still requires address/postalCode", () => {
+    const { fullName, phone } = validBase;
+    const result = loggedInFormSchema.safeParse({ fullName, phone });
+    expect(result.success).toBe(false);
+  });
+
+  it("passes in pickup mode without address or postalCode", () => {
+    const result = loggedInFormSchema.safeParse({
+      fullName: "Budi Santoso",
+      phone: "081234567890",
+      fulfillmentMethod: "pickup",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("fails in delivery mode without address", () => {
+    const result = loggedInFormSchema.safeParse({
+      fullName: "Budi Santoso",
+      phone: "081234567890",
+      fulfillmentMethod: "delivery",
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const addressErrors = result.error.errors.filter((e) => e.path.includes("address"));
+      expect(addressErrors.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("passes in delivery mode with valid address and postalCode", () => {
+    const result = loggedInFormSchema.safeParse({ ...validBase, fulfillmentMethod: "delivery" });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects an unknown fulfillmentMethod value", () => {
+    const result = loggedInFormSchema.safeParse({ ...validBase, fulfillmentMethod: "teleport" });
+    expect(result.success).toBe(false);
+  });
+});

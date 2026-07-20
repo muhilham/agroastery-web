@@ -11,6 +11,7 @@ import {
   Text,
 } from "@react-email/components";
 import * as React from "react";
+import { getShippingLabel, getShippingHeading, getTrackingCtaLabel } from "./shippingLabel";
 
 interface OrderItem {
   product_name: string;
@@ -74,10 +75,8 @@ export function OrderConfirmation({
   shippingAddress,
   trackingUrl,
 }: OrderConfirmationProps) {
-  const courierLabel =
-    shippingCourier && shippingService
-      ? `${shippingCourier.toUpperCase()} ${shippingService}`
-      : shippingCourier?.toUpperCase() ?? "Courier";
+  const courierLabel = getShippingLabel(shippingCourier, shippingService);
+  const isPickup = shippingCourier === "pickup";
 
   return (
     <Html>
@@ -143,7 +142,7 @@ export function OrderConfirmation({
                 <td style={{ textAlign: "right" }}><Text style={{ color: "#666", fontSize: "12px", margin: "2px 0" }}>{formatIdr(subtotal)}</Text></td>
               </tr>
               <tr>
-                <td><Text style={{ color: "#666", fontSize: "12px", margin: "2px 0" }}>Shipping ({courierLabel})</Text></td>
+                <td><Text style={{ color: "#666", fontSize: "12px", margin: "2px 0" }}>{isPickup ? "Pickup" : `Shipping (${courierLabel})`}</Text></td>
                 <td style={{ textAlign: "right" }}><Text style={{ color: "#666", fontSize: "12px", margin: "2px 0" }}>{formatIdr(shippingCost)}</Text></td>
               </tr>
             </table>
@@ -157,7 +156,7 @@ export function OrderConfirmation({
 
             {/* Shipping address */}
             <Section style={{ backgroundColor: "#f0ede6", borderRadius: "8px", padding: "12px 14px", margin: "20px 0" }}>
-              <Text style={{ color: "#1a1a1a", fontSize: "13px", fontWeight: "600", margin: "0 0 4px" }}>Shipping to</Text>
+              <Text style={{ color: "#1a1a1a", fontSize: "13px", fontWeight: "600", margin: "0 0 4px" }}>{getShippingHeading(shippingCourier)}</Text>
               <Text style={{ color: "#666", fontSize: "12px", lineHeight: "1.7", margin: 0 }}>
                 {shippingAddress.recipient_name} · {shippingAddress.phone}
                 <br />
@@ -186,7 +185,7 @@ export function OrderConfirmation({
                 marginBottom: "8px",
               }}
             >
-              Track My Order →
+              {getTrackingCtaLabel(shippingCourier)}
             </Button>
             <Text style={{ color: "#aaa", fontSize: "11px", textAlign: "center", margin: "4px 0 0" }}>
               Or copy: {trackingUrl}

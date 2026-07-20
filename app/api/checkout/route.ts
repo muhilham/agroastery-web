@@ -1,38 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
 import { createQrisPaymentSession } from "@/lib/pivot/client";
 import { sendOrderNotification } from "@/lib/telegram/notify";
 import { getActiveGlobalDiscounts, getActiveProductDiscounts } from "@/lib/supabase/queries/discounts";
 import { calculateDiscountedPrice } from "@/lib/utils/discount";
-
-const CheckoutItemSchema = z.object({
-  variantId: z.string().uuid(),
-  quantity: z.number().int().positive().max(100),
-});
-
-const ShippingAddressSchema = z.object({
-  recipientName: z.string().min(1),
-  phone: z.string().min(1),
-  addressLine: z.string().min(1),
-  postalCode: z.string().optional(),
-  latitude: z.number().optional(),
-  longitude: z.number().optional(),
-});
-
-const CheckoutSchema = z.object({
-  items: z.array(CheckoutItemSchema).min(1).max(50),
-  customerName: z.string().min(1),
-  customerEmail: z.string().email().optional().or(z.literal("")),
-  customerPhone: z.string().min(1),
-  shippingAddress: ShippingAddressSchema,
-  shippingCourier: z.string().optional(),
-  shippingService: z.string().optional(),
-  shippingCost: z.number().int().nonnegative().default(0),
-  shippingEtd: z.string().optional(),
-  notes: z.string().max(500).optional(),
-  idempotencyKey: z.string().uuid().optional(),
-});
+import { isShippingCostInvalid } from "@/lib/checkout/validateShippingCost";
+import { CheckoutSchema } from "./checkoutSchema";
 
 const MAX_ORDER_NUMBER_RETRIES = 3;
 
@@ -181,8 +154,16 @@ export async function POST(request: NextRequest) {
       return sum + shipWeightGrams * item.quantity;
     }, 0);
 
-    // Reject if shipping cost is 0 but items need shipping and a courier is specified
-    if (data.shippingCost === 0 && data.shippingCourier && totalShipWeight > 0) {
+    // Reject if shipping cost is 0 but items need shipping and a courier is specified.
+    // Pickup orders are exempt — see isShippingCostInvalid.
+    if (
+      isShippingCostInvalid({
+        fulfillmentMethod: data.fulfillmentMethod,
+        shippingCost: data.shippingCost,
+        shippingCourier: data.shippingCourier,
+        totalShipWeight,
+      })
+    ) {
       return NextResponse.json(
         { error: "Ongkos kirim tidak valid", code: "INVALID_SHIPPING_COST" },
         { status: 400 }
@@ -263,6 +244,7 @@ export async function POST(request: NextRequest) {
             postal_code: data.shippingAddress.postalCode ?? null,
             latitude: data.shippingAddress.latitude ?? null,
             longitude: data.shippingAddress.longitude ?? null,
+            hours: data.shippingAddress.hours ?? null,
           },
           shipping_courier: data.shippingCourier ?? null,
           shipping_service: data.shippingService ?? null,

@@ -126,7 +126,9 @@ export async function sendOrderNotification(params: OrderNotificationParams): Pr
     .join("\n");
 
   const courier =
-    params.shippingCourier && params.shippingService
+    params.shippingCourier === "pickup"
+      ? "Ambil Sendiri"
+      : params.shippingCourier && params.shippingService
       ? `${params.shippingCourier.toUpperCase()} ${params.shippingService}`
       : params.shippingCourier?.toUpperCase() ?? "—";
 

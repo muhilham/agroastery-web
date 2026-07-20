@@ -12,6 +12,8 @@ const STATUS_LABELS: Record<string, string> = {
   processing: "Sedang Diproses",
   shipped: "Dikirim",
   delivered: "Diterima",
+  ready_for_pickup: "Siap Diambil",
+  completed: "Selesai",
   cancelled: "Dibatalkan",
   refunded: "Dikembalikan",
 };
@@ -22,6 +24,8 @@ const STATUS_COLORS: Record<string, string> = {
   processing: "text-blue-400 bg-blue-400/10 border-blue-400/20",
   shipped: "text-cyan-400 bg-cyan-400/10 border-cyan-400/20",
   delivered: "text-green-500 bg-green-500/10 border-green-500/20",
+  ready_for_pickup: "text-purple-400 bg-purple-400/10 border-purple-400/20",
+  completed: "text-green-500 bg-green-500/10 border-green-500/20",
   cancelled: "text-red-400 bg-red-400/10 border-red-400/20",
   refunded: "text-orange-400 bg-orange-400/10 border-orange-400/20",
 };
@@ -80,38 +84,50 @@ export default async function TrackingPage({ params }: PageProps) {
         </div>
 
         {/* Shipping + live Biteship timeline */}
-        <div className="bg-[#1a1a1a] border border-white/10 rounded-xl p-4 mb-4">
-          <h2 className="text-[11px] font-bold uppercase tracking-widest text-secondary mb-3">
-            Info Pengiriman
-          </h2>
-          {shippingAddress && (
-            <div className="space-y-1.5 mb-4">
-              {order.shipping_courier && (
+        {order.shipping_courier === "pickup" ? (
+          <div className="bg-[#1a1a1a] border border-white/10 rounded-xl p-4 mb-4">
+            <h2 className="text-[11px] font-bold uppercase tracking-widest text-secondary mb-3">
+              Ambil Sendiri
+            </h2>
+            <p className="text-primary text-sm">{shippingAddress?.address_line}</p>
+            {shippingAddress?.hours && (
+              <p className="text-secondary text-sm mt-1">{shippingAddress.hours}</p>
+            )}
+          </div>
+        ) : (
+          <div className="bg-[#1a1a1a] border border-white/10 rounded-xl p-4 mb-4">
+            <h2 className="text-[11px] font-bold uppercase tracking-widest text-secondary mb-3">
+              Info Pengiriman
+            </h2>
+            {shippingAddress && (
+              <div className="space-y-1.5 mb-4">
+                {order.shipping_courier && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-secondary">Kurir</span>
+                    <span className="text-primary font-medium">
+                      {(order.shipping_courier as string).toUpperCase()}{" "}
+                      {order.shipping_service as string}
+                    </span>
+                  </div>
+                )}
+                {order.shipping_etd && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-secondary">Estimasi tiba</span>
+                    <span className="text-primary">{order.shipping_etd as string}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-sm">
-                  <span className="text-secondary">Kurir</span>
-                  <span className="text-primary font-medium">
-                    {(order.shipping_courier as string).toUpperCase()}{" "}
-                    {order.shipping_service as string}
+                  <span className="text-secondary">Tujuan</span>
+                  <span className="text-primary text-right max-w-[200px] leading-snug">
+                    {shippingAddress.address_line}
+                    {shippingAddress.postal_code ? ` ${shippingAddress.postal_code}` : ""}
                   </span>
                 </div>
-              )}
-              {order.shipping_etd && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-secondary">Estimasi tiba</span>
-                  <span className="text-primary">{order.shipping_etd as string}</span>
-                </div>
-              )}
-              <div className="flex justify-between text-sm">
-                <span className="text-secondary">Tujuan</span>
-                <span className="text-primary text-right max-w-[200px] leading-snug">
-                  {shippingAddress.address_line}
-                  {shippingAddress.postal_code ? ` ${shippingAddress.postal_code}` : ""}
-                </span>
               </div>
-            </div>
-          )}
-          <TrackingTimeline orderId={orderId} />
-        </div>
+            )}
+            <TrackingTimeline orderId={orderId} />
+          </div>
+        )}
 
         {/* Items */}
         <div className="bg-[#1a1a1a] border border-white/10 rounded-xl p-4 mb-4">
