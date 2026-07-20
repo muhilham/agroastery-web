@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.8.0](https://github.com/muhilham/agroastery-web/compare/v0.7.0...v0.8.0) (2026-07-20)
+
+
+### Features
+
+* **checkout:** accept pickup orders in checkout API request schema ([e1bdaaf](https://github.com/muhilham/agroastery-web/commit/e1bdaaff828d39897f6d641989f3c451044eeb56))
+* **checkout:** add fulfillmentMethod to client form schema ([98f146b](https://github.com/muhilham/agroastery-web/commit/98f146b920e4e25ffbb868fb95cbfae951a866d5))
+* **checkout:** add self-pickup toggle to checkout page ([591e8dc](https://github.com/muhilham/agroastery-web/commit/591e8dc9435a4306b1b77ff3b8148f51311940d1))
+* **checkout:** extract shipping-cost guard into testable function ([9dd3518](https://github.com/muhilham/agroastery-web/commit/9dd35186bd534a69ce28607e23feef62f6a6c169))
+* **checkout:** pickup-aware copy on success page ([bf353fc](https://github.com/muhilham/agroastery-web/commit/bf353fc9145cd3981ca423e1dff3a54ab5a0a84d))
+* **email:** show pickup-specific copy in order confirmation ([abff126](https://github.com/muhilham/agroastery-web/commit/abff126cc9b2406e2fe27592d1558e87068e3df0))
+* **orders:** show pickup location on order detail page ([14382d3](https://github.com/muhilham/agroastery-web/commit/14382d3dc56e0c6cfa7dccf17dd8bc02d6423516))
+* **telegram:** show 'Ambil Sendiri' instead of courier name for pickup orders ([7787814](https://github.com/muhilham/agroastery-web/commit/77878143a3b098e5784f3ae3bd18a790e9f78116))
+* **track:** show pickup location instead of courier tracking ([cd54ae2](https://github.com/muhilham/agroastery-web/commit/cd54ae2650d9ddfe0805953aa135b3cb155d6ef9))
+
+
+### Documentation
+
+* **env:** document self-pickup env vars ([0625ec0](https://github.com/muhilham/agroastery-web/commit/0625ec03652fd3bc09b980031a04e1037940d7ea))
+* **plan:** add self-pickup checkout implementation plan ([423f23b](https://github.com/muhilham/agroastery-web/commit/423f23ba7880a9c54c0efa9ec905c03e851b6e50))
+* **plan:** fix Task 3 test import crash + task-number typos ([b06843f](https://github.com/muhilham/agroastery-web/commit/b06843fd9605319320935db97823ccc2c8afbb06))
+* **spec:** add self-pickup checkout design ([79c7189](https://github.com/muhilham/agroastery-web/commit/79c7189ff918bfc3a9f7c4a7e20411a5b0c3e3e9))
+* **spec:** add touch-points section after code review ([26770fa](https://github.com/muhilham/agroastery-web/commit/26770fa39ae7f94fe7c90004c3f257df16e73a6a))
+
 ## [0.7.0](https://github.com/muhilham/agroastery-web/compare/v0.6.0...v0.7.0) (2026-07-16)
 
 
