@@ -23,7 +23,7 @@ export default function Home() {
                   CRAFTING THE FINEST STANDARD
                 </h1>
                 <p className="text-xl font-light text-[#f5ebc9]">
-                  100,000+ orders. Rated 5.0 by 25,300 buyers.
+                  100,000+ orders. Rated 5.0 by 25,000+ buyers.
                 </p>
                 <p className="text-sm font-light text-[#cabfa9]">
                   Seven years of roasting — now direct.
