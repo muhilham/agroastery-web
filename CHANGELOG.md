@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.9.0](https://github.com/muhilham/agroastery-web/compare/v0.8.0...v0.9.0) (2026-07-22)
+
+
+### Features
+
+* **home:** update hero copy to social proof buyers ([d17657d](https://github.com/muhilham/agroastery-web/commit/d17657d59e534bcb2da5bbd2eac82fd0d7e26cae))
+* **home:** update hero copy to social proof, point plan doc to self-pickup checkout ([e7348fc](https://github.com/muhilham/agroastery-web/commit/e7348fcc7ee4ba310660665a0fb3aab035585887))
+
 ## [0.8.0](https://github.com/muhilham/agroastery-web/compare/v0.7.0...v0.8.0) (2026-07-20)
 
 
