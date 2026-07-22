@@ -23,9 +23,10 @@ export default function Home() {
                   CRAFTING THE FINEST STANDARD
                 </h1>
                 <p className="text-xl font-light text-[#f5ebc9]">
-                  At AGROASTERY we are passionate about sourcing and roasting
-                  the highest quality coffee beans from around the world. Our
-                  mission is to bring you the perfect cup of coffee every time.
+                  100,000+ orders. Rated 5.0 by 25,300 buyers.
+                </p>
+                <p className="text-sm font-light text-[#cabfa9]">
+                  Seven years of roasting — now direct.
                 </p>
               </div>
               <div className="flex items-center">
@@ -48,7 +49,7 @@ export default function Home() {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                Buy now
+                Shop Direct
               </a>
             </div>
           </section>
