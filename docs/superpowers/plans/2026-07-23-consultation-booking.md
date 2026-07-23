@@ -84,6 +84,12 @@ CREATE TABLE consultation_bookings (
   cancelled_at  timestamptz
 );
 
+-- INTENTIONALLY NO RLS on consultation_bookings: all access goes through the
+-- server-side admin client with trusted filters (manage_token, user_id from
+-- session, pivot_payment_session_id from verified webhook). This matches the
+-- existing products/variants no-RLS pattern in this project. Do NOT enable
+-- RLS without adding policies for every server access path.
+
 CREATE UNIQUE INDEX consultation_bookings_unique_active_slot
   ON consultation_bookings (booking_date, time_slot)
   WHERE status IN ('pending_payment', 'confirmed');
@@ -209,7 +215,9 @@ describe("generateConsultationAvailability", () => {
   it("only returns Tue/Wed/Thu dates", () => {
     const result = generateConsultationAvailability(THU, []);
     for (const d of result) {
-      const day = new Date(d.date + "T00:00:00+07:00").getDay();
+      // TZ-independent assertion: parse string, use UTC getters
+      const [y, m, dd] = d.date.split("-").map(Number);
+      const day = new Date(Date.UTC(y, m - 1, dd)).getUTCDay();
       expect([2, 3, 4]).toContain(day);
     }
   });
@@ -417,9 +425,15 @@ import {
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
-/** Day-of-week (Asia/Jakarta) for a YYYY-MM-DD string. */
+/**
+ * Day-of-week for a YYYY-MM-DD string, TZ-independent.
+ * Parse the string directly and read via UTC getters — never
+ * `new Date(str + "T00:00:00+07:00").getDay()`, which re-projects the
+ * instant onto the process timezone (UTC on Railway → off-by-one weekday).
+ */
 function wibWeekday(dateStr: string): number {
-  return new Date(`${dateStr}T00:00:00+07:00`).getDay();
+  const [y, m, d] = dateStr.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
 }
 
 /** Today's date as YYYY-MM-DD in WIB. */
@@ -437,7 +451,12 @@ function wibMaxDate(weeks: number): string {
 const BookingDateSchema = z
   .string()
   .regex(DATE_RE, "Format tanggal harus YYYY-MM-DD")
-  .refine((d) => !Number.isNaN(new Date(`${d}T00:00:00+07:00`).getTime()), "Tanggal tidak valid")
+  .refine((d) => {
+    const [y, m, day] = d.split("-").map(Number);
+    const dt = new Date(Date.UTC(y, m - 1, day));
+    // Reject impossible dates like 2026-02-30 (rolls over to March)
+    return dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === day;
+  }, "Tanggal tidak valid")
   .refine((d) => (CONSULTATION_WEEKDAYS as readonly number[]).includes(wibWeekday(d)), {
     message: "Konsultasi hanya tersedia Selasa–Kamis",
   })
@@ -930,6 +949,8 @@ export async function POST(request: NextRequest) {
 }
 ```
 
+NOTE: Before implementing, confirm the Pivot client signature in `lib/pivot/client.ts` — at time of writing it is `createQrisPaymentSession(params: CreateQrisSessionParams, requestIdSuffix = "")` where params are `{ orderId, orderNumber, total, customerName, customerEmail?, customerPhone }`. Adapt the call below if it has changed.
+
 NOTE: `createQrisPaymentSession`'s `redirectUrl` fields point at checkout URLs — acceptable for now since the consultation QR page is driven by polling, not redirects (mode "API", autoConfirm). If Pivot requires valid URLs, existing checkout URLs still resolve.
 
 - [ ] **Step 4: Run test to verify it passes**
@@ -1389,7 +1410,7 @@ describe("POST reschedule", () => {
 Run: `pnpm test app/api/consultations/manage`
 Expected: FAIL — modules do not exist (also `lib/consultations/notify` + `lib/resend/sendConsultationEmail` missing — implemented in Tasks 9–10; the mocks above use `vi.mock` so tests will fail on missing route modules first)
 
-NOTE: Tasks 9–10 create the notify/email modules these tests mock. If running strictly in order, create minimal stubs now and complete them in Tasks 9–10, OR implement Tasks 9–10 before running these tests. Recommended: implement cancel/reschedule routes now with the imports, then do Tasks 9–10 immediately after.
+NOTE: Tasks 9–10 create the notify/email modules these tests mock. The routes below import them, so **Tasks 9 and 10 MUST be completed before running this task's tests or committing**. Order: implement routes (steps 5–6) → implement Task 9 (notify) → implement Task 10 (email) → then run this task's tests (deferred to Task 10 step 4) → commit. The commit for this task's files is folded into Task 10 step 5.
 
 - [ ] **Step 5: Implement cancel route**
 
@@ -1796,10 +1817,15 @@ const MONTH_ID = [
   "Juli", "Agustus", "September", "Oktober", "November", "Desember",
 ];
 
-/** "2026-07-28" → "Selasa, 28 Juli 2026" (WIB date, no timezone shift). */
+/**
+ * "2026-07-28" → "Selasa, 28 Juli 2026".
+ * TZ-independent: parse the string and use UTC getters — local getters
+ * (.getDay()/.getDate()) re-project onto the process timezone.
+ */
 export function formatBookingDateId(dateStr: string): string {
-  const d = new Date(`${dateStr}T00:00:00+07:00`);
-  return `${DAY_ID[d.getDay()]}, ${d.getDate()} ${MONTH_ID[d.getMonth()]} ${d.getFullYear()}`;
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const weekday = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+  return `${DAY_ID[weekday]}, ${d} ${MONTH_ID[m - 1]} ${y}`;
 }
 ```
 
@@ -2702,7 +2728,9 @@ export default function BookingFlow() {
       <h2 className="text-base font-medium text-foreground mt-8 mb-3">1. Pilih Tanggal</h2>
       <div className="flex gap-2 overflow-x-auto pb-2">
         {dates.map((d) => {
-          const day = new Date(d.date + "T00:00:00+07:00");
+          // TZ-independent: parse string, read via UTC getters (never local getters)
+          const [y, m, dd] = d.date.split("-").map(Number);
+          const weekday = new Date(Date.UTC(y, m - 1, dd)).getUTCDay();
           const allTaken = d.slots.every((s) => !s.available);
           const active = selectedDate === d.date;
           return (
@@ -2718,8 +2746,8 @@ export default function BookingFlow() {
                 ${active ? "border-primary bg-primary/10 text-primary" : "border-white/15 text-foreground/80"}
                 ${allTaken ? "opacity-30" : "hover:border-primary/60"}`}
             >
-              <span className="text-xs">{DAY_SHORT[day.getDay()]}</span>
-              <span className="font-semibold">{day.getDate()}</span>
+              <span className="text-xs">{DAY_SHORT[weekday]}</span>
+              <span className="font-semibold">{dd}</span>
             </button>
           );
         })}
@@ -3461,24 +3489,26 @@ export default function ManageBookingClient({
         <div className="rounded-xl border border-white/15 p-4 mb-4">
           <h2 className="text-sm font-medium mb-3">Pilih jadwal baru</h2>
           <div className="flex gap-2 overflow-x-auto pb-2 mb-3">
-            {dates.map((d) => {
-              const day = new Date(d.date + "T00:00:00+07:00");
-              const allTaken = d.slots.every((s) => !s.available);
-              return (
-                <button
-                  key={d.date}
-                  type="button"
-                  disabled={allTaken}
-                  onClick={() => { setNewDate(d.date); setNewSlot(null); }}
-                  className={`flex flex-col items-center min-w-14 rounded-lg border px-3 py-2 text-sm
-                    ${newDate === d.date ? "border-primary bg-primary/10 text-primary" : "border-white/15"}
-                    ${allTaken ? "opacity-30" : ""}`}
-                >
-                  <span className="text-xs">{DAY_SHORT[day.getDay()]}</span>
-                  <span className="font-semibold">{day.getDate()}</span>
-                </button>
-              );
-            })}
+             {dates.map((d) => {
+               // TZ-independent: parse string, read via UTC getters (never local getters)
+               const [y, m, dd] = d.date.split("-").map(Number);
+               const weekday = new Date(Date.UTC(y, m - 1, dd)).getUTCDay();
+               const allTaken = d.slots.every((s) => !s.available);
+               return (
+                 <button
+                   key={d.date}
+                   type="button"
+                   disabled={allTaken}
+                   onClick={() => { setNewDate(d.date); setNewSlot(null); }}
+                   className={`flex flex-col items-center min-w-14 rounded-lg border px-3 py-2 text-sm
+                     ${newDate === d.date ? "border-primary bg-primary/10 text-primary" : "border-white/15"}
+                     ${allTaken ? "opacity-30" : ""}`}
+                 >
+                   <span className="text-xs">{DAY_SHORT[weekday]}</span>
+                   <span className="font-semibold">{dd}</span>
+                 </button>
+               );
+             })}
           </div>
           {newDate && (
             <div className="flex gap-2 mb-3">
