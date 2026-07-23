@@ -11,7 +11,7 @@ export default function KonsultasiPage() {
   return (
     <div className="min-h-svh bg-background flex flex-col">
       <Navigation />
-      <main className="flex-1 px-4 py-10">
+      <main className="flex-1 pt-24 pb-16 px-4 tablet:px-10 desktop:px-20">
         <BookingFlow />
       </main>
     </div>
