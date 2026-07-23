@@ -83,7 +83,7 @@ lib/
   biteship/        # Shipping API client
   telegram/        # Order notifications
   consultations/   # Consultation booking: constants, availability, schemas, telegram notify, format
-  whatsapp.ts      # wa.me link helper (NEXT_PUBLIC_WHATSAPP_NUMBER)
+  whatsapp.ts      # wa.me link helper (uses ORIGIN_CONTACT_PHONE, strips leading +)
 app/(root)/konsultasi/  # Consultation booking pages
 app/api/consultations/  # Consultation booking API
 ```
@@ -96,7 +96,7 @@ Copy `.env.example` to `.env.local`. Required for local dev:
 - Xendit keys (or set `XENDIT_MOCK=true` for testing without real payments)
 - Google Maps API key
 - Telegram bot token (optional, for order notifications)
-- NEXT_PUBLIC_WHATSAPP_NUMBER (wa.me format, e.g. 628979092726)
+
 
 ## Testing
 
