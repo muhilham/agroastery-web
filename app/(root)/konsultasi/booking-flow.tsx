@@ -93,120 +93,151 @@ export default function BookingFlow() {
 
   return (
     <div className="max-w-lg mx-auto">
-      <h1 className="text-2xl font-semibold text-primary mb-2">Konsultasi Kopi</h1>
-      <p className="text-secondary text-sm mb-1">
-        2 jam &middot; {numberToIdr({ nominal: CONSULTATION_FEE_IDR })}
-      </p>
-      <p className="text-sm text-white/60 mb-2">
-        Gunakan peralatan kami: espresso machine, EK43, Mazzer Super Jolly.
-        Cocok untuk mengembangkan blend untuk menu kafe Anda, atau mencoba
-        produk kami dengan bahan Anda sendiri.
-      </p>
-      <p className="text-xs text-secondary mb-4">
-        Bawa bahan sendiri (susu, gula, dll) — kecuali biji kopi. Atau tim kami
-        bisa belanjakan (biaya ditambah ke invoice akhir).
-      </p>
-      <a
-        href={buildWhatsAppLink("Halo, saya mau tanya tentang konsultasi kopi")}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-sm text-primary underline underline-offset-4"
-      >
-        Ada pertanyaan? Chat kami
-      </a>
-
-      <h2 className="text-base font-medium text-primary mt-8 mb-3">1. Pilih Tanggal</h2>
-      <div className="flex gap-2 overflow-x-auto pb-2">
-        {dates.map((d) => {
-          const [y, m, dd] = d.date.split("-").map(Number);
-          const weekday = new Date(Date.UTC(y, m - 1, dd)).getUTCDay();
-          const allTaken = d.slots.every((s) => !s.available);
-          const active = selectedDate === d.date;
-          return (
-            <button
-              key={d.date}
-              type="button"
-              disabled={allTaken}
-              onClick={() => {
-                setSelectedDate(d.date);
-                setSelectedSlot(null);
-              }}
-              className={`flex flex-col items-center min-w-14 rounded-lg border px-3 py-2 text-sm transition-colors
-                ${active ? "border-primary bg-primary/10 text-primary" : "border-white/15 text-secondary"}
-                ${allTaken ? "opacity-30" : "hover:border-primary/60"}`}
-            >
-              <span className="text-xs">{DAY_SHORT[weekday]}</span>
-              <span className="font-semibold">{dd}</span>
-            </button>
-          );
-        })}
+      <div className="mb-8">
+        <h1 className="text-2xl font-semibold text-primary mb-2">Konsultasi Kopi</h1>
+        <p className="text-secondary text-sm mb-3">
+          2 jam &middot; {numberToIdr({ nominal: CONSULTATION_FEE_IDR })}
+        </p>
+        <p className="text-sm text-white/60 leading-relaxed mb-3">
+          Gunakan peralatan kami: espresso machine double boiler, EK43, Mazzer Super Jolly.
+          Cocok untuk mengembangkan blend untuk menu kafe Anda, atau mencoba
+          produk kami dengan bahan Anda sendiri.
+        </p>
+        <p className="text-xs text-secondary leading-relaxed mb-4">
+          Bawa bahan sendiri (susu, gula, dll) — kecuali biji kopi. Atau tim kami
+          bisa belanjakan (biaya ditambah ke invoice akhir).
+        </p>
+        <a
+          href={buildWhatsAppLink("Halo, saya mau tanya tentang konsultasi kopi")}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-block text-sm text-primary underline underline-offset-4"
+        >
+          Ada pertanyaan? Chat kami
+        </a>
       </div>
 
-      {selectedDate && selected && (
-        <>
-          <h2 className="text-base font-medium text-primary mt-6 mb-3">2. Pilih Waktu</h2>
-          <div className="flex gap-2">
-            {selected.slots.map((s) => {
-              const active = selectedSlot === s.time;
+      <div className="space-y-4">
+        <div className="bg-[#1a1a1a] rounded-xl border border-white/10 p-4 space-y-3">
+          <div className="flex items-center gap-3">
+            <span className="w-5 h-5 rounded-full bg-primary/20 border border-primary/30 text-primary text-[10px] font-bold flex items-center justify-center shrink-0">1</span>
+            <h2 className="text-primary font-semibold tracking-widest uppercase text-xs">Pilih Tanggal</h2>
+          </div>
+          <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 py-1">
+            {dates.map((d) => {
+              const [y, m, dd] = d.date.split("-").map(Number);
+              const weekday = new Date(Date.UTC(y, m - 1, dd)).getUTCDay();
+              const allTaken = d.slots.every((s) => !s.available);
+              const active = selectedDate === d.date;
               return (
                 <button
-                  key={s.time}
+                  key={d.date}
                   type="button"
-                  disabled={!s.available}
-                  onClick={() => setSelectedSlot(s.time)}
-                  className={`rounded-lg border px-4 py-2 text-sm transition-colors
-                    ${active ? "border-primary bg-primary/10 text-primary" : "border-white/15 text-secondary"}
-                    ${!s.available ? "opacity-30 line-through" : "hover:border-primary/60"}`}
+                  disabled={allTaken}
+                  onClick={() => {
+                    setSelectedDate(d.date);
+                    setSelectedSlot(null);
+                  }}
+                  className={`flex flex-col items-center shrink-0 min-w-14 rounded-lg border-2 px-3 py-2 text-sm transition-colors
+                    ${active ? "border-primary bg-primary/10 text-primary" : "border-white/10 bg-[#242424] text-secondary"}
+                    ${allTaken ? "opacity-30" : "hover:border-primary/60"}`}
                 >
-                  {s.time}
+                  <span className="text-xs">{DAY_SHORT[weekday]}</span>
+                  <span className="font-semibold">{dd}</span>
                 </button>
               );
             })}
           </div>
-        </>
-      )}
+        </div>
 
-      {selectedSlot && (
-        <form onSubmit={handleSubmit(onSubmit)} className="mt-6">
-          <h2 className="text-base font-medium text-primary mb-3">3. Data Diri</h2>
+        {selectedDate && selected && (
+          <div className="bg-[#1a1a1a] rounded-xl border border-white/10 p-4 space-y-3">
+            <div className="flex items-center gap-3">
+              <span className="w-5 h-5 rounded-full bg-primary/20 border border-primary/30 text-primary text-[10px] font-bold flex items-center justify-center shrink-0">2</span>
+              <h2 className="text-primary font-semibold tracking-widest uppercase text-xs">Pilih Waktu</h2>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {selected.slots.map((s) => {
+                const active = selectedSlot === s.time;
+                return (
+                  <button
+                    key={s.time}
+                    type="button"
+                    disabled={!s.available}
+                    onClick={() => setSelectedSlot(s.time)}
+                    className={`rounded-lg border-2 px-4 py-2 text-sm transition-colors
+                      ${active ? "border-primary bg-primary/10 text-primary" : "border-white/10 bg-[#242424] text-secondary"}
+                      ${!s.available ? "opacity-30 line-through" : "hover:border-primary/60"}`}
+                  >
+                    {s.time}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
-          <label className="block text-sm text-white/60 mb-1" htmlFor="name">Nama</label>
-          <Input id="name" {...register("name")} />
-          {errors.name && <p className="text-destructive text-xs mb-2">{errors.name.message}</p>}
+        {selectedSlot && (
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="bg-[#1a1a1a] rounded-xl border border-white/10 p-4 space-y-4"
+          >
+            <div className="flex items-center gap-3">
+              <span className="w-5 h-5 rounded-full bg-primary/20 border border-primary/30 text-primary text-[10px] font-bold flex items-center justify-center shrink-0">3</span>
+              <h2 className="text-primary font-semibold tracking-widest uppercase text-xs">Data Diri</h2>
+            </div>
 
-          <label className="block text-sm text-white/60 mb-1 mt-3" htmlFor="email">Email</label>
-          <Input id="email" type="email" {...register("email")} />
-          {errors.email && <p className="text-destructive text-xs mb-2">{errors.email.message}</p>}
+            <div className="space-y-1.5">
+              <label className="block text-sm text-white/60" htmlFor="name">Nama</label>
+              <Input id="name" {...register("name")} />
+              {errors.name && <p className="text-destructive text-xs">{errors.name.message}</p>}
+            </div>
 
-          <label className="block text-sm text-white/60 mb-1 mt-3" htmlFor="phone">No. WhatsApp</label>
-          <Input id="phone" {...register("phone")} />
-          {errors.phone && <p className="text-destructive text-xs mb-2">{errors.phone.message}</p>}
+            <div className="space-y-1.5">
+              <label className="block text-sm text-white/60" htmlFor="email">Email</label>
+              <Input id="email" type="email" {...register("email")} />
+              {errors.email && <p className="text-destructive text-xs">{errors.email.message}</p>}
+            </div>
 
-          <fieldset className="mt-4">
-            <legend className="text-sm text-white/60 mb-2">Tujuan</legend>
-            {(Object.keys(CONSULTATION_PURPOSES) as ConsultationPurpose[]).map((key) => (
-              <label key={key} className="flex items-start gap-2 text-sm mb-2 text-white/60">
-                <input type="radio" value={key} {...register("purpose")} className="accent-primary mt-1" />
-                <span>{CONSULTATION_PURPOSES[key]}</span>
-              </label>
-            ))}
-            {errors.purpose && <p className="text-destructive text-xs">Pilih salah satu</p>}
-          </fieldset>
+            <div className="space-y-1.5">
+              <label className="block text-sm text-white/60" htmlFor="phone">No. WhatsApp</label>
+              <Input id="phone" {...register("phone")} />
+              {errors.phone && <p className="text-destructive text-xs">{errors.phone.message}</p>}
+            </div>
 
-          <label className="block text-sm text-white/60 mb-1 mt-4" htmlFor="notes">Catatan (opsional)</label>
-          <Textarea
-            id="notes"
-            placeholder="Ceritakan menu andalan Anda atau bahan yang ingin dibawa (opsional)"
-            {...register("notes")}
-          />
+            <fieldset className="space-y-2">
+              <legend className="text-sm text-white/60 mb-2">Tujuan</legend>
+              <div className="space-y-2">
+                {(Object.keys(CONSULTATION_PURPOSES) as ConsultationPurpose[]).map((key) => (
+                  <label
+                    key={key}
+                    className="flex items-start gap-2.5 rounded-lg border-2 border-white/10 bg-[#242424] p-3 text-sm text-white/60 cursor-pointer has-[:checked]:border-primary has-[:checked]:bg-primary/10 has-[:checked]:text-primary transition-colors"
+                  >
+                    <input type="radio" value={key} {...register("purpose")} className="accent-primary mt-0.5" />
+                    <span>{CONSULTATION_PURPOSES[key]}</span>
+                  </label>
+                ))}
+              </div>
+              {errors.purpose && <p className="text-destructive text-xs mt-2">Pilih salah satu</p>}
+            </fieldset>
 
-          {submitError && <p className="text-destructive text-sm mt-3">{submitError}</p>}
+            <div className="space-y-1.5">
+              <label className="block text-sm text-white/60" htmlFor="notes">Catatan (opsional)</label>
+              <Textarea
+                id="notes"
+                placeholder="Ceritakan menu andalan Anda atau bahan yang ingin dibawa (opsional)"
+                {...register("notes")}
+              />
+            </div>
 
-          <Button type="submit" disabled={isSubmitting} className="w-full mt-5">
-            {isSubmitting ? "Memproses..." : `Bayar ${numberToIdr({ nominal: CONSULTATION_FEE_IDR })} & Konfirmasi`}
-          </Button>
-        </form>
-      )}
+            {submitError && <p className="text-destructive text-sm">{submitError}</p>}
+
+            <Button type="submit" disabled={isSubmitting} className="w-full">
+              {isSubmitting ? "Memproses..." : `Bayar ${numberToIdr({ nominal: CONSULTATION_FEE_IDR })} & Konfirmasi`}
+            </Button>
+          </form>
+        )}
+      </div>
     </div>
   );
 }
