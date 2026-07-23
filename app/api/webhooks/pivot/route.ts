@@ -5,6 +5,8 @@ import { sendPaymentNotification } from "@/lib/telegram/notify";
 import { createBiteshipDraft } from '@/lib/biteship/createDraft';
 import { sendOrderEmail } from "@/lib/resend/sendOrderEmail";
 import { createJubelioOrderFromEcom } from "@/lib/jubelio/orders";
+import { sendConsultationConfirmationEmail } from "@/lib/resend/sendConsultationEmail";
+import { sendConsultationBookingAlert, sendConsultationConflictAlert } from "@/lib/consultations/notify";
 
 function verifyPivotCallback(request: NextRequest): boolean {
   const apiKey = request.headers.get("x-api-key") ?? "";
@@ -56,7 +58,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (!existing) {
-      console.warn(`Pivot webhook: no order found for session ${paymentSessionId}`);
+      await handleConsultationPaid(supabase, paymentSessionId, paidAt);
       return NextResponse.json({ received: true });
     }
 
@@ -150,15 +152,16 @@ export async function POST(request: NextRequest) {
       .eq("pivot_payment_session_id", paymentSessionId)
       .not("payment_status", "in", '("expired","paid")')
       .select("id")
-      .single();
+      .maybeSingle();
 
-    if (cancelError?.code === "PGRST116") {
-      // Already in terminal state — skip
-      return NextResponse.json({ received: true });
-    }
     if (cancelError) {
       console.error("Pivot webhook: DB error on EXPIRED/CANCELLED:", cancelError);
       return NextResponse.json({ error: "DB error" }, { status: 500 });
+    }
+
+    if (!cancelledOrder) {
+      await handleConsultationExpired(supabase, paymentSessionId);
+      return NextResponse.json({ received: true });
     }
 
     // Restore stock
@@ -184,4 +187,80 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json({ received: true });
+}
+
+type SupabaseAdmin = ReturnType<typeof createSupabaseAdminClient>;
+
+async function handleConsultationPaid(
+  supabase: SupabaseAdmin,
+  paymentSessionId: string,
+  paidAt: string
+): Promise<void> {
+  const { data: booking } = await supabase
+    .from("consultation_bookings")
+    .select("id, status, name, phone, booking_date, time_slot, purpose, notes, amount")
+    .eq("pivot_payment_session_id", paymentSessionId)
+    .maybeSingle();
+
+  if (!booking) {
+    console.warn(`Pivot webhook: no consultation booking for session ${paymentSessionId}`);
+    return;
+  }
+  if (booking.status === "confirmed") return;
+
+  const fromStatus = booking.status as string;
+  const { error } = await supabase
+    .from("consultation_bookings")
+    .update({ status: "confirmed", paid_at: paidAt, updated_at: new Date().toISOString() })
+    .eq("id", booking.id as string)
+    .eq("status", fromStatus);
+
+  if (error) {
+    if (error.code === "23505" || fromStatus === "expired") {
+      await supabase
+        .from("consultation_bookings")
+        .update({ paid_at: paidAt, updated_at: new Date().toISOString() })
+        .eq("id", booking.id as string);
+      sendConsultationConflictAlert({
+        bookingId: booking.id as string,
+        name: booking.name as string,
+        phone: booking.phone as string,
+        bookingDate: String(booking.booking_date),
+        timeSlot: String(booking.time_slot),
+      }).catch(() => {});
+      return;
+    }
+    console.error("Pivot webhook: consultation confirm error:", error);
+    return;
+  }
+
+  sendConsultationConfirmationEmail(booking.id as string).catch((err: unknown) =>
+    console.error(`[pivot-webhook] consultation email failed for ${booking.id}:`, err)
+  );
+  sendConsultationBookingAlert({
+    name: booking.name as string,
+    phone: booking.phone as string,
+    bookingDate: String(booking.booking_date),
+    timeSlot: String(booking.time_slot),
+    purpose: String(booking.purpose),
+    notes: (booking.notes as string | null) ?? null,
+    amount: booking.amount as number,
+  }).catch((err: unknown) =>
+    console.error(`[pivot-webhook] consultation telegram failed for ${booking.id}:`, err)
+  );
+}
+
+async function handleConsultationExpired(
+  supabase: SupabaseAdmin,
+  paymentSessionId: string
+): Promise<void> {
+  const { error } = await supabase
+    .from("consultation_bookings")
+    .update({ status: "expired", updated_at: new Date().toISOString() })
+    .eq("pivot_payment_session_id", paymentSessionId)
+    .eq("status", "pending_payment");
+
+  if (error && error.code !== "PGRST116") {
+    console.error("Pivot webhook: consultation expire error:", error);
+  }
 }

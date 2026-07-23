@@ -336,6 +336,75 @@ export type Database = {
           },
         ]
       }
+      consultation_bookings: {
+        Row: {
+          id: string
+          user_id: string | null
+          name: string
+          email: string
+          phone: string
+          purpose: string
+          booking_date: string
+          time_slot: string
+          status: string
+          amount: number
+          pivot_payment_session_id: string | null
+          pivot_qr_string: string | null
+          pivot_qr_url: string | null
+          pivot_qr_expires_at: string | null
+          paid_at: string | null
+          manage_token: string
+          notes: string | null
+          created_at: string
+          updated_at: string
+          cancelled_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          name: string
+          email: string
+          phone: string
+          purpose: string
+          booking_date: string
+          time_slot: string
+          status?: string
+          amount?: number
+          pivot_payment_session_id?: string | null
+          pivot_qr_string?: string | null
+          pivot_qr_url?: string | null
+          pivot_qr_expires_at?: string | null
+          paid_at?: string | null
+          manage_token?: string
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+          cancelled_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          name?: string
+          email?: string
+          phone?: string
+          purpose?: string
+          booking_date?: string
+          time_slot?: string
+          status?: string
+          amount?: number
+          pivot_payment_session_id?: string | null
+          pivot_qr_string?: string | null
+          pivot_qr_url?: string | null
+          pivot_qr_expires_at?: string | null
+          paid_at?: string | null
+          manage_token?: string
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+          cancelled_at?: string | null
+        }
+        Relationships: []
+      }
       ecom_notification_logs: {
         Row: {
           channel: string
