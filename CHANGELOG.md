@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.10.0](https://github.com/muhilham/agroastery-web/compare/v0.9.0...v0.10.0) (2026-07-23)
+
+
+### Features
+
+* consultation booking feature ([#44](https://github.com/muhilham/agroastery-web/issues/44)) ([f9f9024](https://github.com/muhilham/agroastery-web/commit/f9f902461fe2735efd9e0a5bfb89f3ab6cb11237))
+
+
+### Bug Fixes
+
+* **consultations:** align booking page colors with site design system ([5b76e9d](https://github.com/muhilham/agroastery-web/commit/5b76e9d143a4ca6fe95e5b6847e5028a32a8b42e))
+* **konsultasi:** clean up booking flow layout spacing ([#46](https://github.com/muhilham/agroastery-web/issues/46)) ([2b40d45](https://github.com/muhilham/agroastery-web/commit/2b40d453bdf580b1ee6643a95384d459022d25fe))
+* **plan:** tz-independent date handling, pivot sig note, rls comment, task ordering ([2dc92cc](https://github.com/muhilham/agroastery-web/commit/2dc92cc9a111b9b6fbe2e049e819ad9ecc69fbb8))
+
+
+### Documentation
+
+* **plan:** consultation booking implementation plan ([38fe219](https://github.com/muhilham/agroastery-web/commit/38fe219aaa0005ed1a52b12de577319ce1f21a0f))
+* **spec:** consultation booking feature design ([20f99e3](https://github.com/muhilham/agroastery-web/commit/20f99e344097a09686044e377a1dae8dffacd6a3))
+
 ## [0.9.0](https://github.com/muhilham/agroastery-web/compare/v0.8.0...v0.9.0) (2026-07-22)
 
 
