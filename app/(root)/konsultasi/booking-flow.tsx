@@ -10,11 +10,15 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { numberToIdr } from "@/lib/numberToIdr";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
+import { ADDRESS } from "@/constant/resource-and-link";
 import {
   CONSULTATION_FEE_IDR,
   CONSULTATION_PURPOSES,
   type ConsultationPurpose,
 } from "@/lib/consultations/constants";
+
+const MAPS_DIRECTIONS_URL =
+  "https://www.google.com/maps/place/AGROASTERY/@-6.2637061,106.8194468,843m/data=!3m2!1e3!4b1!4m6!3m5!1s0x2e69f1a21b4040ed:0x1ca0ab06ef63e366!8m2!3d-6.2637061!4d106.8194468!16s%2Fg%2F11h7r_fy7s?entry=ttu&g_ep=EgoyMDI2MDcyMC4wIKXMDSoASAFQAw%3D%3D";
 
 interface DateAvailability {
   date: string;
@@ -98,15 +102,50 @@ export default function BookingFlow() {
         <p className="text-secondary text-sm mb-3">
           2 jam &middot; {numberToIdr({ nominal: CONSULTATION_FEE_IDR })}
         </p>
-        <p className="text-sm text-white/60 leading-relaxed mb-3">
-          Gunakan peralatan kami: espresso machine double boiler, EK43, Mazzer Super Jolly.
-          Cocok untuk mengembangkan blend untuk menu kafe Anda, atau mencoba
-          produk kami dengan bahan Anda sendiri.
-        </p>
-        <p className="text-xs text-secondary leading-relaxed mb-4">
-          Bawa bahan sendiri (susu, gula, dll) — kecuali biji kopi. Atau tim kami
-          bisa belanjakan (biaya ditambah ke invoice akhir).
-        </p>
+
+        <div className="bg-[#1a1a1a] rounded-xl border border-white/10 p-4 mb-3">
+          <p className="text-xs font-semibold uppercase tracking-widest text-primary/70 mb-1">
+            Lokasi
+          </p>
+          <p className="text-sm text-white/60">Agroastery Private Bar</p>
+          <p className="text-xs text-secondary leading-relaxed mt-0.5">{ADDRESS}</p>
+          <a
+            href={MAPS_DIRECTIONS_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block text-xs text-primary underline underline-offset-4 mt-2"
+          >
+            Buka di Google Maps
+          </a>
+        </div>
+
+        <div className="bg-[#1a1a1a] rounded-xl border border-white/10 p-4 mb-4">
+          <p className="text-xs font-semibold uppercase tracking-widest text-white/70 mb-1">
+            Untuk Apa
+          </p>
+          <p className="text-sm text-white/60 leading-relaxed">
+            Setiap cafe punya karakter sendiri. Karakter dengan pelanggan yang berbeda, rasa yang dituju juga berbeda. Karena itu kopi yang cocok untuk satu tempat belum tentu cocok untuk tempat lain,
+            dan satu-satunya cara memastikannya adalah dengan mencobanya sendiri.
+          </p>
+
+          <p className="text-xs font-semibold uppercase tracking-widest text-white/70 mt-3 mb-1">
+            Yang Anda Dapatkan
+          </p>
+          <ul className="list-disc list-inside space-y-1 text-sm text-white/60 leading-relaxed">
+            <li>Diskusi karakter rasa yang sesuai dengan menu dan pelanggan Anda</li>
+            <li>Eksplorasi kopi sesuai dengan preferensi dan menu andalan cafe Anda</li>
+            <li>Penawaran harga wholesale</li>
+          </ul>
+
+          <p className="text-xs text-secondary leading-relaxed mt-3">
+            Menggunakan peralatan kami: espresso machine double boiler, Grinder EK43 dan
+            Mazzer Super Jolly.
+          </p>
+          <p className="text-xs text-secondary leading-relaxed mt-2">
+            Bawa bahan sendiri (susu, gula, dll) — kecuali biji kopi. Atau tim kami
+            bisa belanjakan (biaya ditambah ke invoice akhir).
+          </p>
+        </div>
         <a
           href={buildWhatsAppLink("Halo, saya mau tanya tentang konsultasi kopi")}
           target="_blank"

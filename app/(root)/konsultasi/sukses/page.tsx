@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 import { formatBookingDateId } from "@/lib/consultations/format";
+import { ADDRESS } from "@/constant/resource-and-link";
 
 export const dynamic = "force-dynamic";
 
@@ -61,6 +62,10 @@ export default async function KonsultasiSuccessPage({ searchParams }: Props) {
               <p className="text-sm text-white/60 mt-1">
                 <span className="text-secondary">Waktu:</span> {booking.time_slot} WIB (2 jam)
               </p>
+              <p className="text-sm text-white/60 mt-1">
+                <span className="text-secondary">Lokasi:</span> Agroastery Private Bar
+              </p>
+              <p className="text-xs text-secondary leading-relaxed mt-0.5">{ADDRESS}</p>
             </div>
           )}
 
