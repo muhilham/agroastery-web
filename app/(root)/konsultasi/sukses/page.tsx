@@ -55,10 +55,10 @@ export default async function KonsultasiSuccessPage({ searchParams }: Props) {
 
           {booking && (
             <div className="rounded-xl border border-white/15 p-4 mb-6 text-left">
-              <p className="text-sm text-foreground">
+              <p className="text-sm text-white/60">
                 <span className="text-secondary">Tanggal:</span> {dateLabel}
               </p>
-              <p className="text-sm text-foreground mt-1">
+              <p className="text-sm text-white/60 mt-1">
                 <span className="text-secondary">Waktu:</span> {booking.time_slot} WIB (2 jam)
               </p>
             </div>

@@ -6,6 +6,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { numberToIdr } from "@/lib/numberToIdr";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 import {
@@ -95,7 +97,7 @@ export default function BookingFlow() {
       <p className="text-secondary text-sm mb-1">
         2 jam &middot; {numberToIdr({ nominal: CONSULTATION_FEE_IDR })}
       </p>
-      <p className="text-sm text-foreground/80 mb-2">
+      <p className="text-sm text-white/60 mb-2">
         Gunakan peralatan kami: espresso machine, EK43, Mazzer Super Jolly.
         Cocok untuk mengembangkan blend untuk menu kafe Anda, atau mencoba
         produk kami dengan bahan Anda sendiri.
@@ -113,10 +115,9 @@ export default function BookingFlow() {
         Ada pertanyaan? Chat kami
       </a>
 
-      <h2 className="text-base font-medium text-foreground mt-8 mb-3">1. Pilih Tanggal</h2>
+      <h2 className="text-base font-medium text-primary mt-8 mb-3">1. Pilih Tanggal</h2>
       <div className="flex gap-2 overflow-x-auto pb-2">
         {dates.map((d) => {
-          // TZ-independent: parse string, read via UTC getters (never local getters)
           const [y, m, dd] = d.date.split("-").map(Number);
           const weekday = new Date(Date.UTC(y, m - 1, dd)).getUTCDay();
           const allTaken = d.slots.every((s) => !s.available);
@@ -131,7 +132,7 @@ export default function BookingFlow() {
                 setSelectedSlot(null);
               }}
               className={`flex flex-col items-center min-w-14 rounded-lg border px-3 py-2 text-sm transition-colors
-                ${active ? "border-primary bg-primary/10 text-primary" : "border-white/15 text-foreground/80"}
+                ${active ? "border-primary bg-primary/10 text-primary" : "border-white/15 text-secondary"}
                 ${allTaken ? "opacity-30" : "hover:border-primary/60"}`}
             >
               <span className="text-xs">{DAY_SHORT[weekday]}</span>
@@ -143,7 +144,7 @@ export default function BookingFlow() {
 
       {selectedDate && selected && (
         <>
-          <h2 className="text-base font-medium text-foreground mt-6 mb-3">2. Pilih Waktu</h2>
+          <h2 className="text-base font-medium text-primary mt-6 mb-3">2. Pilih Waktu</h2>
           <div className="flex gap-2">
             {selected.slots.map((s) => {
               const active = selectedSlot === s.time;
@@ -154,7 +155,7 @@ export default function BookingFlow() {
                   disabled={!s.available}
                   onClick={() => setSelectedSlot(s.time)}
                   className={`rounded-lg border px-4 py-2 text-sm transition-colors
-                    ${active ? "border-primary bg-primary/10 text-primary" : "border-white/15 text-foreground/80"}
+                    ${active ? "border-primary bg-primary/10 text-primary" : "border-white/15 text-secondary"}
                     ${!s.available ? "opacity-30 line-through" : "hover:border-primary/60"}`}
                 >
                   {s.time}
@@ -167,38 +168,36 @@ export default function BookingFlow() {
 
       {selectedSlot && (
         <form onSubmit={handleSubmit(onSubmit)} className="mt-6">
-          <h2 className="text-base font-medium text-foreground mb-3">3. Data Diri</h2>
+          <h2 className="text-base font-medium text-primary mb-3">3. Data Diri</h2>
 
-          <label className="block text-sm mb-1" htmlFor="name">Nama</label>
-          <input id="name" {...register("name")} className="w-full mb-1 rounded border border-white/15 bg-transparent px-3 py-2 text-sm" />
+          <label className="block text-sm text-white/60 mb-1" htmlFor="name">Nama</label>
+          <Input id="name" {...register("name")} />
           {errors.name && <p className="text-destructive text-xs mb-2">{errors.name.message}</p>}
 
-          <label className="block text-sm mb-1 mt-3" htmlFor="email">Email</label>
-          <input id="email" type="email" {...register("email")} className="w-full mb-1 rounded border border-white/15 bg-transparent px-3 py-2 text-sm" />
+          <label className="block text-sm text-white/60 mb-1 mt-3" htmlFor="email">Email</label>
+          <Input id="email" type="email" {...register("email")} />
           {errors.email && <p className="text-destructive text-xs mb-2">{errors.email.message}</p>}
 
-          <label className="block text-sm mb-1 mt-3" htmlFor="phone">No. WhatsApp</label>
-          <input id="phone" {...register("phone")} className="w-full mb-1 rounded border border-white/15 bg-transparent px-3 py-2 text-sm" />
+          <label className="block text-sm text-white/60 mb-1 mt-3" htmlFor="phone">No. WhatsApp</label>
+          <Input id="phone" {...register("phone")} />
           {errors.phone && <p className="text-destructive text-xs mb-2">{errors.phone.message}</p>}
 
           <fieldset className="mt-4">
-            <legend className="text-sm mb-2">Tujuan</legend>
+            <legend className="text-sm text-white/60 mb-2">Tujuan</legend>
             {(Object.keys(CONSULTATION_PURPOSES) as ConsultationPurpose[]).map((key) => (
-              <label key={key} className="flex items-start gap-2 text-sm mb-2">
-                <input type="radio" value={key} {...register("purpose")} />
+              <label key={key} className="flex items-start gap-2 text-sm mb-2 text-white/60">
+                <input type="radio" value={key} {...register("purpose")} className="accent-primary mt-1" />
                 <span>{CONSULTATION_PURPOSES[key]}</span>
               </label>
             ))}
             {errors.purpose && <p className="text-destructive text-xs">Pilih salah satu</p>}
           </fieldset>
 
-          <label className="block text-sm mb-1 mt-4" htmlFor="notes">Catatan (opsional)</label>
-          <textarea
+          <label className="block text-sm text-white/60 mb-1 mt-4" htmlFor="notes">Catatan (opsional)</label>
+          <Textarea
             id="notes"
-            rows={3}
             placeholder="Ceritakan menu andalan Anda atau bahan yang ingin dibawa (opsional)"
             {...register("notes")}
-            className="w-full rounded border border-white/15 bg-transparent px-3 py-2 text-sm"
           />
 
           {submitError && <p className="text-destructive text-sm mt-3">{submitError}</p>}
