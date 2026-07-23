@@ -10,6 +10,7 @@ import {
 
 export const menuItems: I_MenuListInterface[] = [
   { name: "Buy Now", link: "/katalog" },
+  { name: "Konsultasi", link: "/konsultasi" },
   { name: "WhatsApp", link: WHATSAPP },
   { name: "Telegram", link: TELEGRAM },
   { name: "Instagram", link: INSTAGRAM },

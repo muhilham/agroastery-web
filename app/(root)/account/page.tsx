@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseServerClient, createSupabaseAdminClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/supabase/queries/profiles";
 import Navigation from "@/components/navigation";
 import { Footer } from "@/components/ui/footer";
@@ -17,6 +17,16 @@ export default async function AccountPage() {
   }
 
   const profile = await getProfile(supabase, user.id);
+
+  const todayWib = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
+  const admin = createSupabaseAdminClient();
+  const { data: consultations } = await admin
+    .from("consultation_bookings")
+    .select("id, booking_date, time_slot, status, manage_token")
+    .eq("user_id", user.id)
+    .eq("status", "confirmed")
+    .gte("booking_date", todayWib)
+    .order("booking_date", { ascending: true });
 
   return (
     <div className="min-h-svh flex flex-col bg-background">
@@ -59,6 +69,27 @@ export default async function AccountPage() {
               <ChevronRight className="w-4 h-4" />
             </Link>
           </section>
+
+          {consultations && consultations.length > 0 && (
+            <section className="mt-8">
+              <h2 className="text-lg font-semibold text-primary mb-3">Konsultasi Mendatang</h2>
+              <ul className="space-y-3">
+                {consultations.map((c) => (
+                  <li key={c.id} className="flex items-center justify-between rounded-lg border border-white/15 p-3">
+                    <span className="text-sm text-foreground">
+                      {c.booking_date} — {c.time_slot} WIB
+                    </span>
+                    <Link
+                      href={`/konsultasi/manage/${c.manage_token}`}
+                      className="text-sm text-primary underline underline-offset-4"
+                    >
+                      Kelola
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
         </div>
       </main>
       <Footer />

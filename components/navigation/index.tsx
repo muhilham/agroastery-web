@@ -182,6 +182,11 @@ export default function Navigation() {
               Buy now
             </a>
           </li>
+          <li>
+            <a href="/konsultasi" className="hover:underline">
+              Konsultasi
+            </a>
+          </li>
           {/* Cart icon — desktop */}
           <li>
             <Link href="/cart" className="relative inline-flex items-center">
