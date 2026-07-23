@@ -102,8 +102,6 @@ export default function BookingFlow() {
         <p className="text-secondary text-sm mb-3">
           2 jam &middot; {numberToIdr({ nominal: CONSULTATION_FEE_IDR })}
         </p>
-<<<<<<< HEAD
-
         <div className="bg-[#1a1a1a] rounded-xl border border-white/10 p-4 mb-3">
           <p className="text-xs font-semibold uppercase tracking-widest text-primary/70 mb-1">
             Lokasi
