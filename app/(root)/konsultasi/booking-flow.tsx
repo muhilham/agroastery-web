@@ -137,7 +137,7 @@ export default function BookingFlow() {
           </ul>
 
           <p className="text-xs text-secondary leading-relaxed mt-3">
-            Menggunakan peralatan kami: espresso machine double boiler, Grinder EK43 dan
+            Menggunakan peralatan kami: espresso machine double boiler, Grinder EK43, dan
             Mazzer Super Jolly.
           </p>
           <p className="text-xs text-secondary leading-relaxed mt-2">
