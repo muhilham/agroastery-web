@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.2](https://github.com/muhilham/agroastery-web/compare/v0.10.1...v0.10.2) (2026-07-30)
+
+
+### Bug Fixes
+
+* **checkout:** robust QRIS download with crisp rendering and mobile fallback ([78b36d4](https://github.com/muhilham/agroastery-web/commit/78b36d402e634bcf7cfe317c0b50c1c1ae62608e))
+
 ## [0.10.1](https://github.com/muhilham/agroastery-web/compare/v0.10.0...v0.10.1) (2026-07-23)
 
 
