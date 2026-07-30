@@ -55,6 +55,7 @@ package.json                               # MODIFY — add @next/third-parties
 **Files:**
 - Create: `lib/analytics/gtag.ts`
 - Test: `lib/analytics/gtag.test.ts`
+- Modify: `vitest-runner.js` (test infrastructure fix — required for every `pnpm test <file>` command in this plan to work correctly)
 
 **Interfaces:**
 - Consumes: `CartItem` type from `lib/stores/cart.ts` (type-only import — see Global Constraints)
@@ -66,12 +67,38 @@ package.json                               # MODIFY — add @next/third-parties
   - `trackBookConsultation(params: { value: number }): void`
   - `cartItemToGA4(item: CartItem): GA4Item` where `GA4Item = { item_id: string; item_name: string; price: number; quantity: number }` (exported, used internally and by tests)
 
+- [ ] **Step 0: Fix `vitest-runner.js` to forward CLI args and force run-once mode**
+
+`vitest-runner.js` currently spawns `pnpm vitest` with no argument forwarding, so `pnpm test gtag.test.ts` silently runs the *entire* suite instead of just that file — and in an interactive terminal, bare `vitest` defaults to watch mode and never exits. Every `pnpm test <file>` command in this plan (Tasks 1, 4) depends on this being fixed first.
+
+Modify `vitest-runner.js`:
+
+```javascript
+// vitest-runner.js
+
+const { spawn } = require('child_process');
+
+// This script ensures the crypto API is available globally before starting Vitest.
+const { webcrypto } = require('crypto');
+global.crypto = webcrypto;
+
+const args = process.argv.slice(2);
+const vitest = spawn('pnpm', ['vitest', 'run', ...args], { stdio: 'inherit' });
+
+vitest.on('close', (code) => {
+  process.exit(code);
+});
+```
+
+Run: `pnpm test` (no args)
+Expected: full suite runs once and exits (does not hang in watch mode).
+
 - [ ] **Step 1: Write the failing tests**
 
 Create `lib/analytics/gtag.test.ts`:
 
 ```typescript
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, afterEach, vi } from "vitest";
 import {
   trackEvent,
   cartItemToGA4,
@@ -212,6 +239,7 @@ Expected: FAIL — `lib/analytics/gtag.ts` does not exist yet (module not found)
 
 - [ ] **Step 3: Write the implementation**
 
+
 Create `lib/analytics/gtag.ts`:
 
 ```typescript
@@ -307,7 +335,7 @@ export function trackBookConsultation(params: { value: number }): void {
 - [ ] **Step 4: Run tests to verify they pass**
 
 Run: `pnpm test gtag.test.ts`
-Expected: PASS — all 7 test cases green.
+Expected: PASS — all 8 test cases green (`trackEvent` has 2, one per remaining function has 1 each).
 
 - [ ] **Step 5: Commit**
 
@@ -393,10 +421,14 @@ export default function RootLayout({
 }
 ```
 
-- [ ] **Step 3: Verify the app still builds and boots without the env var set**
+- [ ] **Step 3: Verify the env-gate in both directions**
+
+`.env.local` already has `NEXT_PUBLIC_GA_MEASUREMENT_ID` set, so the default build will emit the GA script — that's expected, not a bug.
 
 Run: `pnpm build`
-Expected: build succeeds; no `<GoogleAnalytics/>` script tag emitted (env var unset in this environment yet — confirm no runtime error).
+Expected: build succeeds; with the env var present, the rendered `<head>`/`<body>` includes the GA script tag (spot-check via `pnpm dev` + view-source, or grep the build output).
+
+Then temporarily comment out the var in `.env.local`, rerun `pnpm build` (or `pnpm dev` + reload), and confirm no GA script tag is emitted and no runtime error occurs. Restore the var afterward.
 
 - [ ] **Step 4: Commit**
 
@@ -458,10 +490,10 @@ Run: `pnpm dev`, open a product page, open browser console, temporarily add `win
 Run: `pnpm test`
 Expected: all existing tests still pass (no test covers this component today, so this step only guards against a syntax/type error breaking the build).
 
-- [ ] **Step 4: Typecheck**
+- [ ] **Step 4: Lint**
 
-Run: `pnpm build` (or `tsc --noEmit` if faster — check `package.json` scripts; use whichever the repo's `lint`/typecheck script is)
-Expected: no type errors.
+Run: `pnpm lint`
+Expected: no errors (the repo has no separate typecheck script — `lint` is the fast pre-build check).
 
 - [ ] **Step 5: Commit**
 
@@ -1064,9 +1096,9 @@ git commit -m "docs(analytics): document NEXT_PUBLIC_GA_MEASUREMENT_ID env var"
 
 ## Post-implementation (manual, owner-side — not part of this plan's automated tasks)
 
-Per the spec's "GA4 console setup" section:
-1. Create the GA4 property at analytics.google.com (name "Agroastery", timezone Asia/Jakarta, currency IDR).
-2. Add a Web data stream for `agroastery.com`, copy the Measurement ID, confirm Enhanced Measurement is ON.
-3. Set `NEXT_PUBLIC_GA_MEASUREMENT_ID` in Railway service variables and local `.env.local`.
+Per the spec's "GA4 console setup" section — **note:** `.env.local` already has `NEXT_PUBLIC_GA_MEASUREMENT_ID=G-VSX89VDWBJ` set, so the property/stream below may already exist. Confirm at analytics.google.com before redoing setup:
+1. Confirm the GA4 property exists at analytics.google.com (name "Agroastery", timezone Asia/Jakarta, currency IDR) — create it only if it doesn't.
+2. Confirm the Web data stream for `agroastery.com` exists and Enhanced Measurement is ON; confirm the Measurement ID matches `G-VSX89VDWBJ`.
+3. Set `NEXT_PUBLIC_GA_MEASUREMENT_ID` in Railway service variables (local `.env.local` already has it).
 4. Mark `purchase` and `book_consultation` as key events (conversions) in the GA4 UI.
 5. Walk the full funnel once in production/staging with GA4 DebugView open to confirm end-to-end wiring.
