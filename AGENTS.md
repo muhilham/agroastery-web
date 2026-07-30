@@ -76,9 +76,10 @@ Products use Shopify-style N-level variants:
 app/
   (root)/          # Customer-facing pages
   api/             # API routes
-lib/
+  lib/
   supabase/        # Client/server clients + queries
   stores/          # Nanostores (cart, auth, search, shipping)
+  analytics/       # GA4 event wrapper (single source of truth for all tracking)
   pivot/           # Payment gateway client
   biteship/        # Shipping API client
   telegram/        # Order notifications
@@ -95,6 +96,7 @@ Copy `.env.example` to `.env.local`. Required for local dev:
 - Biteship API key
 - Xendit keys (or set `XENDIT_MOCK=true` for testing without real payments)
 - Google Maps API key
+- GA4 Measurement ID (`NEXT_PUBLIC_GA_MEASUREMENT_ID`, optional — leave blank to disable analytics locally)
 - Telegram bot token (optional, for order notifications)
 
 
@@ -111,6 +113,7 @@ Vitest requires a crypto polyfill — always use `pnpm test` (not `vitest` direc
 
 - `@supabase/ssr` — Server-side auth with cookies
 - `nanostores` — State management
+- `@next/third-parties` — Google Analytics 4 script injection (`app/layout.tsx`)
 - `xendit-node` — Payment API
 - `zod` — Validation everywhere
 - `resend` — Transactional email

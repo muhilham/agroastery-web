@@ -140,7 +140,7 @@ const SupabaseProductDetail = ({ product }: Props) => {
       itemName: product.name,
       price: matchedVariant.discounted_price ?? matchedVariant.price,
     });
-  }, [product.slug, matchedVariant]);
+  }, [product.slug, product.name, matchedVariant]);
 
   return (
     <Fragment>
