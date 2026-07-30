@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.4](https://github.com/muhilham/agroastery-web/compare/v0.10.3...v0.10.4) (2026-07-30)
+
+
+### Bug Fixes
+
+* **checkout:** make screenshot instruction more visible ([2fdcbf1](https://github.com/muhilham/agroastery-web/commit/2fdcbf103d5d5b19044369766080aaa1673d09a4))
+
 ## [0.10.3](https://github.com/muhilham/agroastery-web/compare/v0.10.2...v0.10.3) (2026-07-30)
 
 
