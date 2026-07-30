@@ -1,10 +1,7 @@
-import type { CartItem } from "@/lib/stores/cart";
+"use client";
 
-declare global {
-  interface Window {
-    gtag?: (...args: unknown[]) => void;
-  }
-}
+import { sendGAEvent } from "@next/third-parties/google";
+import type { CartItem } from "@/lib/stores/cart";
 
 export type GA4Item = {
   item_id: string;
@@ -21,8 +18,12 @@ export type PurchaseItem = {
 };
 
 export function trackEvent(eventName: string, params?: Record<string, unknown>): void {
-  if (typeof window === "undefined" || typeof window.gtag !== "function") return;
-  window.gtag("event", eventName, params);
+  if (typeof window === "undefined") return;
+  if (params) {
+    sendGAEvent(eventName, params);
+  } else {
+    sendGAEvent(eventName);
+  }
 }
 
 export function cartItemToGA4(item: CartItem): GA4Item {
