@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import Navigation from "@/components/navigation";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { MapPin } from "lucide-react";
+import PurchaseTracking from "./PurchaseTracking";
+import type { PurchaseItem } from "@/lib/analytics/gtag";
 
 type PageProps = {
   searchParams: Promise<{ order?: string }>;
@@ -14,21 +16,54 @@ export default async function CheckoutSuccessPage({ searchParams }: PageProps) {
   let orderNumber: string | null = null;
   let customerEmail: string | null = null;
   let isPickup = false;
+  let paymentStatus: string | null = null;
+  let total: number | null = null;
+  let shippingCost = 0;
+  let purchaseItems: PurchaseItem[] = [];
 
   if (orderId) {
     const admin = createSupabaseAdminClient();
     const { data } = await admin
       .from("ecom_orders")
-      .select("order_number, customer_email, shipping_courier")
+      .select(
+        "order_number, customer_email, shipping_courier, payment_status, total, shipping_cost, ecom_order_items(product_name, unit_price, quantity, variant_id)"
+      )
       .eq("id", orderId)
       .single();
     orderNumber = (data?.order_number as string) ?? null;
     customerEmail = (data?.customer_email as string) ?? null;
     isPickup = data?.shipping_courier === "pickup";
+    paymentStatus = (data?.payment_status as string) ?? null;
+    total = (data?.total as number) ?? null;
+    shippingCost = (data?.shipping_cost as number) ?? 0;
+    const items =
+      (data?.ecom_order_items as Array<{
+        product_name: string;
+        unit_price: number;
+        quantity: number;
+        variant_id: string | null;
+      }> | null) ?? [];
+    purchaseItems = items.map((i) => ({
+      itemId: i.variant_id ?? i.product_name,
+      itemName: i.product_name,
+      price: i.unit_price,
+      quantity: i.quantity,
+    }));
   }
+
+  const shouldTrackPurchase =
+    paymentStatus === "paid" && !!orderNumber && total !== null;
 
   return (
     <div className="min-h-svh bg-background flex flex-col">
+      {shouldTrackPurchase && (
+        <PurchaseTracking
+          transactionId={orderNumber as string}
+          value={total as number}
+          shipping={shippingCost}
+          items={purchaseItems}
+        />
+      )}
       <Navigation />
       <main className="flex-1 flex items-center justify-center px-4">
         <div className="max-w-sm w-full text-center py-16">

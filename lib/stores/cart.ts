@@ -1,4 +1,5 @@
 import { atom, onMount } from "nanostores";
+import { trackAddToCart } from "@/lib/analytics/gtag";
 
 // CART_SCHEMA_VERSION: Increment when CartItem type changes to force clear old carts
 const CART_SCHEMA_VERSION = 2;
@@ -99,6 +100,7 @@ export function addToCart(item: CartItem) {
   } else {
     $cartItems.set([...current, item]);
   }
+  trackAddToCart(item);
 }
 
 export function removeFromCart(variantId: string) {

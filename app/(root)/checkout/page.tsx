@@ -32,6 +32,7 @@ const MapPicker = dynamic(() => import("@/components/map/MapPicker"), {
   ssr: false,
 });
 import { useCart } from "@/lib/hooks/useCart";
+import { trackBeginCheckout } from "@/lib/analytics/gtag";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -65,6 +66,14 @@ export default function CheckoutPage() {
   const { user, loading: authLoading } = useAuth();
   const { addresses, isLoading: isLoadingAddresses } = useAddresses();
   const [selectedAddressId, setSelectedAddressId] = useState<string | "new" | null>(null);
+
+  const trackedBeginCheckoutRef = useRef(false);
+  useEffect(() => {
+    if (!hydrated || cartCount === 0) return;
+    if (trackedBeginCheckoutRef.current) return;
+    trackedBeginCheckoutRef.current = true;
+    trackBeginCheckout(cartItems);
+  }, [hydrated, cartCount, cartItems]);
 
   const isGuest = !user && !authLoading;
   const form = useForm<TForm>({

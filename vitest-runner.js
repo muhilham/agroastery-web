@@ -6,9 +6,9 @@ const { spawn } = require('child_process');
 const { webcrypto } = require('crypto');
 global.crypto = webcrypto;
 
-const vitest = spawn('pnpm', ['vitest'], { stdio: 'inherit' });
+const args = ['vitest', 'run', ...process.argv.slice(2)];
+const vitest = spawn('pnpm', args, { stdio: 'inherit' });
 
 vitest.on('close', (code) => {
   process.exit(code);
 });
-

@@ -8,6 +8,7 @@ import { Minus, Plus, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { numberToIdr } from "@/lib/numberToIdr";
+import { trackViewItem } from "@/lib/analytics/gtag";
 import Navigation from "@/components/navigation";
 import { useRouter } from "next/navigation";
 
@@ -128,6 +129,18 @@ const SupabaseProductDetail = ({ product }: Props) => {
     handleAddToCart();
     router.push("/cart");
   }
+
+  const trackedViewItemSlugRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!matchedVariant) return;
+    if (trackedViewItemSlugRef.current === product.slug) return;
+    trackedViewItemSlugRef.current = product.slug;
+    trackViewItem({
+      itemId: matchedVariant.id,
+      itemName: product.name,
+      price: matchedVariant.discounted_price ?? matchedVariant.price,
+    });
+  }, [product.slug, product.name, matchedVariant]);
 
   return (
     <Fragment>
