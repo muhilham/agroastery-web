@@ -5,6 +5,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 import { formatBookingDateId } from "@/lib/consultations/format";
 import { ADDRESS } from "@/constant/resource-and-link";
+import ConsultationTracking from "./ConsultationTracking";
 
 export const dynamic = "force-dynamic";
 
@@ -18,13 +19,14 @@ export default async function KonsultasiSuccessPage({ searchParams }: Props) {
     time_slot: string;
     manage_token: string;
     status: string;
+    amount: number;
   } | null = null;
 
   if (bookingId) {
     const admin = createSupabaseAdminClient();
     const { data } = await admin
       .from("consultation_bookings")
-      .select("booking_date, time_slot, manage_token, status")
+      .select("booking_date, time_slot, manage_token, status, amount")
       .eq("id", bookingId)
       .single();
     booking = data;
@@ -37,8 +39,13 @@ export default async function KonsultasiSuccessPage({ searchParams }: Props) {
       )
     : "#";
 
+  const shouldTrackBooking = !!booking && booking.status === "confirmed" && !!bookingId;
+
   return (
     <div className="min-h-svh bg-background flex flex-col">
+      {shouldTrackBooking && (
+        <ConsultationTracking bookingId={bookingId as string} value={booking!.amount} />
+      )}
       <Navigation />
       <main className="flex-1 flex items-center justify-center px-4">
         <div className="max-w-sm w-full text-center py-16">
