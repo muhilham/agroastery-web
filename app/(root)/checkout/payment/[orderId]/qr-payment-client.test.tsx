@@ -17,7 +17,12 @@ vi.mock("@/components/navigation", () => ({
 
 vi.mock("react-qr-code", () => ({
   default: ({ value }: { value: string }) => (
-    <div data-testid="qr-code">{value}</div>
+    <div data-testid="qr-code">
+      <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100">
+        <rect width="100" height="100" fill="#000" />
+      </svg>
+      {value}
+    </div>
   ),
 }));
 
@@ -134,10 +139,202 @@ describe("QrPaymentClient — download button", () => {
     ).toBeDefined();
   });
 
-  it("clicking download QR does not throw when SVG is absent", () => {
+  it("shows screenshot hint text", () => {
+    render(<QrPaymentClient {...defaultProps} />);
+    expect(
+      screen.getByText(/screenshot QR ini/i)
+    ).toBeDefined();
+  });
+
+  it("shows error when SVG is absent", () => {
+    render(<QrPaymentClient {...defaultProps} />);
+
+    // Remove the SVG from the DOM to simulate absent QR
+    const qrContainer = screen.getByTestId("qr-code");
+    qrContainer.querySelector("svg")?.remove();
+
+    const button = screen.getByRole("button", { name: /download qr/i });
+    fireEvent.click(button);
+
+    expect(
+      screen.getByText(/QR code tidak ditemukan/i)
+    ).toBeDefined();
+  });
+
+  it("downloads QR image with crisp rendering", () => {
+    const originalCreateElement = document.createElement.bind(document);
+    const anchorClickSpy = vi.fn();
+    const toDataURLSpy = vi.fn().mockReturnValue("data:image/png;base64,fake");
+    const drawImageSpy = vi.fn();
+    const fillRectSpy = vi.fn();
+    const imageSmoothingEnabledSpy = vi.fn();
+
+    // Mock canvas
+    vi.spyOn(document, "createElement").mockImplementation((tagName: string) => {
+      if (tagName === "canvas") {
+        const canvas = originalCreateElement("canvas");
+        let _imageSmoothingEnabled = true;
+        canvas.getContext = vi.fn().mockReturnValue({
+          fillRect: fillRectSpy,
+          drawImage: drawImageSpy,
+          get imageSmoothingEnabled() {
+            return _imageSmoothingEnabled;
+          },
+          set imageSmoothingEnabled(v: boolean) {
+            _imageSmoothingEnabled = v;
+            imageSmoothingEnabledSpy(v);
+          },
+        } as unknown as CanvasRenderingContext2D);
+        canvas.toDataURL = toDataURLSpy;
+        return canvas;
+      }
+      if (tagName === "a") {
+        const a = originalCreateElement("a");
+        a.click = anchorClickSpy;
+        return a;
+      }
+      return originalCreateElement(tagName);
+    });
+
+    // Mock Image to trigger onload immediately
+    const originalImage = global.Image;
+    global.Image = class MockImage {
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      #src = "";
+      width = 100;
+      height = 100;
+      get src() {
+        return this.#src;
+      }
+      set src(value: string) {
+        this.#src = value;
+        // Synchronous onload for testing — in real browsers this is async
+        this.onload?.();
+      }
+    } as unknown as typeof Image;
+
     render(<QrPaymentClient {...defaultProps} />);
 
     const button = screen.getByRole("button", { name: /download qr/i });
-    expect(() => fireEvent.click(button)).not.toThrow();
+    fireEvent.click(button);
+
+    // Wait for the async image onload
+    return waitFor(() => {
+      expect(imageSmoothingEnabledSpy).toHaveBeenCalledWith(false);
+      expect(drawImageSpy).toHaveBeenCalled();
+      expect(toDataURLSpy).toHaveBeenCalledWith("image/png");
+    }).finally(() => {
+      global.Image = originalImage;
+    });
+  });
+
+  it("shows error when image fails to load", () => {
+    const originalCreateElement = document.createElement.bind(document);
+
+    // jsdom doesn't implement getContext, so we must mock the canvas element
+    vi.spyOn(document, "createElement").mockImplementation((tagName: string) => {
+      if (tagName === "canvas") {
+        const canvas = originalCreateElement("canvas");
+        canvas.getContext = vi.fn().mockReturnValue({
+          fillRect: vi.fn(),
+          drawImage: vi.fn(),
+          imageSmoothingEnabled: true,
+        } as unknown as CanvasRenderingContext2D);
+        canvas.toDataURL = vi.fn().mockReturnValue("data:image/png;base64,fake");
+        return canvas;
+      }
+      return originalCreateElement(tagName);
+    });
+
+    const originalImage = global.Image;
+    global.Image = class MockImage {
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      #src = "";
+      width = 100;
+      height = 100;
+      get src() {
+        return this.#src;
+      }
+      set src(value: string) {
+        this.#src = value;
+        // Trigger onerror synchronously to simulate a broken SVG source
+        this.onerror?.();
+      }
+    } as unknown as typeof Image;
+
+    render(<QrPaymentClient {...defaultProps} />);
+
+    const button = screen.getByRole("button", { name: /download qr/i });
+    fireEvent.click(button);
+
+    expect(
+      screen.getByText(/Gagal memuat QR/i)
+    ).toBeDefined();
+
+    global.Image = originalImage;
+  });
+
+  it("opens new window on mobile browser", () => {
+    const originalCreateElement = document.createElement.bind(document);
+
+    // jsdom doesn't implement getContext, so we must mock the canvas element
+    vi.spyOn(document, "createElement").mockImplementation((tagName: string) => {
+      if (tagName === "canvas") {
+        const canvas = originalCreateElement("canvas");
+        canvas.getContext = vi.fn().mockReturnValue({
+          fillRect: vi.fn(),
+          drawImage: vi.fn(),
+          imageSmoothingEnabled: true,
+        } as unknown as CanvasRenderingContext2D);
+        canvas.toDataURL = vi.fn().mockReturnValue("data:image/png;base64,fake");
+        return canvas;
+      }
+      return originalCreateElement(tagName);
+    });
+
+    const originalUA = navigator.userAgent;
+    Object.defineProperty(navigator, "userAgent", {
+      value: "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X)",
+      configurable: true,
+    });
+
+    const writeSpy = vi.fn();
+    const closeSpy = vi.fn();
+    const mockWindow = { document: { write: writeSpy, close: closeSpy } } as unknown as Window;
+    vi.spyOn(window, "open").mockReturnValue(mockWindow);
+
+    const originalImage = global.Image;
+    global.Image = class MockImage {
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      #src = "";
+      width = 100;
+      height = 100;
+      get src() {
+        return this.#src;
+      }
+      set src(value: string) {
+        this.#src = value;
+        this.onload?.();
+      }
+    } as unknown as typeof Image;
+
+    render(<QrPaymentClient {...defaultProps} />);
+
+    const button = screen.getByRole("button", { name: /download qr/i });
+    fireEvent.click(button);
+
+    expect(window.open).toHaveBeenCalled();
+    expect(writeSpy).toHaveBeenCalled();
+    expect(closeSpy).toHaveBeenCalled();
+
+    // Restore
+    Object.defineProperty(navigator, "userAgent", {
+      value: originalUA,
+      configurable: true,
+    });
+    global.Image = originalImage;
   });
 });

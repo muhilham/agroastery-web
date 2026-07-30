@@ -82,31 +82,85 @@ export default function QrPaymentClient({
   const [refreshError, setRefreshError] = useState<string | null>(null);
   const [simulateError, setSimulateError] = useState<string | null>(null);
   const [isSimulating, setIsSimulating] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
   const qrRef = useRef<HTMLDivElement>(null);
 
   const handleDownload = useCallback(() => {
-    const svg = qrRef.current?.querySelector("svg");
-    if (!svg) return;
+    setDownloadError(null);
+    const svgEl = qrRef.current?.querySelector("svg");
+    if (!svgEl) {
+      setDownloadError("QR code tidak ditemukan.");
+      return;
+    }
+
+    // Clone SVG so we can mutate it without affecting the rendered DOM.
+    const svg = svgEl.cloneNode(true) as SVGSVGElement;
+
+    // Ensure explicit pixel dimensions and crisp edge rendering.
+    // SVG default viewport behaviour can give an img.naturalWidth of 300x150
+    // when width/height are missing, which destroys the aspect ratio on canvas.
+    const sizeAttr = svg.getAttribute("width") || svg.getAttribute("height") || "224";
+    const size = parseInt(sizeAttr, 10) || 224;
+    svg.setAttribute("width", String(size));
+    svg.setAttribute("height", String(size));
+    svg.setAttribute("shape-rendering", "crispEdges");
 
     const svgData = new XMLSerializer().serializeToString(svg);
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    if (!ctx) {
+      setDownloadError("Browser tidak mendukung download gambar.");
+      return;
+    }
 
     const img = new Image();
     img.onload = () => {
-      canvas.width = img.width * 2; // retina scale for crisp image
-      canvas.height = img.height * 2;
+      const scale = 2;
+      canvas.width = size * scale;
+      canvas.height = size * scale;
+
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // CRITICAL: disable anti-aliasing so each QR module stays a sharp,
+      // unblurred rectangle. Bilinear interpolation softens the edges and
+      // makes phone scanners fail to read the code.
+      ctx.imageSmoothingEnabled = false;
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-      const a = document.createElement("a");
-      a.download = `qris-${orderNumber}.png`;
-      a.href = canvas.toDataURL("image/png");
-      a.click();
+      const pngUrl = canvas.toDataURL("image/png");
+
+      // Mobile browsers (especially iOS Safari) often ignore the download attribute
+      // on dynamically created anchors. Fallback: open in new tab so user can
+      // long-press / share / save manually.
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+      if (isMobile) {
+        const newWindow = window.open();
+        if (newWindow) {
+          newWindow.document.write(
+            `<html><head><title>QRIS Payment</title><meta name="viewport" content="width=device-width, initial-scale=1"></head><body style="margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#fff;"><img src="${pngUrl}" style="max-width:100%;height:auto;" alt="QRIS Payment" /></body></html>`
+          );
+          newWindow.document.close();
+        } else {
+          // Popup blocked — fallback to normal anchor click
+          const a = document.createElement("a");
+          a.download = `qris-${orderNumber}.png`;
+          a.href = pngUrl;
+          a.click();
+        }
+      } else {
+        const a = document.createElement("a");
+        a.download = `qris-${orderNumber}.png`;
+        a.href = pngUrl;
+        a.click();
+      }
     };
-    img.src = `data:image/svg+xml;base64,${btoa(svgData)}`;
+    img.onerror = () => {
+      setDownloadError("Gagal memuat QR. Coba perbarui QR terlebih dahulu.");
+    };
+    // Use encodeURIComponent instead of btoa to avoid Unicode issues
+    img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgData)}`;
   }, [orderNumber]);
 
   const handleSimulate = useCallback(async () => {
@@ -232,15 +286,23 @@ export default function QrPaymentClient({
             )}
 
             {qrString && (
-              <Button
-                onClick={handleDownload}
-                variant="outline"
-                size="sm"
-                className="mt-2 !border-gray-400 !text-gray-700 hover:bg-gray-100"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Download QR
-              </Button>
+              <>
+                <p className="text-[10px] text-gray-400 text-center">
+                  Atau silahkan screenshot QR ini
+                </p>
+                <Button
+                  onClick={handleDownload}
+                  variant="outline"
+                  size="sm"
+                  className="mt-1 !border-gray-400 !text-gray-700 hover:bg-gray-100"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Download QR
+                </Button>
+                {downloadError && (
+                  <p className="text-destructive text-xs text-center">{downloadError}</p>
+                )}
+              </>
             )}
 
             {!isExpired && (
