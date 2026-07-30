@@ -7,7 +7,7 @@ import Navigation from "@/components/navigation";
 import { Button } from "@/components/ui/button";
 import { numberToIdr } from "@/lib/numberToIdr";
 import { useCart } from "@/lib/hooks/useCart";
-import { RefreshCw, Loader2 } from "lucide-react";
+import { RefreshCw, Loader2, Camera } from "lucide-react";
 
 interface Props {
   orderId: string;
@@ -206,9 +206,12 @@ export default function QrPaymentClient({
             )}
 
             {qrString && (
-              <p className="text-[10px] text-gray-400 text-center">
-                Silahkan screenshot QR ini lalu scan di aplikasi pembayaran
-              </p>
+              <div className="flex items-center gap-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2">
+                <Camera className="w-4 h-4 text-amber-600 shrink-0" />
+                <p className="text-sm font-medium text-amber-800 leading-snug">
+                  Screenshot QR ini, lalu scan di aplikasi pembayaran
+                </p>
+              </div>
             )}
 
             {!isExpired && (
