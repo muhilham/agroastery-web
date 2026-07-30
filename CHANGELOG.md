@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.3](https://github.com/muhilham/agroastery-web/compare/v0.10.2...v0.10.3) (2026-07-30)
+
+
+### Bug Fixes
+
+* **checkout:** remove broken download button — ask user to screenshot QR instead ([2c08b75](https://github.com/muhilham/agroastery-web/commit/2c08b75803b4fffd7d1233d2e8b6a4183956164f))
+
 ## [0.10.2](https://github.com/muhilham/agroastery-web/compare/v0.10.1...v0.10.2) (2026-07-30)
 
 
