@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.0](https://github.com/muhilham/agroastery-web/compare/v0.10.4...v0.11.0) (2026-07-30)
+
+
+### Features
+
+* **analytics:** add GA4 ecommerce tracking ([#52](https://github.com/muhilham/agroastery-web/issues/52)) ([a633874](https://github.com/muhilham/agroastery-web/commit/a6338741dd9b141f8505394b62889d86c1d30d03))
+
 ## [0.10.4](https://github.com/muhilham/agroastery-web/compare/v0.10.3...v0.10.4) (2026-07-30)
 
 
