@@ -3,7 +3,7 @@
   "version": "0.11.0",
   "private": true,
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=24.0.0"
   },
   "scripts": {
     "dev": "bash -c '. \"$HOME/.nvm/nvm.sh\" && nvm use && next dev --turbopack'",
@@ -50,7 +50,7 @@
     "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/react": "^16.3.0",
     "@types/google.maps": "^3.58.1",
-    "@types/node": "^20",
+    "@types/node": "^24",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@typescript-eslint/eslint-plugin": "^8.31.1",
