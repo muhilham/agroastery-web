@@ -7,10 +7,8 @@ export function ReorderSection() {
   return (
     <section className="border-t border-white/10 py-16">
       <div className="mx-auto max-w-2xl px-6 text-center">
-        <h2 className="text-xl font-semibold">Menikmati Blend 50:50?</h2>
         <p className="mt-3 text-sm leading-relaxed text-[hsl(var(--secondary))]">
-          Pesan langsung dari AGRoastery dan nikmati harga terbaik kami. Hemat hingga 11%
-          dibanding harga marketplace.
+          Hemat hingga 11% dibandingkan harga di marketplace.
         </p>
         <Link
           href="/product/biji-kopi-blend-5050-kopi-susu-ekonomis"

@@ -10,7 +10,7 @@ export function HelpSection() {
   return (
     <section className="border-t border-white/10 py-12">
       <div className="mx-auto max-w-2xl px-6 text-center">
-        <h2 className="text-xl font-semibold">Butuh Bantuan?</h2>
+        <h2 className="text-xl font-semibold text-[hsl(var(--primary))]">Butuh Bantuan?</h2>
         <p className="mt-3 text-sm leading-relaxed text-[hsl(var(--secondary))]">
           Belum dapat hasil yang Anda inginkan? Tim kami dengan senang hati membantu Anda dial-in
           kopi ini.
