@@ -5,12 +5,14 @@ import { ViewTracker } from "./ViewTracker";
 class FakeIntersectionObserver {
   static instances: FakeIntersectionObserver[] = [];
   callback: IntersectionObserverCallback;
+  options: IntersectionObserverInit | undefined;
   observe = vi.fn();
   disconnect = vi.fn();
   unobserve = vi.fn();
 
-  constructor(callback: IntersectionObserverCallback) {
+  constructor(callback: IntersectionObserverCallback, options?: IntersectionObserverInit) {
     this.callback = callback;
+    this.options = options;
     FakeIntersectionObserver.instances.push(this);
   }
 
@@ -51,5 +53,28 @@ describe("ViewTracker", () => {
     );
     FakeIntersectionObserver.instances[0].trigger(false);
     expect(onView).not.toHaveBeenCalled();
+  });
+
+  it("calls disconnect when the component unmounts", () => {
+    const onView = vi.fn();
+    const { unmount } = render(
+      <ViewTracker onView={onView}>
+        <div>content</div>
+      </ViewTracker>
+    );
+    const observer = FakeIntersectionObserver.instances[0];
+    unmount();
+    expect(observer.disconnect).toHaveBeenCalledTimes(1);
+  });
+
+  it("passes the threshold prop to the IntersectionObserver constructor", () => {
+    const onView = vi.fn();
+    render(
+      <ViewTracker onView={onView} threshold={0.75}>
+        <div>content</div>
+      </ViewTracker>
+    );
+    const observer = FakeIntersectionObserver.instances[0];
+    expect(observer.options?.threshold).toBe(0.75);
   });
 });

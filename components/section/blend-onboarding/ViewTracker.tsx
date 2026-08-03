@@ -12,6 +12,8 @@ type ViewTrackerProps = {
 export function ViewTracker({ onView, children, className, threshold = 0.4 }: ViewTrackerProps) {
   const ref = useRef<HTMLDivElement | null>(null);
   const firedRef = useRef(false);
+  const onViewRef = useRef(onView);
+  onViewRef.current = onView;
 
   useEffect(() => {
     const node = ref.current;
@@ -22,7 +24,7 @@ export function ViewTracker({ onView, children, className, threshold = 0.4 }: Vi
         for (const entry of entries) {
           if (entry.isIntersecting && !firedRef.current) {
             firedRef.current = true;
-            onView();
+            onViewRef.current();
             observer.disconnect();
           }
         }
@@ -32,7 +34,7 @@ export function ViewTracker({ onView, children, className, threshold = 0.4 }: Vi
 
     observer.observe(node);
     return () => observer.disconnect();
-  }, [onView, threshold]);
+  }, [threshold]);
 
   return (
     <div ref={ref} className={className}>
