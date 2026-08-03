@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.0](https://github.com/muhilham/agroastery-web/compare/v0.11.0...v0.12.0) (2026-08-03)
+
+
+### Features
+
+* Blend 50:50 onboarding page at /start/blend-50-50 ([#54](https://github.com/muhilham/agroastery-web/issues/54)) ([d9f7919](https://github.com/muhilham/agroastery-web/commit/d9f79190b6670a69b026dc2818c5b03324d9eb1b))
+
 ## [0.11.0](https://github.com/muhilham/agroastery-web/compare/v0.10.4...v0.11.0) (2026-07-30)
 
 
