@@ -6,7 +6,7 @@ Most first-time Blend 50:50 buyers purchase via Tokopedia/Shopee, not agroastery
 
 This is a **product onboarding page**, not a marketing or ecommerce page. Its job is to help the customer brew Blend 50:50 exactly as AGRoastery intends, before any selling happens. Visual tone: Apple documentation / Linear.app — minimal, calm, spacious, typography-first. No banners, popups, carousels, testimonials, or unnecessary animation.
 
-Business goal: convert a good first brewing experience into a direct-to-agroastery.com repeat customer, via a single low-pressure reorder CTA at the very end.
+Business goal: help first-time marketplace customers achieve a successful first brewing experience while introducing AGRoastery as the preferred destination for future purchases, via a single low-pressure reorder CTA at the very end.
 
 Audience: home espresso users, small coffee shop owners, offices, restaurants. Not assumed to be beginners or experts.
 
