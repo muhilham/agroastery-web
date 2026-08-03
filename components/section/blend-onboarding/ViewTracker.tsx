@@ -13,7 +13,10 @@ export function ViewTracker({ onView, children, className, threshold = 0.4 }: Vi
   const ref = useRef<HTMLDivElement | null>(null);
   const firedRef = useRef(false);
   const onViewRef = useRef(onView);
-  onViewRef.current = onView;
+
+  useEffect(() => {
+    onViewRef.current = onView;
+  });
 
   useEffect(() => {
     const node = ref.current;
