@@ -37,7 +37,7 @@ export default function RootLayout({
 }>) {
   const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
   return (
-    <html lang="en" className="scroll-smooth">
+    <html lang="en">
       <head>
         {/* Preconnect to third-party origins used at checkout */}
         <link rel="preconnect" href="https://maps.googleapis.com" />

@@ -2,7 +2,7 @@ import { ingredients } from "@/lib/data/blend-50-50";
 
 export function IngredientsSection() {
   return (
-    <section id="bahan" className="scroll-mt-8 border-t border-white/10 py-12">
+    <section className="border-t border-white/10 py-12">
       <div className="mx-auto max-w-2xl px-6">
         <h2 className="text-xl font-semibold">Bahan yang Digunakan</h2>
         <dl className="mt-6 space-y-4">
