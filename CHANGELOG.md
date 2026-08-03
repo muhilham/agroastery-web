@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.1](https://github.com/muhilham/agroastery-web/compare/v0.12.0...v0.12.1) (2026-08-03)
+
+
+### Bug Fixes
+
+* restore visible text color on /start/blend-50-50 page ([#56](https://github.com/muhilham/agroastery-web/issues/56)) ([fd6bba3](https://github.com/muhilham/agroastery-web/commit/fd6bba3158a9fc127cc9fd5dc5c506d2eacfeb22))
+
 ## [0.12.0](https://github.com/muhilham/agroastery-web/compare/v0.11.0...v0.12.0) (2026-08-03)
 
 
