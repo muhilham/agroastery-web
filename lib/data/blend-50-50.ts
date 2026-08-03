@@ -25,7 +25,7 @@ export type Troubleshooting = {
 };
 
 export function trackBlendEvent(eventName: string, params?: Record<string, unknown>): void {
-  trackEvent(eventName, { product: PRODUCT_SLUG, version: CONTENT_VERSION, ...params });
+  trackEvent(eventName, { ...params, product: PRODUCT_SLUG, version: CONTENT_VERSION });
 }
 
 export const recipes: Recipe[] = [

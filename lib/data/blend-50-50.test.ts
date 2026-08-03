@@ -25,7 +25,7 @@ describe("blend-50-50 content", () => {
   });
 
   it("has ingredients and troubleshooting entries", () => {
-    expect(ingredients.length).toBeGreaterThan(0);
+    expect(ingredients).toHaveLength(4);
     expect(troubleshooting).toHaveLength(4);
   });
 });
@@ -44,11 +44,11 @@ describe("trackBlendEvent", () => {
   });
 
   it("merges extra params without overwriting product/version", () => {
-    trackBlendEvent("brew_guide_viewed", { brew_method: "espresso" });
+    trackBlendEvent("brew_guide_viewed", { brew_method: "espresso", product: "hacked", version: "999" });
     expect(trackEvent).toHaveBeenCalledWith("brew_guide_viewed", {
+      brew_method: "espresso",
       product: PRODUCT_SLUG,
       version: CONTENT_VERSION,
-      brew_method: "espresso",
     });
   });
 });
