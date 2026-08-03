@@ -70,7 +70,7 @@ export const ingredients: Ingredient[] = [
   { name: "Sirup Aren", detail: "Mahorahora" },
   {
     name: "Liquid Creamer",
-    detail: "Campur 50g bubuk creamer + 50g Aqua, blender hingga halus.",
+    detail: "Campur 50g bubuk creamer + 50g Aqua, aduk hingga halus.",
   },
 ];
 

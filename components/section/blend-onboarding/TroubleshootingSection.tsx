@@ -9,7 +9,7 @@ export function TroubleshootingSection() {
     <ViewTracker onView={() => trackBlendEvent("troubleshooting_viewed", undefined)}>
       <section className="border-t border-white/10 py-12">
         <div className="mx-auto max-w-2xl px-6">
-          <h2 className="text-xl font-semibold">Troubleshooting</h2>
+          <h2 className="text-xl font-semibold text-[hsl(var(--primary))]">Troubleshooting</h2>
           <div className="mt-6 space-y-4">
             {troubleshooting.map((item) => (
               <TroubleshootingCard key={item.question} item={item} />

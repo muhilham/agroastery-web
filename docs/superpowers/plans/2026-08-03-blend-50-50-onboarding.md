@@ -173,7 +173,7 @@ export const ingredients: Ingredient[] = [
   { name: "Sirup Aren", detail: "Mahorahora" },
   {
     name: "Liquid Creamer",
-    detail: "Campur 50g bubuk creamer + 50g Aqua, blender hingga halus.",
+    detail: "Campur 50g bubuk creamer + 50g Aqua, aduk hingga halus.",
   },
 ];
 
@@ -1029,8 +1029,7 @@ export function ReorderSection() {
       <div className="mx-auto max-w-2xl px-6 text-center">
         <h2 className="text-xl font-semibold">Menikmati Blend 50:50?</h2>
         <p className="mt-3 text-sm leading-relaxed text-[hsl(var(--secondary))]">
-          Pesan langsung dari AGRoastery dan nikmati harga terbaik kami. Hemat hingga 11%
-          dibanding harga marketplace.
+          Pesan langsung dari AGRoastery. Hemat hingga 11%.
         </p>
         <Link
           href="/product/biji-kopi-blend-5050-kopi-susu-ekonomis"
