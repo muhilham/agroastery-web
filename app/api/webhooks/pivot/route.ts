@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
         xendit_payment_method: "QRIS", // reuse existing column for payment method label
       })
       .eq("pivot_payment_session_id", paymentSessionId)
-      .select("id, order_number, customer_name, customer_phone, total")
+      .select("id, order_number, customer_name, customer_phone, total, shipping_address")
       .single();
 
     if (error) {
@@ -84,14 +84,32 @@ export async function POST(request: NextRequest) {
     }
 
     if (updatedOrder) {
+      // Fetch order items for WhatsApp message
+      const { data: orderItems, error: itemsError } = await supabase
+        .from("ecom_order_items")
+        .select("product_name, quantity")
+        .eq("order_id", updatedOrder.id);
+
+      if (itemsError) {
+        console.error(`[pivot-webhook] Failed to fetch items for order ${updatedOrder.id}:`, itemsError);
+      }
+
+      const shippingAddress = updatedOrder.shipping_address as Record<string, unknown> | null;
+      const shippingAddressPhone = (shippingAddress?.phone as string) || null;
+
       sendPaymentNotification({
         orderId: updatedOrder.id as string,
         orderNumber: updatedOrder.order_number as string,
         customerName: updatedOrder.customer_name as string,
         customerPhone: updatedOrder.customer_phone as string,
+        shippingAddressPhone,
         paymentMethod: "QRIS",
         total: updatedOrder.total as number,
         paidAt,
+        items: (orderItems ?? []).map((i) => ({
+          productName: i.product_name as string,
+          quantity: i.quantity as number,
+        })),
       }).catch((err: unknown) =>
         console.error(
           `[pivot-webhook] Payment notification failed for order ${updatedOrder.id}:`,
