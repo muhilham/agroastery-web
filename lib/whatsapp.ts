@@ -27,3 +27,46 @@ export function buildWhatsAppLink(message: string): string {
   const number = raw.replace(/^\+/, ""); // wa.me needs country code without +
   return `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
 }
+
+type PaymentWhatsAppItem = {
+  productName: string;
+  quantity: number;
+};
+
+type BuildPaymentWhatsAppLinkParams = {
+  phone: string;
+  customerName: string;
+  orderNumber: string;
+  orderId: string;
+  items: PaymentWhatsAppItem[];
+  total: number;
+  appUrl?: string;
+};
+
+export function buildPaymentWhatsAppLink(params: BuildPaymentWhatsAppLinkParams): string | null {
+  const cleanPhone = formatPhoneForWaMe(params.phone);
+  if (!cleanPhone) return null;
+
+  const appUrl = (params.appUrl ?? process.env.NEXT_PUBLIC_APP_URL ?? "https://agroastery.com").replace(/\/$/, "");
+
+  const formattedTotal = new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    minimumFractionDigits: 0,
+  }).format(params.total);
+
+  let message = `Halo ${params.customerName}, order ${params.orderNumber} sudah dikonfirmasi.`;
+
+  if (params.items.length > 0) {
+    const itemLines = params.items
+      .map((i) => `• ${i.productName} ×${i.quantity}`)
+      .join("\n");
+    message += `\n\n${itemLines}`;
+  }
+
+  message += `\n\nTotal: ${formattedTotal}`;
+  message += `\nTracking: ${appUrl}/track/${params.orderId}/`;
+  message += `\n\nTerima kasih sudah order di Agroastery! 🙏`;
+
+  return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+}
