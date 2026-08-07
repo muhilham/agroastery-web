@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.13.0](https://github.com/muhilham/agroastery-web/compare/v0.12.1...v0.13.0) (2026-08-07)
+
+
+### Features
+
+* **telegram:** integrate wa.me link into payment notifications ([170aa7e](https://github.com/muhilham/agroastery-web/commit/170aa7eb37cc8c0c9a2424c71d19469123aa4e27))
+* **webhook:** pass order items and shipping phone to payment notification ([10a9751](https://github.com/muhilham/agroastery-web/commit/10a97512acb998169f66c5cda458ea99b14e64c5))
+* **whatsapp:** add Indonesian phone normalization for wa.me ([51cca2f](https://github.com/muhilham/agroastery-web/commit/51cca2f44a4dbc30c7e5dc13a52d55d8d67f800b))
+* **whatsapp:** add payment WhatsApp link builder ([f2e6405](https://github.com/muhilham/agroastery-web/commit/f2e640511b1d751b4f40dc17dc4342fc22a0e386))
+
+
+### Documentation
+
+* add WhatsApp link in Telegram payment notification design spec (buyer-first priority + ID phone normalization) ([d80f714](https://github.com/muhilham/agroastery-web/commit/d80f714d7c978cfdf41c480e95f2eee5f3ec6fdb))
+* add WhatsApp link in Telegram payment notification implementation plan ([fe0a678](https://github.com/muhilham/agroastery-web/commit/fe0a67807f9979f3c4180a858d50938075897277))
+
 ## [0.12.1](https://github.com/muhilham/agroastery-web/compare/v0.12.0...v0.12.1) (2026-08-03)
 
 
