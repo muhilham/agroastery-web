@@ -1,4 +1,5 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
+import { buildPaymentWhatsAppLink } from "@/lib/whatsapp";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -17,14 +18,22 @@ type OrderNotificationParams = {
   shippingService?: string | null;
 };
 
+/**
+ * @property shippingAddressPhone - Fallback when customerPhone unavailable.
+ *   Populated by pivot webhook (Task 4).
+ * @property items - Order line items for WhatsApp message body.
+ *   Populated by pivot webhook from ecom_order_items (Task 4).
+ */
 type PaymentNotificationParams = {
   orderId: string;
   orderNumber: string;
   customerName: string;
   customerPhone: string;
+  shippingAddressPhone?: string | null;
   paymentMethod?: string | null;
   total: number;
   paidAt: string; // ISO string
+  items?: { productName: string; quantity: number }[];
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -180,7 +189,7 @@ export async function sendPaymentNotification(params: PaymentNotificationParams)
     minute: "2-digit",
   });
 
-  const text = [
+  let text = [
     `✅ *Pembayaran Diterima!*`,
     ``,
     `*No. Pesanan:* \`${params.orderNumber}\``,
@@ -192,6 +201,24 @@ export async function sendPaymentNotification(params: PaymentNotificationParams)
   ]
     .filter((line) => line !== null)
     .join("\n");
+
+  // Alert detection: ops convention — paymentMethod prefixed with ⚠️ means
+  // manual/alert message, skip wa.me link for those.
+  const isAlert = params.paymentMethod?.startsWith("⚠️");
+  if (!isAlert) {
+    const targetPhone = params.customerPhone || params.shippingAddressPhone || "";
+    const waLink = buildPaymentWhatsAppLink({
+      phone: targetPhone,
+      customerName: params.customerName,
+      orderNumber: params.orderNumber,
+      orderId: params.orderId,
+      items: params.items ?? [],
+      total: params.total,
+    });
+    if (waLink) {
+      text += "\n\nWA: " + waLink;
+    }
+  }
 
   const sendError = await sendTelegramMessage(text);
   const skipped = sendError?.includes("not configured");
