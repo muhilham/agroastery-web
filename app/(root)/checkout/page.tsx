@@ -39,6 +39,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { useAddresses } from "@/lib/hooks/useAddresses";
 import type { Address } from "@/lib/hooks/useAddresses";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { guestFormSchema, loggedInFormSchema, type TForm } from "./checkoutSchemas";
 
 function CheckoutImage({ src, alt }: { src: string; alt: string }) {
@@ -61,6 +62,7 @@ export default function CheckoutPage() {
   const [mounted, setMounted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const idempotencyKey = useRef<string>(crypto.randomUUID());
+  const profilePrefilledRef = useRef(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [showMap, setShowMap] = useState(false);
   const { user, loading: authLoading } = useAuth();
@@ -211,6 +213,34 @@ export default function CheckoutPage() {
     } else if (defaultAddr.postal_code) {
       handleCalculateShippingByPostal(defaultAddr.postal_code);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, isLoadingAddresses, addresses]);
+
+  useEffect(() => {
+    if (!user || isLoadingAddresses || profilePrefilledRef.current) return;
+    if (addresses.length > 0) return;
+
+    profilePrefilledRef.current = true;
+
+    const supabase = createSupabaseBrowserClient();
+    supabase
+      .from("profiles")
+      .select("full_name, phone")
+      .eq("id", user.id)
+      .single()
+      .then(({ data, error }) => {
+        if (error || !data) return;
+
+        if (!form.getFieldState("fullName").isDirty) {
+          form.setValue("fullName", data.full_name ?? "", { shouldValidate: true });
+        }
+        if (!form.getFieldState("phone").isDirty) {
+          form.setValue("phone", data.phone ?? "", { shouldValidate: true });
+        }
+        if (!form.getFieldState("email").isDirty && user.email) {
+          form.setValue("email", user.email, { shouldValidate: true });
+        }
+      });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, isLoadingAddresses, addresses]);
 
