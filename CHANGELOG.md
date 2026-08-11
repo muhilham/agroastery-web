@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.14.0](https://github.com/muhilham/agroastery-web/compare/v0.13.1...v0.14.0) (2026-08-11)
+
+
+### Features
+
+* prefill checkout Data Penerima from profile when no saved addresses ([#62](https://github.com/muhilham/agroastery-web/issues/62)) ([77228ab](https://github.com/muhilham/agroastery-web/commit/77228ab3de3e288b734e9e6de3d5b2cecb6f232b))
+
 ## [0.13.1](https://github.com/muhilham/agroastery-web/compare/v0.13.0...v0.13.1) (2026-08-11)
 
 
