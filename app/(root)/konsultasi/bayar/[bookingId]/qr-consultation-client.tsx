@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import QRCode from "react-qr-code";
-import { RefreshCw, Loader2 } from "lucide-react";
+import { RefreshCw, Loader2, Camera, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { numberToIdr } from "@/lib/numberToIdr";
 
@@ -126,6 +126,25 @@ export default function QrConsultationClient({
           <div className="w-56 h-56 bg-gray-100 rounded-lg flex items-center justify-center">
             <Loader2 className="animate-spin w-8 h-8 text-gray-400" />
           </div>
+        )}
+
+        {qrString && (
+          <>
+            <div className="flex items-center gap-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 w-full">
+              <Camera className="w-4 h-4 text-amber-600 shrink-0" />
+              <p className="text-sm font-medium text-amber-800 leading-snug">
+                Screenshot QR ini, lalu scan di aplikasi pembayaran
+              </p>
+            </div>
+            <a
+              href={`/api/consultations/${bookingId}/qr.png`}
+              download
+              className="inline-flex items-center justify-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              Download QR
+            </a>
+          </>
         )}
 
         <Button
