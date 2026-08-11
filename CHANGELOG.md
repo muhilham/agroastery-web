@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.13.1](https://github.com/muhilham/agroastery-web/compare/v0.13.0...v0.13.1) (2026-08-11)
+
+
+### Bug Fixes
+
+* **checkout:** server-side QRIS PNG generation for reliable downloads ([#60](https://github.com/muhilham/agroastery-web/issues/60)) ([fda444b](https://github.com/muhilham/agroastery-web/commit/fda444b6142d831fda1b77b45772aca510de60bb))
+
 ## [0.13.0](https://github.com/muhilham/agroastery-web/compare/v0.12.1...v0.13.0) (2026-08-07)
 
 
