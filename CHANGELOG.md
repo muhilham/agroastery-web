@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.14.1](https://github.com/muhilham/agroastery-web/compare/v0.14.0...v0.14.1) (2026-08-14)
+
+
+### Bug Fixes
+
+* **consultations:** shorten orderNumber to fit Pivot 20-char limit ([858030b](https://github.com/muhilham/agroastery-web/commit/858030b90293d73b91378ae5e110573f4f359cc9))
+
 ## [0.14.0](https://github.com/muhilham/agroastery-web/compare/v0.13.1...v0.14.0) (2026-08-11)
 
 
