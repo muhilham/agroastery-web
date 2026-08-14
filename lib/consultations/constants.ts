@@ -22,6 +22,14 @@ export const CONSULTATION_PURPOSES = {
 
 export type ConsultationPurpose = keyof typeof CONSULTATION_PURPOSES;
 
+/** Build a Pivot-safe order number (≤20 chars) for consultation bookings. */
+export function formatConsultationOrderNumber(
+  bookingDate: string,
+  timeSlot: string
+): string {
+  return `KONS-${bookingDate.replace(/-/g, "")}-${timeSlot.replace(/:/g, "")}`;
+}
+
 export function isConsultationSlot(value: string): value is ConsultationTimeSlot {
   return (CONSULTATION_TIME_SLOTS as readonly string[]).includes(value);
 }

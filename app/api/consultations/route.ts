@@ -4,7 +4,10 @@ import {
   createSupabaseServerClient,
 } from "@/lib/supabase/server";
 import { CreateBookingSchema } from "@/lib/consultations/schema";
-import { CONSULTATION_FEE_IDR } from "@/lib/consultations/constants";
+import {
+  CONSULTATION_FEE_IDR,
+  formatConsultationOrderNumber,
+} from "@/lib/consultations/constants";
 import { createQrisPaymentSession } from "@/lib/pivot/client";
 
 export const dynamic = "force-dynamic";
@@ -64,7 +67,7 @@ export async function POST(request: NextRequest) {
   try {
     const session = await createQrisPaymentSession({
       orderId: booking.id as string,
-      orderNumber: `KONSULTASI-${input.booking_date}-${input.time_slot}`,
+      orderNumber: formatConsultationOrderNumber(input.booking_date, input.time_slot),
       total: CONSULTATION_FEE_IDR,
       customerName: input.name,
       customerEmail: input.email,

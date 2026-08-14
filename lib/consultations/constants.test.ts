@@ -5,6 +5,7 @@ import {
   CONSULTATION_FEE_IDR,
   CONSULTATION_WINDOW_WEEKS,
   isConsultationSlot,
+  formatConsultationOrderNumber,
 } from "./constants";
 
 describe("consultation constants", () => {
@@ -29,5 +30,11 @@ describe("consultation constants", () => {
     expect(isConsultationSlot("17:00")).toBe(true);
     expect(isConsultationSlot("10:00")).toBe(false);
     expect(isConsultationSlot("")).toBe(false);
+  });
+
+  it("formatConsultationOrderNumber is ≤20 chars", () => {
+    const on = formatConsultationOrderNumber("2026-08-19", "11:00");
+    expect(on).toBe("KONS-20260819-1100");
+    expect(on.length).toBeLessThanOrEqual(20);
   });
 });

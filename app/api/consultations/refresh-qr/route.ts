@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { createQrisPaymentSession } from "@/lib/pivot/client";
+import { formatConsultationOrderNumber } from "@/lib/consultations/constants";
 
 const RefreshSchema = z.object({ bookingId: z.string().uuid() });
 
@@ -37,7 +38,10 @@ export async function POST(request: NextRequest) {
     const session = await createQrisPaymentSession(
       {
         orderId: booking.id as string,
-        orderNumber: `KONSULTASI-${booking.booking_date}-${booking.time_slot}`,
+        orderNumber: formatConsultationOrderNumber(
+          booking.booking_date as string,
+          booking.time_slot as string
+        ),
         total: booking.amount as number,
         customerName: booking.name as string,
         customerEmail: booking.email as string,

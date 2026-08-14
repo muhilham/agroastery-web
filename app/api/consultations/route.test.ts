@@ -39,7 +39,7 @@ const validBody = {
   email: "budi@example.com",
   phone: "08123456789",
   purpose: "custom_blending",
-  booking_date: "2026-07-28",
+  booking_date: "2026-08-19",
   time_slot: "11:00",
 };
 
