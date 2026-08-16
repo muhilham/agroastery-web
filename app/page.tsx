@@ -40,7 +40,9 @@ export default function Home() {
                   >
                     <path d="M12 2l2.4 7.2H22l-6 4.4 2.3 7.4L12 16.8 5.7 21l2.3-7.4-6-4.4h7.6z" />
                   </svg>
-                  Up to 11% cheaper than Shopee/Tokopedia
+                  {process.env.NEXT_PUBLIC_INDEPENDENCE_DAY_PROMO === "true"
+                    ? "17% OFF — Spesial HUT RI"
+                    : "Up to 11% cheaper than Shopee/Tokopedia"}
                 </span>
               </div>
               <a

@@ -36,4 +36,18 @@ describe("ReorderSection", () => {
     fireEvent.click(screen.getByRole("link", { name: "Pesan Ulang Blend 50:50" }));
     expect(trackBlendEvent).toHaveBeenCalledWith("reorder_clicked");
   });
+
+  it("shows normal copy when promo env var is not set", () => {
+    vi.stubEnv("NEXT_PUBLIC_INDEPENDENCE_DAY_PROMO", "false");
+    render(<ReorderSection />);
+    expect(screen.getByText(/Hemat hingga 11%/)).toBeInTheDocument();
+    vi.unstubAllEnvs();
+  });
+
+  it("shows promo copy when env var is true", () => {
+    vi.stubEnv("NEXT_PUBLIC_INDEPENDENCE_DAY_PROMO", "true");
+    render(<ReorderSection />);
+    expect(screen.getByText(/Diskon 17% spesial HUT RI/)).toBeInTheDocument();
+    vi.unstubAllEnvs();
+  });
 });

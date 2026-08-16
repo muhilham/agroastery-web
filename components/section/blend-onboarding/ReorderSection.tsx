@@ -8,7 +8,9 @@ export function ReorderSection() {
     <section className="border-t border-white/10 py-16">
       <div className="mx-auto max-w-2xl px-6 text-center">
         <p className="mt-3 text-sm leading-relaxed text-[hsl(var(--secondary))]">
-          Hemat hingga 11% dibandingkan harga di marketplace.
+          {process.env.NEXT_PUBLIC_INDEPENDENCE_DAY_PROMO === "true"
+            ? "Diskon 17% spesial HUT RI — Beli langsung dari Agroastery."
+            : "Hemat hingga 11% dibandingkan harga di marketplace."}
         </p>
         <Link
           href="/product/biji-kopi-blend-5050-kopi-susu-ekonomis"
