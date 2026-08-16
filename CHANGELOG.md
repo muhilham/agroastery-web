@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.0](https://github.com/muhilham/agroastery-web/compare/v0.14.1...v0.15.0) (2026-08-16)
+
+
+### Features
+
+* **promo:** add Independence Day promo toggle ([83b0af8](https://github.com/muhilham/agroastery-web/commit/83b0af8f77478760abaf19fe1ecbfabc2a636632))
+
 ## [0.14.1](https://github.com/muhilham/agroastery-web/compare/v0.14.0...v0.14.1) (2026-08-14)
 
 
