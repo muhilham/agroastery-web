@@ -85,6 +85,9 @@ function escapeMarkdown(text: string): string {
 async function sendTelegramMessage(text: string): Promise<string | null> {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
+  const threadIdRaw = process.env.TELEGRAM_PRODUCTION_THREAD_ID;
+  const threadId =
+    threadIdRaw && /^\d+$/.test(threadIdRaw) ? Number.parseInt(threadIdRaw, 10) : undefined;
 
   if (!botToken || !chatId) {
     return "TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID not configured";
@@ -92,12 +95,13 @@ async function sendTelegramMessage(text: string): Promise<string | null> {
 
   // Escape markdown special characters to prevent parsing errors
   const escapedText = escapeMarkdown(text);
+  const basePayload = threadId ? { chat_id: chatId, message_thread_id: threadId } : { chat_id: chatId };
 
   try {
     const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chat_id: chatId, text: escapedText, parse_mode: "Markdown" }),
+      body: JSON.stringify({ ...basePayload, text: escapedText, parse_mode: "Markdown" }),
     });
 
     if (!res.ok) {
@@ -107,7 +111,7 @@ async function sendTelegramMessage(text: string): Promise<string | null> {
         const plainRes = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ chat_id: chatId, text: text }), // unescaped, no parse_mode
+          body: JSON.stringify({ ...basePayload, text }), // unescaped, no parse_mode
         });
         if (!plainRes.ok) {
           const plainBody = await plainRes.text();
