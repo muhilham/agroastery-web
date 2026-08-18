@@ -1,6 +1,6 @@
 # Resting Period Helper Page Implementation Plan
 
-> **For agonic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** A shareable `/resting-period` page where users enter a roast date and see rest-day milestones (3/7/14/21) and today's rest-day count, with the date encoded in the URL for copying.
 
