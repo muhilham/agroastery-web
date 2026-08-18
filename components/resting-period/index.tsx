@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   addDays,
@@ -35,9 +35,16 @@ export function RestingPeriod() {
 
   const [copied, setCopied] = useState(false);
   const [clipboardFailed, setClipboardFailed] = useState(false);
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const today = useMemo(() => getTodayWIB(new Date()), []);
+  const [today] = useState(() => getTodayWIB(new Date()));
   const dayCount = roast ? diffDays(roast, today) : null;
+
+  useEffect(() => {
+    return () => {
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    };
+  }, []);
 
   function handleRoastChange(value: string) {
     if (!value) {
@@ -52,7 +59,8 @@ export function RestingPeriod() {
       await navigator.clipboard.writeText(window.location.href);
       setCopied(true);
       setClipboardFailed(false);
-      setTimeout(() => setCopied(false), 2000);
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+      copyTimerRef.current = setTimeout(() => setCopied(false), 2000);
     } catch {
       setClipboardFailed(true);
     }
@@ -90,6 +98,7 @@ export function RestingPeriod() {
           type="button"
           onClick={handleCopy}
           disabled={!roast}
+          aria-live="polite"
           className="rounded-xl bg-foreground px-5 py-3 text-sm font-semibold text-background transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
         >
           {copied ? "Copied!" : "Copy link"}
@@ -97,7 +106,7 @@ export function RestingPeriod() {
       </section>
 
       {clipboardFailed && (
-        <div className="mb-8">
+        <div className="mb-8" aria-live="polite">
           <label
             htmlFor="copy-manually"
             className="mb-2 block text-sm text-white/60"
