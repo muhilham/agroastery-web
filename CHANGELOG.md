@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.1](https://github.com/muhilham/agroastery-web/compare/v0.15.0...v0.15.1) (2026-08-18)
+
+
+### Bug Fixes
+
+* **telegram:** send order alerts to thread ([ceb2673](https://github.com/muhilham/agroastery-web/commit/ceb2673c465bfe377ef33c0d0089558605916c1b))
+
 ## [0.15.0](https://github.com/muhilham/agroastery-web/compare/v0.14.1...v0.15.0) (2026-08-16)
 
 
