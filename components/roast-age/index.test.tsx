@@ -83,7 +83,7 @@ describe("RestingPeriod", () => {
       target: { value: "2026-08-04" },
     });
     expect(mockReplace).toHaveBeenCalledWith(
-      "/resting-period/?roast=2026-08-04",
+      "/roast-age/?roast=2026-08-04",
       { scroll: false }
     );
   });
@@ -92,7 +92,7 @@ describe("RestingPeriod", () => {
     mockParams.value = { roast: "2026-08-04" };
     render(<RestingPeriod />);
     fireEvent.change(screen.getByLabelText(/roast date/i), { target: { value: "" } });
-    expect(mockReplace).toHaveBeenCalledWith("/resting-period/", { scroll: false });
+    expect(mockReplace).toHaveBeenCalledWith("/roast-age/", { scroll: false });
   });
 
   it("copies the current URL and shows feedback", async () => {
@@ -166,7 +166,7 @@ describe("RestingPeriod", () => {
       target: { value: "Gayo" },
     });
     expect(mockReplace).toHaveBeenCalledWith(
-      "/resting-period/?roast=2026-08-04&coffee=Gayo",
+      "/roast-age/?roast=2026-08-04&coffee=Gayo",
       { scroll: false }
     );
   });
@@ -178,7 +178,7 @@ describe("RestingPeriod", () => {
       target: { value: "" },
     });
     expect(mockReplace).toHaveBeenCalledWith(
-      "/resting-period/?roast=2026-08-04",
+      "/roast-age/?roast=2026-08-04",
       { scroll: false }
     );
   });
@@ -190,7 +190,7 @@ describe("RestingPeriod", () => {
       target: { value: "12" },
     });
     expect(mockReplace).toHaveBeenCalledWith(
-      "/resting-period/?roast=2026-08-04&days=12",
+      "/roast-age/?roast=2026-08-04&days=12",
       { scroll: false }
     );
   });
@@ -202,7 +202,7 @@ describe("RestingPeriod", () => {
       target: { value: "" },
     });
     expect(mockReplace).toHaveBeenCalledWith(
-      "/resting-period/?roast=2026-08-04",
+      "/roast-age/?roast=2026-08-04",
       { scroll: false }
     );
   });
@@ -217,7 +217,7 @@ describe("RestingPeriod", () => {
       target: { value: "2026-08-11" },
     });
     expect(mockReplace).toHaveBeenLastCalledWith(
-      "/resting-period/?roast=2026-08-11&coffee=Gayo",
+      "/roast-age/?roast=2026-08-11&coffee=Gayo",
       { scroll: false }
     );
   });
@@ -229,7 +229,7 @@ describe("RestingPeriod", () => {
       target: { value: "Gayo & Blend" },
     });
     expect(mockReplace).toHaveBeenCalledWith(
-      "/resting-period/?roast=2026-08-04&coffee=Gayo+%26+Blend",
+      "/roast-age/?roast=2026-08-04&coffee=Gayo+%26+Blend",
       { scroll: false }
     );
   });

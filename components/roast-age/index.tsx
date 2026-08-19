@@ -80,7 +80,7 @@ export function RestingPeriod() {
     const n = /^\d+$/.test(merged.days) ? Number.parseInt(merged.days, 10) : NaN;
     if (n >= 1 && n <= 365) query.set("days", String(n));
     const qs = query.toString();
-    router.replace(`/resting-period/${qs ? `?${qs}` : ""}`, { scroll: false });
+    router.replace(`/roast-age/${qs ? `?${qs}` : ""}`, { scroll: false });
   }
 
   async function handleCopy() {
@@ -99,7 +99,7 @@ export function RestingPeriod() {
     <div className="mx-auto w-full max-w-2xl">
       <header className="mb-8">
         <h1 className="text-2xl tablet:text-3xl font-semibold text-foreground">
-          Resting Period
+          Roast Age
         </h1>
         <p className="mt-2 text-sm text-white/60">
           Track how long your coffee has been resting since roast day.

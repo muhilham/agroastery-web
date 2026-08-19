@@ -1,11 +1,11 @@
 import { Suspense } from "react";
 import Navigation from "@/components/navigation";
-import { RestingPeriod } from "@/components/resting-period";
+import { RestingPeriod } from "@/components/roast-age";
 
 export const metadata = {
-  title: "Resting Period — Agroastery",
+  title: "Roast Age — Agroastery",
   description:
-    "Track your coffee's resting period: see days 3, 7, 14, and 21 after roast, and which rest day today is.",
+    "Track your coffee's roast age: see days 3, 7, 14, and 21 after roast, and which rest day today is.",
 };
 
 export default function RestingPeriodPage() {
