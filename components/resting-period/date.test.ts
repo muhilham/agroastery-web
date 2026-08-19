@@ -6,6 +6,8 @@ import {
   addDays,
   formatDateID,
   milestoneStatus,
+  parseCoffeeName,
+  parseRestDays,
 } from "./date";
 
 describe("getTodayWIB", () => {
@@ -110,5 +112,50 @@ describe("milestoneStatus", () => {
 
   it("returns past with day count", () => {
     expect(milestoneStatus("2026-08-07", "2026-08-18")).toEqual({ kind: "past", days: 11 });
+  });
+});
+
+describe("parseCoffeeName", () => {
+  it("trims whitespace", () => {
+    expect(parseCoffeeName("  Toraja Sapan ")).toBe("Toraja Sapan");
+  });
+
+  it("caps at 60 characters", () => {
+    expect(parseCoffeeName("a".repeat(80)).length).toBe(60);
+  });
+
+  it("returns null for empty or whitespace-only", () => {
+    expect(parseCoffeeName("")).toBeNull();
+    expect(parseCoffeeName("   ")).toBeNull();
+  });
+
+  it("returns null for null/undefined input", () => {
+    expect(parseCoffeeName(null)).toBeNull();
+    expect(parseCoffeeName(undefined)).toBeNull();
+  });
+});
+
+describe("parseRestDays", () => {
+  it("parses a valid integer string", () => {
+    expect(parseRestDays("10")).toBe(10);
+    expect(parseRestDays("1")).toBe(1);
+    expect(parseRestDays("365")).toBe(365);
+  });
+
+  it("returns null for non-integers", () => {
+    expect(parseRestDays("abc")).toBeNull();
+    expect(parseRestDays("3.5")).toBeNull();
+    expect(parseRestDays("")).toBeNull();
+  });
+
+  it("returns null out of range", () => {
+    expect(parseRestDays("0")).toBeNull();
+    expect(parseRestDays("-5")).toBeNull();
+    expect(parseRestDays("366")).toBeNull();
+  });
+
+  it("returns null for null/undefined input", () => {
+    expect(parseRestDays(null)).toBeNull();
+    expect(parseRestDays(undefined)).toBeNull();
   });
 });

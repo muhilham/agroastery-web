@@ -59,3 +59,20 @@ export function milestoneStatus(milestoneDate: string, today: string): Milestone
   if (diff > 0) return { kind: "future", days: diff };
   return { kind: "past", days: -diff };
 }
+
+/** Normalize a coffee name param: trim, cap at 60 chars. Null when absent/empty. */
+export function parseCoffeeName(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  return trimmed.slice(0, 60);
+}
+
+/** Parse a custom rest-day param: integer 1-365. Null when invalid. */
+export function parseRestDays(value: string | null | undefined): number | null {
+  if (value == null || value === "") return null;
+  if (!/^\d+$/.test(value)) return null;
+  const n = Number.parseInt(value, 10);
+  if (n < 1 || n > 365) return null;
+  return n;
+}
