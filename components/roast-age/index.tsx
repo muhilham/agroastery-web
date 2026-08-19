@@ -130,7 +130,10 @@ export function RestingPeriod() {
         a.click();
         document.body.removeChild(a);
       };
-      img.src = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgStr)))}`;
+      img.onerror = () => {
+        // SVG→Image load failed; leave dialog open, no crash
+      };
+      img.src = `data:image/svg+xml;base64,${btoa(String.fromCharCode(...new TextEncoder().encode(svgStr)))}`;
     } catch {
       // no-op — dialog stays open
     }

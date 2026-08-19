@@ -283,7 +283,7 @@ describe("RestingPeriod QR save", () => {
     const toDataURL = vi.fn().mockReturnValue("data:image/png;base64,FAKE");
     const anchorClick = vi.fn();
     const origCreate = document.createElement.bind(document);
-    vi.spyOn(document, "createElement").mockImplementation((tag: string) => {
+    const createElSpy = vi.spyOn(document, "createElement").mockImplementation((tag: string) => {
       if (tag === "canvas") {
         const c = origCreate("canvas");
         c.getContext = vi.fn().mockReturnValue({
@@ -301,6 +301,7 @@ describe("RestingPeriod QR save", () => {
       }
       return origCreate(tag);
     });
+    const OrigImage = globalThis.Image;
     class FakeImage {
       onload: (() => void) | null = null;
       private _src = "";
@@ -321,5 +322,7 @@ describe("RestingPeriod QR save", () => {
     await waitFor(() => expect(anchorClick).toHaveBeenCalled());
 
     expect(toDataURL).toHaveBeenCalledWith("image/png");
+    createElSpy.mockRestore();
+    vi.stubGlobal("Image", OrigImage);
   });
 });
