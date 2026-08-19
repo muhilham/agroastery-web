@@ -2,6 +2,15 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import QRCode from "react-qr-code";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   addDays,
   diffDays,
@@ -57,6 +66,9 @@ export function RestingPeriod() {
   const [clipboardFailed, setClipboardFailed] = useState(false);
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const [qrOpen, setQrOpen] = useState(false);
+  const qrContainerRef = useRef<HTMLDivElement | null>(null);
+
   const [today] = useState(() => getTodayWIB(new Date()));
   const dayCount = roast ? diffDays(roast, today) : null;
 
@@ -92,6 +104,35 @@ export function RestingPeriod() {
       copyTimerRef.current = setTimeout(() => setCopied(false), 2000);
     } catch {
       setClipboardFailed(true);
+    }
+  }
+
+  function handleDownloadPng() {
+    try {
+      const svg = qrContainerRef.current?.querySelector("svg");
+      if (!svg) return;
+      const svgStr = new XMLSerializer().serializeToString(svg);
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = 512;
+        canvas.height = 512;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, 512, 512);
+        ctx.drawImage(img, 0, 0, 512, 512);
+        const url = canvas.toDataURL("image/png");
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "roast-age.png";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      };
+      img.src = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgStr)))}`;
+    } catch {
+      // no-op — dialog stays open
     }
   }
 
@@ -161,6 +202,14 @@ export function RestingPeriod() {
               className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-foreground [color-scheme:dark] placeholder:text-white/30 focus:border-foreground focus:outline-none"
             />
           </div>
+          <button
+            type="button"
+            onClick={() => setQrOpen(true)}
+            disabled={!roast}
+            className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-foreground transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Save QR
+          </button>
           <button
             type="button"
             onClick={handleCopy}
@@ -262,6 +311,38 @@ export function RestingPeriod() {
           </section>
         </>
       )}
+      <Dialog open={qrOpen} onOpenChange={setQrOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {coffeeParam ? `QR Code — ${coffeeParam}` : "QR Code"}
+            </DialogTitle>
+            <DialogDescription>
+              Scan to open this roast-age page with all current details.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col items-center gap-4">
+            <div className="rounded-lg bg-white p-4" ref={qrContainerRef}>
+              <QRCode
+                value={typeof window !== "undefined" ? window.location.href : ""}
+                size={256}
+              />
+            </div>
+            <p className="break-all text-center text-xs text-white/40 font-mono">
+              {typeof window !== "undefined" ? window.location.href : ""}
+            </p>
+          </div>
+          <DialogFooter>
+            <button
+              type="button"
+              onClick={handleDownloadPng}
+              className="rounded-xl bg-foreground px-5 py-3 text-sm font-semibold text-background transition hover:opacity-90"
+            >
+              Download PNG
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { RestingPeriod } from "./index";
 
 const { mockReplace, mockParams } = vi.hoisted(() => ({
@@ -232,5 +232,94 @@ describe("RestingPeriod", () => {
       "/roast-age/?roast=2026-08-04&coffee=Gayo+%26+Blend",
       { scroll: false }
     );
+  });
+});
+
+describe("RestingPeriod QR save", () => {
+  beforeEach(() => {
+    mockReplace.mockClear();
+    mockParams.value = {};
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-08-18T10:00:00Z"));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+    window.history.replaceState({}, "", "/");
+  });
+
+  it("Save QR button is disabled when no roast date", () => {
+    mockParams.value = {};
+    render(<RestingPeriod />);
+    expect(screen.getByRole("button", { name: /save qr/i })).toBeDisabled();
+  });
+
+  it("Save QR button is enabled when roast date set", () => {
+    mockParams.value = { roast: "2026-08-04" };
+    render(<RestingPeriod />);
+    expect(screen.getByRole("button", { name: /save qr/i })).toBeEnabled();
+  });
+
+  it("opens dialog with QR and encoded URL on Save QR click", async () => {
+    mockParams.value = { roast: "2026-08-04", coffee: "Toraja" };
+    window.history.replaceState({}, "", "/roast-age/?roast=2026-08-04&coffee=Toraja");
+    render(<RestingPeriod />);
+    fireEvent.click(screen.getByRole("button", { name: /save qr/i }));
+    expect(await screen.findByText(/QR Code — Toraja/i)).toBeInTheDocument();
+    expect(document.querySelector("svg")).toBeInTheDocument();
+    expect(screen.getByText(/roast=2026-08-04/)).toBeInTheDocument();
+  });
+
+  it("dialog title is 'QR Code' when no coffee name", async () => {
+    mockParams.value = { roast: "2026-08-04" };
+    render(<RestingPeriod />);
+    fireEvent.click(screen.getByRole("button", { name: /save qr/i }));
+    expect(await screen.findByText(/^QR Code$/i)).toBeInTheDocument();
+  });
+
+  it("downloads PNG on Download button click", async () => {
+    mockParams.value = { roast: "2026-08-04" };
+    const toDataURL = vi.fn().mockReturnValue("data:image/png;base64,FAKE");
+    const anchorClick = vi.fn();
+    const origCreate = document.createElement.bind(document);
+    vi.spyOn(document, "createElement").mockImplementation((tag: string) => {
+      if (tag === "canvas") {
+        const c = origCreate("canvas");
+        c.getContext = vi.fn().mockReturnValue({
+          fillRect: vi.fn(),
+          drawImage: vi.fn(),
+          fillStyle: "",
+        }) as any;
+        c.toDataURL = toDataURL;
+        return c;
+      }
+      if (tag === "a") {
+        const a = origCreate("a");
+        a.click = anchorClick;
+        return a;
+      }
+      return origCreate(tag);
+    });
+    class FakeImage {
+      onload: (() => void) | null = null;
+      private _src = "";
+      set src(v: string) {
+        this._src = v;
+        Promise.resolve().then(() => this.onload && this.onload());
+      }
+      get src() {
+        return this._src;
+      }
+    }
+    vi.stubGlobal("Image", FakeImage);
+
+    render(<RestingPeriod />);
+    fireEvent.click(screen.getByRole("button", { name: /save qr/i }));
+    const dlBtn = await screen.findByRole("button", { name: /download png/i });
+    fireEvent.click(dlBtn);
+    await waitFor(() => expect(anchorClick).toHaveBeenCalled());
+
+    expect(toDataURL).toHaveBeenCalledWith("image/png");
   });
 });
