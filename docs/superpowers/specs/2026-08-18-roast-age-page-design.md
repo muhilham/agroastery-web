@@ -1,4 +1,4 @@
-# Resting Period Helper Page — Design
+# Roast Age Helper Page — Design
 
 **Date:** 2026-08-18 (updated 2026-08-19)
 **Status:** Approved (design)
@@ -25,7 +25,7 @@ Client-side single page (chosen from three options considered):
 
 - **A (chosen): Client-side single page.** Server shell exports metadata only; client component reads `?roast=` from `useSearchParams()`, does all date math locally, updates the URL with `router.replace()` on change. Instant interaction, URL is the source of truth.
 - **B (rejected): Server reads searchParams, client island.** Same output but a server round trip on every date change — no benefit for a pure calculator.
-- **C (rejected): Path param `/resting-period/[roastDate]`.** Prettier URLs, but requires separate input-state handling when no date is in the path, and editing the date becomes navigation. Worse UX for a tool.
+- **C (rejected): Path param `/roast-age/[roastDate]`.** Prettier URLs, but requires separate input-state handling when no date is in the path, and editing the date becomes navigation. Worse UX for a tool.
 
 ## Architecture
 
@@ -33,9 +33,9 @@ Client-side single page (chosen from three options considered):
 
 | File | Purpose |
 |---|---|
-| `app/(root)/resting-period/page.tsx` | Server component. Exports `metadata` (title "Resting Period", English description). Renders the client component inside a `<Suspense>` boundary (Next.js requirement for `useSearchParams` on static pages). |
-| `components/resting-period/index.tsx` | Client component. All logic: param parsing, date math, rendering, copy button. |
-| `constant/menu-list.ts` | Add `{ href: "/resting-period", label: "Resting Period" }` to `footer` list. Nav header stays unchanged. |
+| `app/(root)/roast-age/page.tsx` | Server component. Exports `metadata` (title "Roast Age", English description). Renders the client component inside a `<Suspense>` boundary (Next.js requirement for `useSearchParams` on static pages). |
+| `components/roast-age/index.tsx` | Client component. All logic: param parsing, date math, rendering, copy button. |
+| `constant/menu-list.ts` | Add `{ href: "/roast-age", label: "Roast Age" }` to `footer` list. Nav header stays unchanged. |
 | `components/ui/footer.tsx` | Footer currently hardcodes `target="_blank"` on every link. Detect internal hrefs (starting with `/`) and render them without `target`/`rel` so the page opens in the same tab. |
 
 ### State & URL

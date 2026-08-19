@@ -1,26 +1,26 @@
-# Resting Period Helper Page Implementation Plan
+# Roast Age Helper Page Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** A shareable `/resting-period` page where users enter a roast date and see rest-day milestones (3/7/14/21) and today's rest-day count, with the date encoded in the URL for copying.
+**Goal:** A shareable `/roast-age` page where users enter a roast date and see rest-day milestones (3/7/14/21) and today's rest-day count, with the date encoded in the URL for copying.
 
 **Architecture:** Client-side single page. Server shell exports metadata and wraps a client component in `<Suspense>` (Next.js requirement for `useSearchParams` on static pages). All date math lives in a pure helper module; the URL query param `?roast=YYYY-MM-DD` is the source of truth, updated via `router.replace` (no history spam). "Today" is computed in Asia/Jakarta (WIB) regardless of visitor timezone.
 
 **Tech Stack:** Next.js 16 App Router, React client component, Tailwind (project custom screens `sm`/`md`/`tablet`/`desktop`, dark theme `background` #1a1a1a / `foreground` #f5ebc9), Vitest + @testing-library/react (run via `pnpm test`, never `vitest` directly — it needs the crypto polyfill runner).
 
-**Spec:** `docs/superpowers/specs/2026-08-18-resting-period-page-design.md`
+**Spec:** `docs/superpowers/specs/2026-08-18-roast-age-page-design.md`
 
 ---
 
 ### Task 1: Date helpers (pure module, TDD)
 
 **Files:**
-- Create: `components/resting-period/date.ts`
-- Test: `components/resting-period/date.test.ts`
+- Create: `components/roast-age/date.ts`
+- Test: `components/roast-age/date.test.ts`
 
 - [ ] **Step 1: Write the failing tests**
 
-Create `components/resting-period/date.test.ts`:
+Create `components/roast-age/date.test.ts`:
 
 ```ts
 import { describe, it, expect, vi, afterEach } from "vitest";
@@ -141,12 +141,12 @@ describe("milestoneStatus", () => {
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `pnpm test -- components/resting-period/date.test.ts`
+Run: `pnpm test -- components/roast-age/date.test.ts`
 Expected: FAIL — module `./date` does not exist.
 
 - [ ] **Step 3: Write the implementation**
 
-Create `components/resting-period/date.ts`:
+Create `components/roast-age/date.ts`:
 
 ```ts
 const WIB = "Asia/Jakarta";
@@ -214,32 +214,32 @@ export function milestoneStatus(milestoneDate: string, today: string): Milestone
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `pnpm test -- components/resting-period/date.test.ts`
+Run: `pnpm test -- components/roast-age/date.test.ts`
 Expected: PASS (all tests in file).
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add components/resting-period/date.ts components/resting-period/date.test.ts
-git commit -m "feat(resting-period): add WIB-aware date helpers"
+git add components/roast-age/date.ts components/roast-age/date.test.ts
+git commit -m "feat(roast-age): add WIB-aware date helpers"
 ```
 
 ---
 
-### Task 2: RestingPeriod client component (TDD)
+### Task 2: RoastAge client component (TDD)
 
 **Files:**
-- Create: `components/resting-period/index.tsx`
-- Test: `components/resting-period/index.test.tsx`
+- Create: `components/roast-age/index.tsx`
+- Test: `components/roast-age/index.test.tsx`
 
 - [ ] **Step 1: Write the failing tests**
 
-Create `components/resting-period/index.test.tsx`:
+Create `components/roast-age/index.test.tsx`:
 
 ```tsx
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import { RestingPeriod } from "./index";
+import { RoastAge } from "./index";
 
 const { mockReplace, mockRoastParam } = vi.hoisted(() => ({
   mockReplace: vi.fn(),
@@ -252,7 +252,7 @@ vi.mock("next/navigation", () => ({
     new URLSearchParams(mockRoastParam.value ? `roast=${mockRoastParam.value}` : ""),
 }));
 
-describe("RestingPeriod", () => {
+describe("RoastAge", () => {
   beforeEach(() => {
     mockReplace.mockClear();
     mockRoastParam.value = "";
@@ -266,38 +266,38 @@ describe("RestingPeriod", () => {
   });
 
   it("shows empty state prompting for a roast date when param is absent", () => {
-    render(<RestingPeriod />);
+    render(<RoastAge />);
     expect(screen.getByText(/enter.*roast date/i)).toBeInTheDocument();
     expect(screen.queryByText(/day 3/i)).not.toBeInTheDocument();
   });
 
   it("ignores an invalid roast param and shows empty state", () => {
     mockRoastParam.value = "not-a-date";
-    render(<RestingPeriod />);
+    render(<RoastAge />);
     expect(screen.getByText(/enter.*roast date/i)).toBeInTheDocument();
   });
 
   it("shows today's day count for a valid roast date", () => {
     mockRoastParam.value = "2026-08-04";
-    render(<RestingPeriod />);
+    render(<RoastAge />);
     expect(screen.getByText(/today is day 14 since roast on 4 Agustus 2026/i)).toBeInTheDocument();
   });
 
   it("shows day 0 banner on the roast day itself", () => {
     mockRoastParam.value = "2026-08-18";
-    render(<RestingPeriod />);
+    render(<RoastAge />);
     expect(screen.getByText(/today is roast day/i)).toBeInTheDocument();
   });
 
   it("shows not roasted yet for a future roast date", () => {
     mockRoastParam.value = "2026-08-20";
-    render(<RestingPeriod />);
+    render(<RoastAge />);
     expect(screen.getByText(/not roasted yet/i)).toBeInTheDocument();
   });
 
   it("renders all four milestones with dates and statuses", () => {
     mockRoastParam.value = "2026-08-04";
-    render(<RestingPeriod />);
+    render(<RoastAge />);
 
     const day3 = screen.getByText("Day 3").closest("div");
     expect(day3).toHaveTextContent("7 Agustus 2026");
@@ -317,21 +317,21 @@ describe("RestingPeriod", () => {
   });
 
   it("updates the URL param when the date input changes", () => {
-    render(<RestingPeriod />);
+    render(<RoastAge />);
     fireEvent.change(screen.getByLabelText(/roast date/i), {
       target: { value: "2026-08-04" },
     });
     expect(mockReplace).toHaveBeenCalledWith(
-      "/resting-period/?roast=2026-08-04",
+      "/roast-age/?roast=2026-08-04",
       { scroll: false }
     );
   });
 
   it("removes the param when the date input is cleared", () => {
     mockRoastParam.value = "2026-08-04";
-    render(<RestingPeriod />);
+    render(<RoastAge />);
     fireEvent.change(screen.getByLabelText(/roast date/i), { target: { value: "" } });
-    expect(mockReplace).toHaveBeenCalledWith("/resting-period/", { scroll: false });
+    expect(mockReplace).toHaveBeenCalledWith("/roast-age/", { scroll: false });
   });
 
   it("copies the current URL and shows feedback", async () => {
@@ -341,7 +341,7 @@ describe("RestingPeriod", () => {
       value: { writeText },
       configurable: true,
     });
-    render(<RestingPeriod />);
+    render(<RoastAge />);
     fireEvent.click(screen.getByRole("button", { name: /copy link/i }));
     expect(await screen.findByText(/copied!/i)).toBeInTheDocument();
     expect(writeText).toHaveBeenCalledWith(window.location.href);
@@ -354,7 +354,7 @@ describe("RestingPeriod", () => {
       value: { writeText },
       configurable: true,
     });
-    render(<RestingPeriod />);
+    render(<RoastAge />);
     fireEvent.click(screen.getByRole("button", { name: /copy link/i }));
     const input = await screen.findByLabelText(/copy manually/i);
     expect(input).toHaveValue(window.location.href);
@@ -364,12 +364,12 @@ describe("RestingPeriod", () => {
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `pnpm test -- components/resting-period/index.test.tsx`
+Run: `pnpm test -- components/roast-age/index.test.tsx`
 Expected: FAIL — module `./index` does not exist.
 
 - [ ] **Step 3: Write the implementation**
 
-Create `components/resting-period/index.tsx`:
+Create `components/roast-age/index.tsx`:
 
 ```tsx
 "use client";
@@ -400,7 +400,7 @@ function statusClass(status: MilestoneStatus): string {
   return "bg-white/5 text-white/40";
 }
 
-export function RestingPeriod() {
+export function RoastAge() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -415,10 +415,10 @@ export function RestingPeriod() {
 
   function handleRoastChange(value: string) {
     if (!value) {
-      router.replace("/resting-period/", { scroll: false });
+      router.replace("/roast-age/", { scroll: false });
       return;
     }
-    router.replace(`/resting-period/?roast=${value}`, { scroll: false });
+    router.replace(`/roast-age/?roast=${value}`, { scroll: false });
   }
 
   async function handleCopy() {
@@ -436,7 +436,7 @@ export function RestingPeriod() {
     <div className="mx-auto w-full max-w-2xl">
       <header className="mb-8">
         <h1 className="text-2xl tablet:text-3xl font-semibold text-foreground">
-          Resting Period
+          Roast Age
         </h1>
         <p className="mt-2 text-sm text-white/60">
           Track how long your coffee has been resting since roast day.
@@ -561,14 +561,14 @@ expect(screen.getByText(/today is day 14/i).closest("section")).toHaveTextConten
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `pnpm test -- components/resting-period/index.test.tsx`
+Run: `pnpm test -- components/roast-age/index.test.tsx`
 Expected: PASS (all tests in file).
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add components/resting-period/index.tsx components/resting-period/index.test.tsx
-git commit -m "feat(resting-period): add RestingPeriod client component"
+git add components/roast-age/index.tsx components/roast-age/index.test.tsx
+git commit -m "feat(roast-age): add RoastAge client component"
 ```
 
 ---
@@ -576,32 +576,32 @@ git commit -m "feat(resting-period): add RestingPeriod client component"
 ### Task 3: Page route and footer link
 
 **Files:**
-- Create: `app/(root)/resting-period/page.tsx`
+- Create: `app/(root)/roast-age/page.tsx`
 - Modify: `constant/menu-list.ts` (footer array, lines 22-29)
 - Modify: `components/ui/footer.tsx` (link rendering, lines 10-20)
 
 - [ ] **Step 1: Create the page**
 
-Create `app/(root)/resting-period/page.tsx` (follows the pattern of `app/(root)/konsultasi/page.tsx`):
+Create `app/(root)/roast-age/page.tsx` (follows the pattern of `app/(root)/konsultasi/page.tsx`):
 
 ```tsx
 import { Suspense } from "react";
 import Navigation from "@/components/navigation";
-import { RestingPeriod } from "@/components/resting-period";
+import { RoastAge } from "@/components/roast-age";
 
 export const metadata = {
-  title: "Resting Period — Agroastery",
+  title: "Roast Age — Agroastery",
   description:
     "Track your coffee's resting period: see days 3, 7, 14, and 21 after roast, and which rest day today is.",
 };
 
-export default function RestingPeriodPage() {
+export default function RoastAgePage() {
   return (
     <div className="min-h-svh bg-background flex flex-col">
       <Navigation />
       <main className="flex-1 pt-24 pb-16 px-4 tablet:px-10 desktop:px-20">
         <Suspense fallback={null}>
-          <RestingPeriod />
+          <RoastAge />
         </Suspense>
       </main>
     </div>
@@ -622,13 +622,13 @@ export const footer: I_FooterInterface[] = [
   { href: "https://t.me/agroastery", label: "Telegram" },
   { href: "https://www.instagram.com/agroastery/", label: "Instagram" },
   { href: "https://www.tiktok.com/@agroastery", label: "Tiktok" },
-  { href: "/resting-period", label: "Resting Period" },
+  { href: "/roast-age", label: "Roast Age" },
 ];
 ```
 
 - [ ] **Step 3: Make footer internal links open in the same tab**
 
-The footer currently hardcodes `target="_blank"` on every link, which would open `/resting-period` in a new tab. In `components/ui/footer.tsx`, replace the link map block:
+The footer currently hardcodes `target="_blank"` on every link, which would open `/roast-age` in a new tab. In `components/ui/footer.tsx`, replace the link map block:
 
 Old:
 
@@ -667,19 +667,19 @@ New:
 - [ ] **Step 4: Verify manually in dev server**
 
 Run: `pnpm dev`
-Open: `http://localhost:3000/resting-period/`
+Open: `http://localhost:3000/roast-age/`
 Expected:
 - Empty state with date input renders
-- Pick a date → URL becomes `/resting-period/?roast=YYYY-MM-DD`, banner + 4 milestone cards appear
-- Footer (bottom of page) shows "Resting Period" link, opens same tab
+- Pick a date → URL becomes `/roast-age/?roast=YYYY-MM-DD`, banner + 4 milestone cards appear
+- Footer (bottom of page) shows "Roast Age" link, opens same tab
 - Copy link button copies the URL (verify by pasting somewhere)
 - Stop the dev server when done.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add app/(root)/resting-period/page.tsx constant/menu-list.ts components/ui/footer.tsx
-git commit -m "feat(resting-period): add page route and footer link"
+git add app/(root)/roast-age/page.tsx constant/menu-list.ts components/ui/footer.tsx
+git commit -m "feat(roast-age): add page route and footer link"
 ```
 
 ---
@@ -701,7 +701,7 @@ Expected: No new errors or warnings from the new/modified files.
 - [ ] **Step 3: Run build**
 
 Run: `pnpm build`
-Expected: Build succeeds. `/resting-period` page listed in output as a static route. No Suspense/useSearchParams build error.
+Expected: Build succeeds. `/roast-age` page listed in output as a static route. No Suspense/useSearchParams build error.
 
 - [ ] **Step 4: Commit any fixes if needed**
 
@@ -709,7 +709,7 @@ If lint or build required changes:
 
 ```bash
 git add -A
-git commit -m "fix(resting-period): address lint/build findings"
+git commit -m "fix(roast-age): address lint/build findings"
 ```
 
 ---
