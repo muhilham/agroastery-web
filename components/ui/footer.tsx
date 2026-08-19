@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { footer } from "@/constant/menu-list";
 import { MAP_LOCATION } from "@/constant/resource-and-link";
 
@@ -7,21 +9,27 @@ export function Footer() {
   return (
     <footer className="p-16 bg-[#171717] gap-10 flex w-full justify-between sm:p-8 sm:flex-col sm:gap-10">
       <div className="flex flex-col space-y-5 sm:w-full">
-        {footer.map((link) => {
-          const isInternal = link.href.startsWith("/");
-          return (
+        {footer.map((link) =>
+          link.href.startsWith("/") ? (
+            <Link
+              key={link.label}
+              href={link.href}
+              className="no-underline text-[#f5ebc9] text-sm hover:text-[#f5e4ac]"
+            >
+              {link.label}
+            </Link>
+          ) : (
             <a
               key={link.label}
               href={link.href}
-              {...(isInternal
-                ? {}
-                : { target: "_blank", rel: "noopener noreferrer" })}
+              target="_blank"
+              rel="noopener noreferrer"
               className="no-underline text-[#f5ebc9] text-sm hover:text-[#f5e4ac]"
             >
               {link.label}
             </a>
-          );
-        })}
+          )
+        )}
       </div>
 
       <div className="flex flex-col gap-4">
