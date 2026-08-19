@@ -9,6 +9,8 @@ import {
   getTodayWIB,
   isRoastDate,
   milestoneStatus,
+  parseCoffeeName,
+  parseRestDays,
   type MilestoneStatus,
 } from "./date";
 
@@ -32,6 +34,8 @@ export function RestingPeriod() {
 
   const roastParam = searchParams.get("roast");
   const roast = roastParam && isRoastDate(roastParam) ? roastParam : null;
+  const coffeeName = parseCoffeeName(searchParams.get("coffee"));
+  const restDays = parseRestDays(searchParams.get("days"));
 
   const [copied, setCopied] = useState(false);
   const [clipboardFailed, setClipboardFailed] = useState(false);
@@ -46,12 +50,19 @@ export function RestingPeriod() {
     };
   }, []);
 
-  function handleRoastChange(value: string) {
-    if (!value) {
-      router.replace("/resting-period/", { scroll: false });
-      return;
-    }
-    router.replace(`/resting-period/?roast=${value}`, { scroll: false });
+  function updateParams(next: { roast?: string; coffee?: string; days?: string }) {
+    const merged = {
+      roast: roast ?? undefined,
+      coffee: coffeeName ?? undefined,
+      days: restDays !== null ? String(restDays) : undefined,
+      ...next,
+    };
+    const query = new URLSearchParams();
+    if (merged.roast) query.set("roast", merged.roast);
+    if (merged.coffee) query.set("coffee", merged.coffee);
+    if (merged.days) query.set("days", merged.days);
+    const qs = query.toString();
+    router.replace(`/resting-period/${qs ? `?${qs}` : ""}`, { scroll: false });
   }
 
   async function handleCopy() {
@@ -75,34 +86,67 @@ export function RestingPeriod() {
         <p className="mt-2 text-sm text-white/60">
           Track how long your coffee has been resting since roast day.
         </p>
+        {coffeeName && (
+          <p className="mt-1 text-base font-semibold text-foreground">{coffeeName}</p>
+        )}
       </header>
 
-      <section className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end">
-        <div className="flex-1">
-          <label
-            htmlFor="roast-date"
-            className="mb-2 block text-sm font-medium text-foreground"
-          >
-            Roast date
-          </label>
-          <input
-            id="roast-date"
-            type="date"
-            value={roast ?? ""}
-            max="2100-12-31"
-            onChange={(e) => handleRoastChange(e.target.value)}
-            className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-foreground [color-scheme:dark] focus:border-foreground focus:outline-none"
-          />
+      <section className="mb-8 flex flex-col gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="flex-1">
+            <label htmlFor="roast-date" className="mb-2 block text-sm font-medium text-foreground">
+              Roast date
+            </label>
+            <input
+              id="roast-date"
+              type="date"
+              value={roast ?? ""}
+              max="2100-12-31"
+              onChange={(e) => updateParams({ roast: e.target.value })}
+              className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-foreground [color-scheme:dark] focus:border-foreground focus:outline-none"
+            />
+          </div>
+          <div className="flex-1">
+            <label htmlFor="coffee-name" className="mb-2 block text-sm font-medium text-foreground">
+              Coffee name
+            </label>
+            <input
+              id="coffee-name"
+              type="text"
+              maxLength={60}
+              placeholder="e.g. Toraja Sapan"
+              value={coffeeName ?? ""}
+              onChange={(e) => updateParams({ coffee: e.target.value })}
+              className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-foreground placeholder:text-white/30 focus:border-foreground focus:outline-none"
+            />
+          </div>
         </div>
-        <button
-          type="button"
-          onClick={handleCopy}
-          disabled={!roast}
-          aria-live="polite"
-          className="rounded-xl bg-foreground px-5 py-3 text-sm font-semibold text-background transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          {copied ? "Copied!" : "Copy link"}
-        </button>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+          <div className="flex-1">
+            <label htmlFor="rest-days" className="mb-2 block text-sm font-medium text-foreground">
+              Rest days (optional)
+            </label>
+            <input
+              id="rest-days"
+              type="number"
+              min={1}
+              max={365}
+              placeholder="e.g. 10"
+              value={restDays ?? ""}
+              onChange={(e) => updateParams({ days: e.target.value })}
+              className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-foreground [color-scheme:dark] placeholder:text-white/30 focus:border-foreground focus:outline-none"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={handleCopy}
+            disabled={!roast}
+            aria-live="polite"
+            className="rounded-xl bg-foreground px-5 py-3 text-sm font-semibold text-background transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {copied ? "Copied!" : "Copy link"}
+          </button>
+        </div>
       </section>
 
       {clipboardFailed && (
@@ -156,6 +200,21 @@ export function RestingPeriod() {
           </section>
 
           <section className="grid gap-3 sm:grid-cols-2">
+            {restDays !== null && (
+              <div className="flex flex-wrap items-center justify-between gap-x-2 rounded-xl border border-foreground/30 bg-white/5 p-4 sm:col-span-2">
+                <p className="text-sm text-white/60">Rest target — {restDays} days</p>
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClass(
+                    milestoneStatus(addDays(roast, restDays), today)
+                  )}`}
+                >
+                  {statusLabel(milestoneStatus(addDays(roast, restDays), today))}
+                </span>
+                <p className="mt-1 w-full text-lg font-semibold text-foreground">
+                  {formatDateID(addDays(roast, restDays))}
+                </p>
+              </div>
+            )}
             {MILESTONES.map((day) => {
               const date = addDays(roast, day);
               const status = milestoneStatus(date, today);
