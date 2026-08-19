@@ -1,5 +1,43 @@
 # Changelog
 
+## [0.16.0](https://github.com/muhilham/agroastery-web/compare/v0.15.1...v0.16.0) (2026-08-19)
+
+
+### Features
+
+* **resting-period:** add coffee name and custom rest target inputs ([a2577dc](https://github.com/muhilham/agroastery-web/commit/a2577dcb15b999579e0762204a5df85144c3c68d))
+* **resting-period:** add coffee name and rest days param parsers ([8725a87](https://github.com/muhilham/agroastery-web/commit/8725a8770ea90760044191cc5840934d3b70d461))
+* **resting-period:** add page route and footer link ([21d1382](https://github.com/muhilham/agroastery-web/commit/21d13824136dfbe33c5a3ff148fdb0495f7367a5))
+* **resting-period:** add RestingPeriod client component ([c53b259](https://github.com/muhilham/agroastery-web/commit/c53b2597a1093747f50a014d0214579241ad923c))
+* **resting-period:** add WIB-aware date helpers ([ddef0c6](https://github.com/muhilham/agroastery-web/commit/ddef0c6c068f6572590e86ca10786d63c05af0f7))
+* **roast-age:** add QR save dialog with PNG download ([5f7758f](https://github.com/muhilham/agroastery-web/commit/5f7758f72bfb60d08eaac0b6b4f74b015512f99a))
+
+
+### Bug Fixes
+
+* pnpm-workspace packages field + untrack .pnpm-store ([f7a7abf](https://github.com/muhilham/agroastery-web/commit/f7a7abf68d5df617ac1d22a619df666d1d33d187))
+* **resting-period:** local input state to prevent dropped keystrokes and stale param merge ([322ee3d](https://github.com/muhilham/agroastery-web/commit/322ee3dfa9dd947cc596b7045d2d2d5a1d11b1d6))
+* **roast-age:** replace unescape, add Image onerror, restore createElement spy ([028c1e7](https://github.com/muhilham/agroastery-web/commit/028c1e74eb4b99666df459cd0d5d578f03a08783))
+
+
+### Refactors
+
+* **footer:** use next/link for internal links ([2d1854c](https://github.com/muhilham/agroastery-web/commit/2d1854c8702aea5381d767aa8b8af9f00141333b))
+* rename resting-period route to /roast-age ([f877fc2](https://github.com/muhilham/agroastery-web/commit/f877fc21a147c89f8350f7d7753238ae67156a8b))
+* **resting-period:** timer cleanup, stable today capture, a11y live regions ([3b66e98](https://github.com/muhilham/agroastery-web/commit/3b66e984b9bfeeca5331e51dcd9f6125c2760582))
+
+
+### Documentation
+
+* add coffee name and custom rest target to resting period spec ([9091971](https://github.com/muhilham/agroastery-web/commit/90919717f770272091c84674d11cf254226b0176))
+* add coffee name and rest target increment plan ([c63e025](https://github.com/muhilham/agroastery-web/commit/c63e025ce4b8bc74ca1f1c8e6823029bf54ebe01))
+* add resting period page design spec ([84e1986](https://github.com/muhilham/agroastery-web/commit/84e1986a01919a980c4e3d139ffda850352249f3))
+* add resting period page implementation plan ([49ea914](https://github.com/muhilham/agroastery-web/commit/49ea9144a93f38f81d8f3cba7aa5ebe4e19c6eb4))
+* add roast-age QR save spec and plan ([de267ec](https://github.com/muhilham/agroastery-web/commit/de267ec625af085335b0519b9d656ae86670d0fb))
+* bring coffee-target increment plan into branch and rename to roast-age ([b7549bd](https://github.com/muhilham/agroastery-web/commit/b7549bdc7e6900cfb348dd6de5f358c80f3584d0))
+* fix typo in plan header ([c2a97e2](https://github.com/muhilham/agroastery-web/commit/c2a97e23a60413f65eba1937b323b3b0430cc42c))
+* rename resting-period docs to roast-age ([f770c17](https://github.com/muhilham/agroastery-web/commit/f770c1738cec44f20ab23c92936824ff6c7b15e0))
+
 ## [0.15.1](https://github.com/muhilham/agroastery-web/compare/v0.15.0...v0.15.1) (2026-08-18)
 
 
