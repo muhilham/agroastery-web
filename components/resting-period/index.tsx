@@ -34,8 +34,24 @@ export function RestingPeriod() {
 
   const roastParam = searchParams.get("roast");
   const roast = roastParam && isRoastDate(roastParam) ? roastParam : null;
-  const coffeeName = parseCoffeeName(searchParams.get("coffee"));
-  const restDays = parseRestDays(searchParams.get("days"));
+  const coffeeParam = parseCoffeeName(searchParams.get("coffee"));
+  const daysParam = parseRestDays(searchParams.get("days"));
+  const rawCoffee = searchParams.get("coffee");
+  const rawDays = searchParams.get("days");
+
+  const [coffeeInput, setCoffeeInput] = useState(coffeeParam ?? "");
+  const [daysInput, setDaysInput] = useState(daysParam !== null ? String(daysParam) : "");
+
+  const [prevRawCoffee, setPrevRawCoffee] = useState(rawCoffee);
+  if (prevRawCoffee !== rawCoffee) {
+    setPrevRawCoffee(rawCoffee);
+    setCoffeeInput(rawCoffee ?? "");
+  }
+  const [prevRawDays, setPrevRawDays] = useState(rawDays);
+  if (prevRawDays !== rawDays) {
+    setPrevRawDays(rawDays);
+    setDaysInput(rawDays ?? "");
+  }
 
   const [copied, setCopied] = useState(false);
   const [clipboardFailed, setClipboardFailed] = useState(false);
@@ -51,16 +67,18 @@ export function RestingPeriod() {
   }, []);
 
   function updateParams(next: { roast?: string; coffee?: string; days?: string }) {
-    const merged = {
-      roast: roast ?? undefined,
-      coffee: coffeeName ?? undefined,
-      days: restDays !== null ? String(restDays) : undefined,
-      ...next,
+    const current = {
+      roast: roast ?? "",
+      coffee: coffeeInput,
+      days: daysInput,
     };
+    const merged = { ...current, ...next };
     const query = new URLSearchParams();
-    if (merged.roast) query.set("roast", merged.roast);
-    if (merged.coffee) query.set("coffee", merged.coffee);
-    if (merged.days) query.set("days", merged.days);
+    if (merged.roast && isRoastDate(merged.roast)) query.set("roast", merged.roast);
+    const trimmedCoffee = merged.coffee.trim();
+    if (trimmedCoffee) query.set("coffee", trimmedCoffee.slice(0, 60));
+    const n = /^\d+$/.test(merged.days) ? Number.parseInt(merged.days, 10) : NaN;
+    if (n >= 1 && n <= 365) query.set("days", String(n));
     const qs = query.toString();
     router.replace(`/resting-period/${qs ? `?${qs}` : ""}`, { scroll: false });
   }
@@ -86,8 +104,8 @@ export function RestingPeriod() {
         <p className="mt-2 text-sm text-white/60">
           Track how long your coffee has been resting since roast day.
         </p>
-        {coffeeName && (
-          <p className="mt-1 text-base font-semibold text-foreground">{coffeeName}</p>
+        {coffeeParam && (
+          <p className="mt-1 text-base font-semibold text-foreground">{coffeeParam}</p>
         )}
       </header>
 
@@ -115,8 +133,11 @@ export function RestingPeriod() {
               type="text"
               maxLength={60}
               placeholder="e.g. Toraja Sapan"
-              value={coffeeName ?? ""}
-              onChange={(e) => updateParams({ coffee: e.target.value })}
+              value={coffeeInput}
+              onChange={(e) => {
+                setCoffeeInput(e.target.value);
+                updateParams({ coffee: e.target.value });
+              }}
               className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-foreground placeholder:text-white/30 focus:border-foreground focus:outline-none"
             />
           </div>
@@ -132,8 +153,11 @@ export function RestingPeriod() {
               min={1}
               max={365}
               placeholder="e.g. 10"
-              value={restDays ?? ""}
-              onChange={(e) => updateParams({ days: e.target.value })}
+              value={daysInput}
+              onChange={(e) => {
+                setDaysInput(e.target.value);
+                updateParams({ days: e.target.value });
+              }}
               className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-foreground [color-scheme:dark] placeholder:text-white/30 focus:border-foreground focus:outline-none"
             />
           </div>
@@ -200,18 +224,18 @@ export function RestingPeriod() {
           </section>
 
           <section className="grid gap-3 sm:grid-cols-2">
-            {restDays !== null && (
+            {daysParam !== null && (
               <div className="flex flex-wrap items-center justify-between gap-x-2 rounded-xl border border-foreground/30 bg-white/5 p-4 sm:col-span-2">
-                <p className="text-sm text-white/60">Rest target — {restDays} days</p>
+                <p className="text-sm text-white/60">Rest target — {daysParam} days</p>
                 <span
                   className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClass(
-                    milestoneStatus(addDays(roast, restDays), today)
+                    milestoneStatus(addDays(roast, daysParam), today)
                   )}`}
                 >
-                  {statusLabel(milestoneStatus(addDays(roast, restDays), today))}
+                  {statusLabel(milestoneStatus(addDays(roast, daysParam), today))}
                 </span>
                 <p className="mt-1 w-full text-lg font-semibold text-foreground">
-                  {formatDateID(addDays(roast, restDays))}
+                  {formatDateID(addDays(roast, daysParam))}
                 </p>
               </div>
             )}

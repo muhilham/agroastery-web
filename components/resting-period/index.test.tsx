@@ -206,4 +206,31 @@ describe("RestingPeriod", () => {
       { scroll: false }
     );
   });
+
+  it("keeps coffee param when roast changes right after coffee input", () => {
+    mockParams.value = { roast: "2026-08-04" };
+    render(<RestingPeriod />);
+    fireEvent.change(screen.getByLabelText(/coffee name/i), {
+      target: { value: "Gayo" },
+    });
+    fireEvent.change(screen.getByLabelText(/roast date/i), {
+      target: { value: "2026-08-11" },
+    });
+    expect(mockReplace).toHaveBeenLastCalledWith(
+      "/resting-period/?roast=2026-08-11&coffee=Gayo",
+      { scroll: false }
+    );
+  });
+
+  it("encodes special characters in coffee param", () => {
+    mockParams.value = { roast: "2026-08-04" };
+    render(<RestingPeriod />);
+    fireEvent.change(screen.getByLabelText(/coffee name/i), {
+      target: { value: "Gayo & Blend" },
+    });
+    expect(mockReplace).toHaveBeenCalledWith(
+      "/resting-period/?roast=2026-08-04&coffee=Gayo+%26+Blend",
+      { scroll: false }
+    );
+  });
 });
