@@ -27,4 +27,5 @@ export const footer: I_FooterInterface[] = [
   { href: "https://t.me/agroastery", label: "Telegram" },
   { href: "https://www.instagram.com/agroastery/", label: "Instagram" },
   { href: "https://www.tiktok.com/@agroastery", label: "Tiktok" },
+  { href: "/resting-period", label: "Resting Period" },
 ];
