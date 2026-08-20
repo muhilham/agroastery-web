@@ -31,6 +31,17 @@ describe("RestingPeriod", () => {
     expect(screen.queryByText(/day 3/i)).not.toBeInTheDocument();
   });
 
+  it("uses stronger contrast classes for helper and empty-state text", () => {
+    render(<RestingPeriod />);
+
+    expect(screen.getByText(/track how long your coffee has been resting/i)).toHaveClass(
+      "text-stone-300"
+    );
+    expect(screen.getByText(/enter your roast date above to see the resting milestones/i)).toHaveClass(
+      "text-stone-200"
+    );
+  });
+
   it("ignores an invalid roast param and shows empty state", () => {
     mockParams.value = { roast: "not-a-date" };
     render(<RestingPeriod />);

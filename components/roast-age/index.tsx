@@ -33,8 +33,8 @@ function statusLabel(status: MilestoneStatus): string {
 
 function statusClass(status: MilestoneStatus): string {
   if (status.kind === "today") return "bg-foreground text-background";
-  if (status.kind === "future") return "bg-white/10 text-foreground";
-  return "bg-white/5 text-white/40";
+  if (status.kind === "future") return "border border-amber-200/30 bg-amber-100/10 text-amber-100";
+  return "border border-stone-400/20 bg-stone-300/10 text-stone-300";
 }
 
 export function RestingPeriod() {
@@ -145,11 +145,11 @@ export function RestingPeriod() {
         <h1 className="text-2xl tablet:text-3xl font-semibold text-foreground">
           Roast Age
         </h1>
-        <p className="mt-2 text-sm text-white/60">
+        <p className="mt-2 text-sm text-stone-300">
           Track how long your coffee has been resting since roast day.
         </p>
         {coffeeParam && (
-          <p className="mt-1 text-base font-semibold text-foreground">{coffeeParam}</p>
+          <p className="mt-2 text-base font-semibold text-amber-100">{coffeeParam}</p>
         )}
       </header>
 
@@ -165,7 +165,7 @@ export function RestingPeriod() {
               value={roast ?? ""}
               max="2100-12-31"
               onChange={(e) => updateParams({ roast: e.target.value })}
-              className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-foreground [color-scheme:dark] focus:border-foreground focus:outline-none"
+              className="w-full rounded-xl border border-stone-500/40 bg-stone-950/60 p-3 text-foreground [color-scheme:dark] focus:border-amber-200 focus:outline-none"
             />
           </div>
           <div className="flex-1">
@@ -182,7 +182,7 @@ export function RestingPeriod() {
                 setCoffeeInput(e.target.value);
                 updateParams({ coffee: e.target.value });
               }}
-              className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-foreground placeholder:text-white/30 focus:border-foreground focus:outline-none"
+              className="w-full rounded-xl border border-stone-500/40 bg-stone-950/60 p-3 text-foreground placeholder:text-stone-400 focus:border-amber-200 focus:outline-none"
             />
           </div>
         </div>
@@ -202,14 +202,14 @@ export function RestingPeriod() {
                 setDaysInput(e.target.value);
                 updateParams({ days: e.target.value });
               }}
-              className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-foreground [color-scheme:dark] placeholder:text-white/30 focus:border-foreground focus:outline-none"
+              className="w-full rounded-xl border border-stone-500/40 bg-stone-950/60 p-3 text-foreground [color-scheme:dark] placeholder:text-stone-400 focus:border-amber-200 focus:outline-none"
             />
           </div>
           <button
             type="button"
             onClick={() => setQrOpen(true)}
             disabled={!roast}
-            className="rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-foreground transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-xl border border-stone-500/40 bg-stone-950/60 px-5 py-3 text-sm font-semibold text-stone-100 transition hover:bg-stone-900 disabled:cursor-not-allowed disabled:opacity-40"
           >
             Save QR
           </button>
@@ -229,7 +229,7 @@ export function RestingPeriod() {
         <div className="mb-8" aria-live="polite">
           <label
             htmlFor="copy-manually"
-            className="mb-2 block text-sm text-white/60"
+            className="mb-2 block text-sm text-stone-300"
           >
             Copy manually
           </label>
@@ -239,21 +239,21 @@ export function RestingPeriod() {
             readOnly
             value={typeof window !== "undefined" ? window.location.href : ""}
             onFocus={(e) => e.target.select()}
-            className="w-full rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-foreground"
+            className="w-full rounded-xl border border-stone-500/40 bg-stone-950/60 p-3 text-sm text-foreground"
           />
         </div>
       )}
 
       {!roast ? (
-        <p className="rounded-xl border border-white/10 bg-white/5 p-6 text-center text-white/60">
+        <p className="rounded-xl border border-stone-500/40 bg-stone-950/60 p-6 text-center text-stone-200">
           Enter your roast date above to see the resting milestones.
         </p>
       ) : (
         <>
-          <section className="mb-8 rounded-2xl border border-white/10 bg-white/5 p-6 text-center">
+          <section className="mb-8 rounded-2xl border border-stone-500/40 bg-stone-950/70 p-6 text-center shadow-[0_0_0_1px_rgba(245,235,201,0.04)]">
             {dayCount !== null && dayCount < 0 ? (
               <>
-                <p className="text-sm uppercase tracking-wide text-white/40">
+                <p className="text-sm uppercase tracking-wide text-stone-400">
                   Not roasted yet
                 </p>
                 <p className="mt-2 text-xl font-semibold text-foreground">
@@ -262,13 +262,13 @@ export function RestingPeriod() {
               </>
             ) : (
               <>
-                <p className="text-sm uppercase tracking-wide text-white/40">
+                <p className="text-sm uppercase tracking-wide text-stone-300">
                   {dayCount === 0 ? "Today is roast day" : `Today is day ${dayCount} since roast`}
                 </p>
-                <p className="mt-2 text-5xl font-bold text-foreground">
+                <p className="mt-3 text-5xl font-bold text-amber-50">
                   {dayCount === 0 ? "Roast day" : `${dayCount} days`}
                 </p>
-                <p className="mt-2 text-sm text-white/60">
+                <p className="mt-3 text-sm text-stone-200">
                   Roasted on {formatDateID(roast)}
                 </p>
               </>
@@ -277,8 +277,8 @@ export function RestingPeriod() {
 
           <section className="grid gap-3 sm:grid-cols-2">
             {daysParam !== null && (
-              <div className="flex flex-wrap items-center justify-between gap-x-2 rounded-xl border border-foreground/30 bg-white/5 p-4 sm:col-span-2">
-                <p className="text-sm text-white/60">Rest target — {daysParam} days</p>
+              <div className="flex flex-wrap items-center justify-between gap-x-2 rounded-xl border border-amber-200/35 bg-amber-100/10 p-4 sm:col-span-2">
+                <p className="text-sm text-stone-200">Rest target — {daysParam} days</p>
                 <span
                   className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClass(
                     milestoneStatus(addDays(roast, daysParam), today)
@@ -297,9 +297,9 @@ export function RestingPeriod() {
               return (
                 <div
                   key={day}
-                  className="flex flex-wrap items-center justify-between gap-x-2 rounded-xl border border-white/10 bg-white/5 p-4"
+                  className="flex flex-wrap items-center justify-between gap-x-2 rounded-xl border border-stone-500/40 bg-stone-950/60 p-4"
                 >
-                  <p className="text-sm text-white/60">Day {day}</p>
+                  <p className="text-sm text-stone-200">Day {day}</p>
                   <span
                     className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClass(status)}`}
                   >
@@ -331,7 +331,7 @@ export function RestingPeriod() {
                 size={256}
               />
             </div>
-            <p className="break-all text-center text-xs text-white/40 font-mono">
+            <p className="break-all text-center text-xs font-mono text-stone-300">
               {typeof window !== "undefined" ? window.location.href : ""}
             </p>
           </div>
