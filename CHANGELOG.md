@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.16.1](https://github.com/muhilham/agroastery-web/compare/v0.16.0...v0.16.1) (2026-08-20)
+
+
+### Bug Fixes
+
+* **roast-age:** improve contrast ([e48a464](https://github.com/muhilham/agroastery-web/commit/e48a464f4b653c94ecdc34644df21c81721d7ac7))
+
 ## [0.16.0](https://github.com/muhilham/agroastery-web/compare/v0.15.1...v0.16.0) (2026-08-19)
 
 
