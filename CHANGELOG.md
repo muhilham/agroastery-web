@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.16.2](https://github.com/muhilham/agroastery-web/compare/v0.16.1...v0.16.2) (2026-08-29)
+
+
+### Performance
+
+* reduce memory footprint for Railway deployment ([ed5df4a](https://github.com/muhilham/agroastery-web/commit/ed5df4a4f88869744f9b79e1ac7595eea6a1ed58))
+
 ## [0.16.1](https://github.com/muhilham/agroastery-web/compare/v0.16.0...v0.16.1) (2026-08-20)
 
 
