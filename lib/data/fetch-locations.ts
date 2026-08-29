@@ -90,24 +90,9 @@ export async function fetchPostalCodeData(): Promise<PostalCodeData> {
   }
 }
 
-// Local cache implementation
-let provinceCache: ProvinceData | null = null;
-let kotaKabupatenCache: KotaKabupatenData | null = null;
-let postalCodeCache: PostalCodeData | null = null;
-let lastFetchTime = 0;
-const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
-
 export async function getProvinceData(): Promise<ProvinceData> {
-  const now = Date.now();
-  
-  if (provinceCache && (now - lastFetchTime) < CACHE_DURATION) {
-    return provinceCache;
-  }
-  
   try {
-    provinceCache = await fetchProvinceData();
-    lastFetchTime = now;
-    return provinceCache;
+    return await fetchProvinceData();
   } catch {
     console.warn('Using fallback province data due to fetch error');
     return {
@@ -124,16 +109,8 @@ export async function getProvinceData(): Promise<ProvinceData> {
 }
 
 export async function getKotaKabupatenData(): Promise<KotaKabupatenData> {
-  const now = Date.now();
-  
-  if (kotaKabupatenCache && (now - lastFetchTime) < CACHE_DURATION) {
-    return kotaKabupatenCache;
-  }
-  
   try {
-    kotaKabupatenCache = await fetchKotaKabupatenData();
-    lastFetchTime = now;
-    return kotaKabupatenCache;
+    return await fetchKotaKabupatenData();
   } catch {
     console.warn('Using fallback kota/kabupaten data due to fetch error');
     return {
@@ -147,16 +124,8 @@ export async function getKotaKabupatenData(): Promise<KotaKabupatenData> {
 }
 
 export async function getPostalCodeData(): Promise<PostalCodeData> {
-  const now = Date.now();
-  
-  if (postalCodeCache && (now - lastFetchTime) < CACHE_DURATION) {
-    return postalCodeCache;
-  }
-  
   try {
-    postalCodeCache = await fetchPostalCodeData();
-    lastFetchTime = now;
-    return postalCodeCache;
+    return await fetchPostalCodeData();
   } catch {
     console.warn('Using fallback postal code data due to fetch error');
     return {

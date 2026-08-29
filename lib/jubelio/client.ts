@@ -53,7 +53,9 @@ export type JubelioProductDetail = {
   variations: string | null;     // e.g. "Grind" or null
 };
 
-export async function fetchAllJubelioProducts(): Promise<JubelioProductGroup[]> {
+export async function fetchAllJubelioProducts(
+  onPage?: (items: JubelioProductGroup[]) => void | Promise<void>
+): Promise<JubelioProductGroup[]> {
   const token = await getToken();
   const all: JubelioProductGroup[] = [];
   let page = 1;
@@ -68,6 +70,7 @@ export async function fetchAllJubelioProducts(): Promise<JubelioProductGroup[]> 
 
     const data = await res.json();
     const items: JubelioProductGroup[] = data.data ?? [];
+    if (onPage) await onPage(items);
     all.push(...items);
 
     if (items.length < pageSize) break;

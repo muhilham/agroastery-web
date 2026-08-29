@@ -23,10 +23,15 @@ export async function createSupabaseServerClient() {
 }
 
 // For server-side operations that bypass RLS (e.g., guest order creation, product reads)
+let adminClient: ReturnType<typeof createServerClient<Database>> | null = null;
+
 export function createSupabaseAdminClient() {
-  return createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { cookies: { getAll: () => [], setAll: () => {} } }
-  );
+  if (!adminClient) {
+    adminClient = createServerClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { cookies: { getAll: () => [], setAll: () => {} } }
+    );
+  }
+  return adminClient;
 }

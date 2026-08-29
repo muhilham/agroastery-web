@@ -227,42 +227,44 @@ export async function syncJubelioProducts(): Promise<SyncResult> {
   const supabase = createSupabaseAdminClient();
   const result: SyncResult = { synced: 0, skipped: 0, errors: [] };
 
-  const allProducts = await fetchAllJubelioProducts();
-  const ecomProducts = allProducts.filter(isEcomProduct);
-
-  console.log(`[Jubelio Sync] Total: ${allProducts.length}, Ecom-relevant: ${ecomProducts.length}`);
-
+  let totalFetched = 0;
   // Track used slugs in this run to handle duplicates within Jubelio
   const usedSlugs = new Set<string>();
 
-  for (const group of ecomProducts) {
-    try {
-      // Fetch group detail for package_weight
-      const detail = await fetchJubelioProductDetail(group.item_group_id);
-      const packageWeightGrams = Math.round(parseFloat(detail.package_weight ?? "150") * 1.3); // +30% packaging
+  await fetchAllJubelioProducts(async (items) => {
+    totalFetched += items.length;
+    const ecomItems = items.filter(isEcomProduct);
+    result.skipped += items.length - ecomItems.length;
 
-      // Generate unique slug
-      let slug = generateSlug(group.item_name);
-      let slugSuffix = 2;
-      while (usedSlugs.has(slug)) {
-        slug = generateSlug(group.item_name, slugSuffix++);
+    for (const group of ecomItems) {
+      try {
+        // Fetch group detail for package_weight
+        const detail = await fetchJubelioProductDetail(group.item_group_id);
+        const packageWeightGrams = Math.round(parseFloat(detail.package_weight ?? "150") * 1.3); // +30% packaging
+
+        // Generate unique slug
+        let slug = generateSlug(group.item_name);
+        let slugSuffix = 2;
+        while (usedSlugs.has(slug)) {
+          slug = generateSlug(group.item_name, slugSuffix++);
+        }
+        usedSlugs.add(slug);
+
+        const productId = await upsertProduct(supabase, group.item_name, slug);
+        if (!productId) throw new Error("upsertProduct returned null");
+
+        await upsertVariantWithGrind(supabase, productId, group.variants, packageWeightGrams);
+
+        result.synced++;
+        console.log(`[Jubelio Sync] ✓ ${group.item_name} (${group.variants.length} variant(s))`);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        result.errors.push(`${group.item_name}: ${msg}`);
+        console.error(`[Jubelio Sync] ✗ ${group.item_name}: ${msg}`);
       }
-      usedSlugs.add(slug);
-
-      const productId = await upsertProduct(supabase, group.item_name, slug);
-      if (!productId) throw new Error("upsertProduct returned null");
-
-      await upsertVariantWithGrind(supabase, productId, group.variants, packageWeightGrams);
-
-      result.synced++;
-      console.log(`[Jubelio Sync] ✓ ${group.item_name} (${group.variants.length} variant(s))`);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      result.errors.push(`${group.item_name}: ${msg}`);
-      console.error(`[Jubelio Sync] ✗ ${group.item_name}: ${msg}`);
     }
-  }
+  });
 
-  result.skipped = allProducts.length - ecomProducts.length;
+  console.log(`[Jubelio Sync] Total: ${totalFetched}, Synced: ${result.synced}, Skipped: ${result.skipped}`);
   return result;
 }
