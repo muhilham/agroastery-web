@@ -1,6 +1,6 @@
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { createBiteshipDraft } from './createDraft';
-import { sendPaymentNotification } from '@/lib/telegram/notify';
+import { sendOpsAlert } from '@/lib/telegram/opsAlert';
 
 const MAX_RETRIES = 3;
 
@@ -18,15 +18,16 @@ export async function retryBiteshipDraft(
       .eq('id', orderId)
       .single();
 
-    // HACK: using paymentMethod field to carry ops alert text
-    await sendPaymentNotification({
+    await supabase
+      .from('ecom_orders')
+      .update({ status: 'requires_attention' })
+      .eq('id', orderId);
+
+    await sendOpsAlert({
       orderId,
       orderNumber: order?.order_number ?? 'UNKNOWN',
-      customerName: order?.customer_name ?? 'UNKNOWN',
-      customerPhone: order?.customer_phone ?? 'UNKNOWN',
-      paymentMethod: '⚠️ BITESHIP GAGAL 3x — perlu tindakan manual',
-      total: order?.total ?? 0,
-      paidAt: new Date().toISOString(),
+      issue: 'BITESHIP GAGAL 3x — perlu tindakan manual',
+      action: 'Cek Biteship dashboard atau gunakan endpoint retry manual',
     }).catch(() => {});
 
     console.error(`[retryBiteshipDraft] Max retries (${MAX_RETRIES}) reached for order ${orderId}`);
@@ -52,14 +53,9 @@ export async function retryBiteshipDraft(
     .select('order_number, customer_name, customer_phone, total')
     .single();
 
-  // HACK: using paymentMethod field to carry ops alert text
-  await sendPaymentNotification({
+  await sendOpsAlert({
     orderId,
     orderNumber: order?.order_number ?? 'UNKNOWN',
-    customerName: order?.customer_name ?? 'UNKNOWN',
-    customerPhone: order?.customer_phone ?? 'UNKNOWN',
-    paymentMethod: '✅ BITESHIP DRAFT BERHASIL DIBUAT ULANG',
-    total: order?.total ?? 0,
-    paidAt: new Date().toISOString(),
+    issue: 'BITESHIP DRAFT BERHASIL DIBUAT ULANG',
   }).catch(() => {});
 }

@@ -14,9 +14,9 @@ vi.mock('@/lib/biteship/createDraft', () => ({
   createBiteshipDraft: mockCreateDraft,
 }));
 
-const mockNotify = vi.fn().mockResolvedValue(undefined);
-vi.mock('@/lib/telegram/notify', () => ({
-  sendPaymentNotification: mockNotify,
+const mockOpsAlert = vi.fn().mockResolvedValue(undefined);
+vi.mock('@/lib/telegram/opsAlert', () => ({
+  sendOpsAlert: mockOpsAlert,
 }));
 
 function resolvedChain(data: unknown, error: unknown = null) {
@@ -53,27 +53,30 @@ describe('retryBiteshipDraft', () => {
     expect(mockCreateDraft).toHaveBeenCalledOnce();
     const [, refId] = mockCreateDraft.mock.calls[0];
     expect(refId).toMatch(/^order-1--retry-\d+-0$/);
-    expect(mockNotify).toHaveBeenCalledWith(
-      expect.objectContaining({ paymentMethod: '✅ BITESHIP DRAFT BERHASIL DIBUAT ULANG' })
+    expect(mockOpsAlert).toHaveBeenCalledWith(
+      expect.objectContaining({ issue: 'BITESHIP DRAFT BERHASIL DIBUAT ULANG' })
     );
   });
 
-  it('recursively retries up to MAX_RETRIES then alerts', async () => {
+  it('recursively retries up to MAX_RETRIES then alerts and sets requires_attention', async () => {
     mockCreateDraft.mockRejectedValue(new Error('Biteship error'));
+    const updateMock = vi.fn().mockReturnValue(resolvedChain(null));
     mockFrom.mockReturnValue({
       select: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
           single: vi.fn().mockResolvedValue({ data: ORDER_ROW, error: null }),
         }),
       }),
+      update: updateMock,
     });
 
     const { retryBiteshipDraft } = await import('@/lib/biteship/retryDraft');
     await retryBiteshipDraft('order-1');
 
     expect(mockCreateDraft).toHaveBeenCalledTimes(3);
-    expect(mockNotify).toHaveBeenCalledWith(
-      expect.objectContaining({ paymentMethod: '⚠️ BITESHIP GAGAL 3x — perlu tindakan manual' })
+    expect(updateMock).toHaveBeenCalledWith({ status: 'requires_attention' });
+    expect(mockOpsAlert).toHaveBeenCalledWith(
+      expect.objectContaining({ issue: 'BITESHIP GAGAL 3x — perlu tindakan manual' })
     );
   });
 

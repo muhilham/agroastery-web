@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { sendPaymentNotification } from "@/lib/telegram/notify";
+import { sendOpsAlert } from "@/lib/telegram/opsAlert";
 import { createBiteshipDraft } from '@/lib/biteship/createDraft';
 import { sendOrderEmail } from "@/lib/resend/sendOrderEmail";
 import { createJubelioOrderFromEcom } from "@/lib/jubelio/orders";
@@ -125,14 +126,11 @@ export async function POST(request: NextRequest) {
           err
         );
         // Alert ops immediately — customer paid but no shipment created. Requires manual action.
-        sendPaymentNotification({
+        sendOpsAlert({
           orderId: updatedOrder.id as string,
           orderNumber: updatedOrder.order_number as string,
-          customerName: updatedOrder.customer_name as string,
-          customerPhone: updatedOrder.customer_phone as string,
-          paymentMethod: "⚠️ BITESHIP GAGAL — buat order manual",
-          total: updatedOrder.total as number,
-          paidAt: new Date().toISOString(),
+          issue: "BITESHIP GAGAL — buat order manual",
+          action: "Cek log atau gunakan endpoint retry manual",
         }).catch(() => {});
       });
 

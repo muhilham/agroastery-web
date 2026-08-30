@@ -17,9 +17,9 @@ vi.mock('@/lib/biteship/retryDraft', () => ({
   retryBiteshipDraft: mockRetryDraft,
 }));
 
-const mockNotify = vi.fn().mockResolvedValue(undefined);
-vi.mock('@/lib/telegram/notify', () => ({
-  sendPaymentNotification: mockNotify,
+const mockOpsAlert = vi.fn().mockResolvedValue(undefined);
+vi.mock('@/lib/telegram/opsAlert', () => ({
+  sendOpsAlert: mockOpsAlert,
 }));
 
 // Returns a Supabase chain that is both awaitable and supports .eq/.select/.single
@@ -524,8 +524,8 @@ describe('POST /api/webhooks/biteship', () => {
       status: 'cancelled',
     });
     expect(mockRetryDraft).toHaveBeenCalledWith('ecom-99');
-    expect(mockNotify).toHaveBeenCalledWith(
-      expect.objectContaining({ paymentMethod: '⚠️ BITESHIP COURIER NOT FOUND — mencoba ulang' })
+    expect(mockOpsAlert).toHaveBeenCalledWith(
+      expect.objectContaining({ issue: 'BITESHIP COURIER NOT FOUND — mencoba ulang' })
     );
   });
 

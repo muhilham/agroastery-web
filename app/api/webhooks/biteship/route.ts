@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { timingSafeEqual } from 'crypto';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { retryBiteshipDraft } from '@/lib/biteship/retryDraft';
-import { sendPaymentNotification } from '@/lib/telegram/notify';
+import { sendOpsAlert } from '@/lib/telegram/opsAlert';
 
 // Maps Biteship order status to ecom_orders.status
 const BITESHIP_STATUS_MAP: Record<string, string> = {
@@ -305,15 +305,10 @@ export async function POST(request: NextRequest) {
           console.error(`[biteship-webhook] Failed to clear Biteship IDs for order ${orderRow.id}:`, clearError);
         }
 
-        // HACK: using paymentMethod field to carry ops alert text
-        sendPaymentNotification({
+        sendOpsAlert({
           orderId: orderRow.id,
           orderNumber: orderRow.order_number,
-          customerName: orderRow.customer_name,
-          customerPhone: orderRow.customer_phone,
-          paymentMethod: '⚠️ BITESHIP COURIER NOT FOUND — mencoba ulang',
-          total: orderRow.total,
-          paidAt: new Date().toISOString(),
+          issue: 'BITESHIP COURIER NOT FOUND — mencoba ulang',
         }).catch(() => {});
 
         retryBiteshipDraft(orderRow.id).catch((err) =>
