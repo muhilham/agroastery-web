@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.16.3](https://github.com/muhilham/agroastery-web/compare/v0.16.2...v0.16.3) (2026-08-30)
+
+
+### Bug Fixes
+
+* Biteship retry exhaustion handling — dedicated ops alerts, manual retry endpoint, status tracking ([2294dbd](https://github.com/muhilham/agroastery-web/commit/2294dbd159854d9dcdc5c0d6819475003040d74e))
+
 ## [0.16.2](https://github.com/muhilham/agroastery-web/compare/v0.16.1...v0.16.2) (2026-08-29)
 
 
