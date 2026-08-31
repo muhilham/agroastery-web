@@ -44,7 +44,6 @@ interface CheckoutFormProps {
   pickupAvailable: boolean;
   location: VerifiedLocation | null;
   shippingError: string | null;
-  submitError: string | null;
   onMapChange: (lat: number, lng: number) => void;
 }
 
@@ -66,7 +65,6 @@ export default function CheckoutForm({
   pickupAvailable,
   location,
   shippingError,
-  submitError,
   onMapChange,
 }: CheckoutFormProps) {
   return (
@@ -349,30 +347,6 @@ export default function CheckoutForm({
         )}
       </div>
 
-      <FormField
-        control={formControl}
-        name="notes"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Catatan (Opsional)</FormLabel>
-            <FormControl>
-              <Textarea
-                placeholder="Catatan untuk pesanan..."
-                className="resize-none"
-                rows={2}
-                {...field}
-              />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      {submitError && (
-        <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-          {submitError}
-        </div>
-      )}
     </div>
   );
 }

@@ -7,8 +7,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch } from "react-hook-form";
 import { numberToIdr } from "@/lib/numberToIdr";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
 } from "@/components/ui/form";
 import { LoaderCircle, ShoppingBag } from "lucide-react";
 import { useDebounce } from "@/lib/hooks/useDebounce";
@@ -434,7 +440,6 @@ export default function CheckoutPage() {
               pickupAvailable={pickupAvailable}
               location={location}
               shippingError={shippingError}
-              submitError={submitError}
               onMapChange={(lat, lng) => {
                 console.log("[Checkout] MapPicker onChange:", { lat, lng });
                 form.setValue("lat", lat);
@@ -448,6 +453,31 @@ export default function CheckoutPage() {
                 selectedShipping={selectedShipping}
                 onSelect={setSelectedShipping}
               />
+            )}
+
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Catatan (Opsional)</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Catatan untuk pesanan..."
+                      className="resize-none"
+                      rows={2}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {submitError && (
+              <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                {submitError}
+              </div>
             )}
           </form>
         </Form>
