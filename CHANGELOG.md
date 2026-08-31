@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.19.0](https://github.com/muhilham/agroastery-web/compare/v0.18.0...v0.19.0) (2026-08-31)
+
+
+### Features
+
+* add loading state to add-to-cart button ([#92](https://github.com/muhilham/agroastery-web/issues/92)) ([e84f132](https://github.com/muhilham/agroastery-web/commit/e84f1326f5863723a19bb07ecaa6b5c1daa88028))
+* add loading states for cart+QR ([#93](https://github.com/muhilham/agroastery-web/issues/93)) ([f0cb6ab](https://github.com/muhilham/agroastery-web/commit/f0cb6ab551d636758fb66682ee8519d006a757b4))
+* add sitemap.xml and robots.txt ([#102](https://github.com/muhilham/agroastery-web/issues/102)) ([0d31662](https://github.com/muhilham/agroastery-web/commit/0d31662076cfebe5f48e901a43f6381ffa9f6d06))
+* **ui:** add loading skeletons for key routes ([#91](https://github.com/muhilham/agroastery-web/issues/91)) ([8e48c34](https://github.com/muhilham/agroastery-web/commit/8e48c34438c04d4131027c9e349ca5ab1488d88d))
+
 ## [0.18.0](https://github.com/muhilham/agroastery-web/compare/v0.17.0...v0.18.0) (2026-08-31)
 
 
