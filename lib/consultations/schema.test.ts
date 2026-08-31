@@ -29,8 +29,8 @@ describe("CreateBookingSchema", () => {
     expect(CreateBookingSchema.safeParse({ ...valid, time_slot: "10:00" }).success).toBe(false);
   });
 
-  it("rejects non-Tue/Wed/Thu date (2026-08-17 is Monday)", () => {
-    expect(CreateBookingSchema.safeParse({ ...valid, booking_date: "2026-08-17" }).success).toBe(false);
+  it("rejects non-Tue/Wed/Thu date (2026-09-07 is Monday)", () => {
+    expect(CreateBookingSchema.safeParse({ ...valid, booking_date: "2026-09-07" }).success).toBe(false);
   });
 
   it("rejects malformed date", () => {
@@ -49,6 +49,6 @@ describe("RescheduleSchema", () => {
   });
 
   it("rejects invalid weekday", () => {
-    expect(RescheduleSchema.safeParse({ booking_date: "2026-08-17", time_slot: "11:00" }).success).toBe(false);
+    expect(RescheduleSchema.safeParse({ booking_date: "2026-09-07", time_slot: "11:00" }).success).toBe(false);
   });
 });

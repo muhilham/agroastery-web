@@ -91,8 +91,9 @@ describe("decrementStock", () => {
 
     const admin = { rpc: mockRpc } as unknown as ReturnType<typeof import("@/lib/supabase/server").createSupabaseAdminClient>;
     const result = await decrementStock(admin, [{ variantId: "v1", quantity: 2 }]);
-
-    expect(result.success).toBe(false);
+    if (result.success) {
+      throw new Error("expected decrementStock to fail");
+    }
     expect(result.error).toBe(dbError);
   });
 
