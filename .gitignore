@@ -54,3 +54,6 @@ yarn-error.log*
 next-env.d.ts
 .claude-context/
 .worktrees/
+
+# Supabase CLI temp
+supabase/.temp/
