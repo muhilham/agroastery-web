@@ -1,26 +1,29 @@
 import Navigation from "@/components/navigation";
-import { Footer } from "@/components/ui/footer";
 
 export default function Loading() {
   return (
     <div className="min-h-svh flex flex-col bg-background">
       <Navigation />
-      <main className="flex-1 flex items-center justify-center px-4 py-12">
-        <div className="max-w-md mx-auto w-full bg-[#1a1a1a] border border-white/10 rounded-xl p-6 text-center">
+      <main className="flex-1 flex items-center justify-center px-4">
+        <div className="max-w-sm w-full text-center py-16">
           {/* Checkmark icon placeholder */}
-          <div className="w-16 h-16 mx-auto rounded-full bg-white/10 animate-pulse mb-6" />
+          <div className="w-20 h-20 mx-auto rounded-full bg-white/10 animate-pulse mb-6" />
 
-          {/* Text line placeholders */}
+          {/* Text placeholders */}
           <div className="space-y-3 mb-6">
+            <div className="h-6 w-48 mx-auto bg-white/10 animate-pulse rounded" />
             <div className="h-4 w-3/4 mx-auto bg-white/10 animate-pulse rounded" />
-            <div className="h-4 w-1/2 mx-auto bg-white/10 animate-pulse rounded" />
           </div>
 
+          {/* Order number chip placeholder */}
+          <div className="h-8 w-40 mx-auto bg-white/10 animate-pulse rounded-full" />
+
           {/* Button placeholder */}
-          <div className="h-10 w-full rounded-xl bg-white/10 animate-pulse" />
+          <div className="mt-8 space-y-3">
+            <div className="h-10 w-full bg-white/10 animate-pulse rounded-xl" />
+          </div>
         </div>
       </main>
-      <Footer />
     </div>
   );
 }

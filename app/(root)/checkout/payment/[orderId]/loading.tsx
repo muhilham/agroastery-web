@@ -6,7 +6,11 @@ export default function Loading() {
     <div className="min-h-svh flex flex-col bg-background">
       <Navigation />
       <main className="flex-1 flex items-center justify-center px-4 py-12">
-        <div className="max-w-md mx-auto w-full bg-[#1a1a1a] border border-white/10 rounded-xl p-6">
+        <div className="max-w-md mx-auto w-full text-center">
+          {/* Title placeholder */}
+          <div className="h-6 w-40 mx-auto bg-white/10 animate-pulse rounded mb-2" />
+          <div className="h-4 w-56 mx-auto bg-white/10 animate-pulse rounded mb-8" />
+
           {/* QR code placeholder */}
           <div className="w-48 h-48 mx-auto bg-white/10 animate-pulse rounded-xl mb-6" />
 
