@@ -13,7 +13,7 @@ import Navigation from "@/components/navigation";
 import { useRouter } from "next/navigation";
 
 import type { SupabaseProduct, SupabaseProductVariant } from "@/types/product";
-import { findMatchingVariant, getMinPrice, getMinOriginalPrice, getProductImageUrl } from "@/lib/supabase/queries/productUtils";
+import { findMatchingVariant, getMinPrice, getMinOriginalPrice, getProductImageUrl, getVariantImageUrl } from "@/lib/supabase/queries/productUtils";
 import { useCart } from "@/lib/hooks/useCart";
 
 type Props = {
@@ -98,17 +98,20 @@ const SupabaseProductDetail = ({ product }: Props) => {
     .filter(Boolean)
     .join(", ");
 
-  const images = (product.images as { url: string; alt?: string }[] | null) ?? [];
+  // Build carousel images — prefer variant-level, fall back to product-level
+  const variantImages = matchedVariant?.images ?? [];
   const carouselImages =
-    images.length > 0
-      ? images.map((img) => ({ image: img.url }))
+    variantImages.length > 0
+      ? variantImages.map((img) => ({ image: img.url }))
+      : (product.images as { url: string; alt?: string }[] | null)?.length
+      ? (product.images as { url: string; alt?: string }[]).map((img) => ({ image: img.url }))
       : product.image_url
       ? [{ image: product.image_url }]
       : [];
 
   function handleAddToCart() {
     if (!matchedVariant || !inStock) return;
-    const imageUrl = getProductImageUrl(product);
+    const imageUrl = getVariantImageUrl(matchedVariant, product);
     addToCart({
       variantId: matchedVariant.id,
       productSlug: product.slug,
@@ -147,6 +150,7 @@ const SupabaseProductDetail = ({ product }: Props) => {
       <Navigation />
       <main className="pt-20 mx-auto desktop:pt-32 w-full desktop:px-20 relative desktop:flex desktop:flex-row min-h-screen pb-24 desktop:pb-0">
         <EmblaCarousel
+          key={matchedVariant?.id ?? product.slug}
           images={carouselImages}
           options={OPTIONS}
           fallbackAlt={product.name}

@@ -25,6 +25,7 @@ export type SupabaseProductVariant = {
   is_active: boolean;
   product_variant_option_values: { option_value_id: string }[];
   discounted_price?: number;
+  images: { url: string; alt?: string; sort_order?: number }[];
 };
 
 export type SupabaseProduct = {

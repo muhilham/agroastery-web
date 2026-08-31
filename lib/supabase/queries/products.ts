@@ -24,7 +24,7 @@ const PRODUCT_SELECT = `
     product_option_values (id, value, display_order)
   ),
   product_variants (
-    id, sku, price, compare_at_price, stock_quantity, ship_weight_grams, is_active,
+    id, sku, price, compare_at_price, stock_quantity, ship_weight_grams, is_active, images,
     product_variant_option_values (option_value_id)
   )
 `;

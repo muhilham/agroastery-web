@@ -58,3 +58,15 @@ export function getProductImageUrl(product: SupabaseProduct): string {
   if (images && images.length > 0) return images[0].url;
   return product.image_url ?? "/assets/placeholder.png";
 }
+
+/**
+ * Get the first image URL from a variant, falling back to the product.
+ * Pure function — safe to import in client components.
+ */
+export function getVariantImageUrl(
+  variant: SupabaseProductVariant,
+  product: SupabaseProduct
+): string {
+  if (variant.images && variant.images.length > 0) return variant.images[0].url;
+  return getProductImageUrl(product);
+}
