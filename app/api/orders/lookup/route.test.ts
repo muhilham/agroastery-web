@@ -2,8 +2,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
 
 const mockMaybeSingle = vi.fn();
-const mockEq = vi.fn();
-const mockIlike = vi.fn();
+const mockEqEmail = vi.fn();
+const mockEqOrder = vi.fn();
 const mockSelect = vi.fn();
 
 vi.mock("@/lib/supabase/server", () => ({
@@ -27,9 +27,9 @@ function req(body: unknown, headers?: Record<string, string>): NextRequest {
 describe("POST /api/orders/lookup", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockSelect.mockReturnValue({ ilike: mockIlike });
-    mockIlike.mockReturnValue({ eq: mockEq });
-    mockEq.mockReturnValue({ maybeSingle: mockMaybeSingle });
+    mockSelect.mockReturnValue({ eq: mockEqOrder });
+    mockEqOrder.mockReturnValue({ eq: mockEqEmail });
+    mockEqEmail.mockReturnValue({ maybeSingle: mockMaybeSingle });
   });
 
   it("returns orderId when order is found", async () => {
@@ -118,7 +118,55 @@ describe("POST /api/orders/lookup", () => {
       email: "BUDI@EXAMPLE.COM",
     }));
 
-    expect(mockIlike).toHaveBeenCalledWith("order_number", "AGR-20260831-ABC123");
-    expect(mockEq).toHaveBeenCalledWith("customer_email", "budi@example.com");
+    expect(mockEqOrder).toHaveBeenCalledWith("order_number", "AGR-20260831-ABC123");
+    expect(mockEqEmail).toHaveBeenCalledWith("customer_email", "budi@example.com");
+  });
+
+  it("rejects spaces-only orderNumber with 400", async () => {
+    const res = await POST(req({ orderNumber: "   ", email: "test@example.com" }));
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.code).toBe("VALIDATION_ERROR");
+  });
+
+  it("treats wildcard '%' literally with exact eq match", async () => {
+    mockMaybeSingle.mockResolvedValue({ data: null, error: null });
+
+    await POST(req({ orderNumber: "%", email: "test@example.com" }));
+
+    expect(mockEqOrder).toHaveBeenCalledWith("order_number", "%");
+  });
+
+  it("returns 500 on database error", async () => {
+    mockMaybeSingle.mockResolvedValue({ data: null, error: { message: "db down" } });
+
+    const res = await POST(req({ orderNumber: "AGR-123", email: "test@example.com" }));
+    expect(res.status).toBe(500);
+    const json = await res.json();
+    expect(json.error).toBe("Terjadi kesalahan. Silakan coba lagi nanti.");
+  });
+
+  it("counts invalid-body attempts toward rate limit", async () => {
+    const headers = { "x-forwarded-for": "10.0.0.1" };
+
+    for (let i = 0; i < 10; i++) {
+      const res = await POST(
+        new NextRequest("http://localhost/api/orders/lookup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...headers },
+          body: "{invalid json",
+        })
+      );
+      expect(res.status).toBe(400);
+    }
+
+    const res = await POST(
+      new NextRequest("http://localhost/api/orders/lookup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...headers },
+        body: "{invalid json",
+      })
+    );
+    expect(res.status).toBe(429);
   });
 });

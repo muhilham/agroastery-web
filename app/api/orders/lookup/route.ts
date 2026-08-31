@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { createHash } from "crypto";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -8,13 +9,23 @@ const WINDOW_MS = 10 * 60 * 1000; // 10 minutes
 const MAX_ATTEMPTS = 10;
 
 const rateLimitMap = new Map<string, number[]>();
+const FINGERPRINT_SECRET = "agroastery-lookup-v1";
 
 function getClientIp(req: NextRequest): string {
   const forwarded = req.headers.get("x-forwarded-for");
   if (forwarded) {
-    return forwarded.split(",")[0].trim();
+    const parts = forwarded.split(",");
+    const rightMost = parts.at(-1)?.trim();
+    if (rightMost) return rightMost;
   }
-  return "unknown";
+  return computeFingerprint(req);
+}
+
+function computeFingerprint(req: NextRequest): string {
+  const ua = req.headers.get("user-agent") ?? "";
+  return createHash("sha256")
+    .update(ua + FINGERPRINT_SECRET)
+    .digest("hex");
 }
 
 function isRateLimited(ip: string): boolean {
@@ -22,7 +33,11 @@ function isRateLimited(ip: string): boolean {
   const attempts = rateLimitMap.get(ip) ?? [];
   const windowStart = now - WINDOW_MS;
   const recentAttempts = attempts.filter((t) => t > windowStart);
-  rateLimitMap.set(ip, recentAttempts);
+  if (recentAttempts.length === 0) {
+    rateLimitMap.delete(ip);
+  } else {
+    rateLimitMap.set(ip, recentAttempts);
+  }
   return recentAttempts.length >= MAX_ATTEMPTS;
 }
 
@@ -33,8 +48,8 @@ function recordAttempt(ip: string): void {
 }
 
 const LookupSchema = z.object({
-  orderNumber: z.string().min(1).transform((v) => v.trim().toUpperCase()),
-  email: z.string().email().transform((v) => v.trim().toLowerCase()),
+  orderNumber: z.string().trim().min(1).transform((v) => v.toUpperCase()),
+  email: z.string().trim().email().transform((v) => v.toLowerCase()),
 });
 
 export async function POST(request: NextRequest) {
@@ -46,6 +61,8 @@ export async function POST(request: NextRequest) {
       { status: 429, headers: { "Retry-After": String(Math.ceil(WINDOW_MS / 1000)) } }
     );
   }
+
+  recordAttempt(ip);
 
   let body: unknown;
   try {
@@ -66,13 +83,12 @@ export async function POST(request: NextRequest) {
   }
 
   const { orderNumber, email } = parsed.data;
-  recordAttempt(ip);
 
   const admin = createSupabaseAdminClient();
   const { data: order, error } = await admin
     .from("ecom_orders")
     .select("id")
-    .ilike("order_number", orderNumber)
+    .eq("order_number", orderNumber)
     .eq("customer_email", email)
     .maybeSingle();
 
