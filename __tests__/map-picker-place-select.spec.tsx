@@ -128,8 +128,11 @@ describe("MapPicker — place selection pins location on map", () => {
         fetchFields: vi.fn().mockResolvedValue(undefined),
       };
 
-      // The gmp-select event provides a place property
-      const event = { place: mockPlace };
+      // The gmp-select event provides a placePrediction property
+      const mockPlacePrediction = {
+        toPlace: () => Promise.resolve(mockPlace),
+      };
+      const event = { placePrediction: mockPlacePrediction };
       for (const listener of placeSelectListeners) {
         await listener(event);
       }
@@ -176,8 +179,11 @@ describe("MapPicker — place selection pins location on map", () => {
         addressComponents: [],
         fetchFields: vi.fn().mockResolvedValue(undefined),
       };
+      const mockPlacePrediction = {
+        toPlace: () => Promise.resolve(mockPlace),
+      };
       for (const listener of placeSelectListeners) {
-        await listener({ place: mockPlace });
+        await listener({ placePrediction: mockPlacePrediction });
       }
     });
 
@@ -194,8 +200,11 @@ describe("MapPicker — place selection pins location on map", () => {
         addressComponents: [],
         fetchFields: vi.fn().mockResolvedValue(undefined),
       };
+      const mockPlacePrediction = {
+        toPlace: () => Promise.resolve(mockPlace),
+      };
       for (const listener of placeSelectListeners) {
-        await listener({ place: mockPlace });
+        await listener({ placePrediction: mockPlacePrediction });
       }
     });
 
@@ -246,8 +255,11 @@ describe("MapPicker — place selection pins location on map", () => {
         addressComponents: [],
         fetchFields: vi.fn().mockResolvedValue(undefined),
       };
+      const mockPlacePrediction = {
+        toPlace: () => Promise.resolve(mockPlace),
+      };
       for (const listener of placeSelectListeners) {
-        await listener({ place: mockPlace });
+        await listener({ placePrediction: mockPlacePrediction });
       }
     });
 

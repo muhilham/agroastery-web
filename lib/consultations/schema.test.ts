@@ -6,7 +6,7 @@ const valid = {
   email: "budi@example.com",
   phone: "08123456789",
   purpose: "custom_blending",
-  booking_date: "2026-08-19", // a Wednesday
+  booking_date: "2026-09-02", // a Wednesday
   time_slot: "11:00",
   notes: "Bawa susu sendiri",
 };
@@ -29,8 +29,8 @@ describe("CreateBookingSchema", () => {
     expect(CreateBookingSchema.safeParse({ ...valid, time_slot: "10:00" }).success).toBe(false);
   });
 
-  it("rejects non-Tue/Wed/Thu date (2026-08-17 is Monday)", () => {
-    expect(CreateBookingSchema.safeParse({ ...valid, booking_date: "2026-08-17" }).success).toBe(false);
+  it("rejects non-Tue/Wed/Thu date (2026-09-07 is Monday)", () => {
+    expect(CreateBookingSchema.safeParse({ ...valid, booking_date: "2026-09-07" }).success).toBe(false);
   });
 
   it("rejects malformed date", () => {
@@ -45,10 +45,10 @@ describe("CreateBookingSchema", () => {
 
 describe("RescheduleSchema", () => {
   it("accepts valid date+slot", () => {
-    expect(RescheduleSchema.safeParse({ booking_date: "2026-08-20", time_slot: "17:00" }).success).toBe(true);
+    expect(RescheduleSchema.safeParse({ booking_date: "2026-09-03", time_slot: "17:00" }).success).toBe(true);
   });
 
   it("rejects invalid weekday", () => {
-    expect(RescheduleSchema.safeParse({ booking_date: "2026-08-17", time_slot: "11:00" }).success).toBe(false);
+    expect(RescheduleSchema.safeParse({ booking_date: "2026-09-07", time_slot: "11:00" }).success).toBe(false);
   });
 });

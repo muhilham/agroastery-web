@@ -5,6 +5,7 @@ import { sendOrderNotification } from "@/lib/telegram/notify";
 import { getActiveGlobalDiscounts, getActiveProductDiscounts } from "@/lib/supabase/queries/discounts";
 import { calculateDiscountedPrice } from "@/lib/utils/discount";
 import { isShippingCostInvalid } from "@/lib/checkout/validateShippingCost";
+import { validateStockAvailability, decrementStock } from "@/lib/checkout/stockValidation";
 import { CheckoutSchema } from "./checkoutSchema";
 
 const MAX_ORDER_NUMBER_RETRIES = 3;
@@ -59,15 +60,9 @@ export async function POST(request: NextRequest) {
 
     const variantMap = new Map(dbVariants.map((v) => [v.id, v]));
 
-    // Ensure every requested variant exists, is active, and has stock
-    for (const item of data.items) {
-      const dbVariant = variantMap.get(item.variantId);
-      if (!dbVariant || !dbVariant.is_active) {
-        return NextResponse.json({ error: `Produk tidak tersedia`, code: "VARIANT_UNAVAILABLE" }, { status: 400 });
-      }
-      if ((dbVariant.stock_quantity ?? 0) < item.quantity) {
-        return NextResponse.json({ error: `Stok tidak cukup`, code: "INSUFFICIENT_STOCK" }, { status: 400 });
-      }
+    const stockCheck = validateStockAvailability(data.items, variantMap);
+    if (!stockCheck.valid) {
+      return NextResponse.json({ error: stockCheck.error, code: stockCheck.code }, { status: 400 });
     }
 
     // Fetch product names and discount eligibility from DB to avoid trusting client-sent names
@@ -200,20 +195,9 @@ export async function POST(request: NextRequest) {
       sku,
     }));
 
-    // Atomically decrement stock for all items in one DB transaction.
-    // If any item has insufficient stock, the RPC raises an exception and all decrements roll back.
-    const { data: stockDecremented, error: stockError } = await admin.rpc(
-      "ecom_decrement_stock_multi",
-      {
-        p_items: data.items.map((item) => ({
-          variant_id: item.variantId,
-          quantity: item.quantity,
-        })),
-      }
-    );
-
-    if (stockError || !stockDecremented) {
-      console.error("Stock decrement error:", stockError);
+    const decrementResult = await decrementStock(admin, data.items);
+    if (!decrementResult.success) {
+      console.error("Stock decrement error:", decrementResult.error);
       return NextResponse.json(
         { error: "Stok tidak cukup", code: "INSUFFICIENT_STOCK" },
         { status: 409 }
