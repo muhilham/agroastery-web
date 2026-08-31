@@ -4,7 +4,7 @@ import { Footer } from "@/components/ui/footer";
 import { EmblaOptionsType } from "embla-carousel";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Minus, Plus, ShoppingCart } from "lucide-react";
+import { Minus, Plus, ShoppingCart, LoaderCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { numberToIdr } from "@/lib/numberToIdr";
@@ -46,6 +46,7 @@ const SupabaseProductDetail = ({ product }: Props) => {
 
   const [qty, setQty] = useState<number>(1);
   const [addedToCart, setAddedToCart] = useState(false);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
   const addedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Clear addedToCart timer on unmount
@@ -110,7 +111,8 @@ const SupabaseProductDetail = ({ product }: Props) => {
       : [];
 
   function handleAddToCart() {
-    if (!matchedVariant || !inStock) return;
+    if (!matchedVariant || !inStock || isAddingToCart) return;
+    setIsAddingToCart(true);
     const imageUrl = getVariantImageUrl(matchedVariant, product);
     addToCart({
       variantId: matchedVariant.id,
@@ -125,7 +127,10 @@ const SupabaseProductDetail = ({ product }: Props) => {
     });
     setAddedToCart(true);
     if (addedTimerRef.current) clearTimeout(addedTimerRef.current);
-    addedTimerRef.current = setTimeout(() => setAddedToCart(false), 2000);
+    addedTimerRef.current = setTimeout(() => {
+      setAddedToCart(false);
+      setIsAddingToCart(false);
+    }, 2000);
   }
 
   function handleCheckout() {
@@ -280,21 +285,25 @@ const SupabaseProductDetail = ({ product }: Props) => {
           {/* Add to Cart button */}
           <Button
             className="w-full flex items-center gap-2"
-            disabled={!matchedVariant || !inStock}
+            disabled={!matchedVariant || !inStock || isAddingToCart}
             onClick={handleAddToCart}
             variant="outline"
           >
-            <ShoppingCart className="w-4 h-4" />
-            {addedToCart ? "Ditambahkan!" : "Tambah ke Keranjang"}
+            {isAddingToCart ? (
+              <LoaderCircle className="w-4 h-4 animate-spin" />
+            ) : (
+              <ShoppingCart className="w-4 h-4" />
+            )}
+            {isAddingToCart ? "Menambahkan..." : addedToCart ? "Ditambahkan!" : "Tambah ke Keranjang"}
           </Button>
 
           {/* Buy Now button */}
           <Button
             className="w-full"
-            disabled={!matchedVariant || !inStock}
+            disabled={!matchedVariant || !inStock || isAddingToCart}
             onClick={handleCheckout}
           >
-            Beli Sekarang
+            {isAddingToCart ? "Menambahkan..." : "Beli Sekarang"}
           </Button>
         </div>
 
@@ -303,19 +312,25 @@ const SupabaseProductDetail = ({ product }: Props) => {
           style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}>
           <Button
             className="flex-1 h-11 flex items-center gap-1.5 text-sm"
-            disabled={!matchedVariant || !inStock}
+            disabled={!matchedVariant || !inStock || isAddingToCart}
             onClick={handleAddToCart}
             variant="outline"
           >
-            <ShoppingCart className="w-4 h-4 shrink-0" />
-            <span className="truncate">{addedToCart ? "Ditambahkan!" : "Keranjang"}</span>
+            {isAddingToCart ? (
+              <LoaderCircle className="w-4 h-4 shrink-0 animate-spin" />
+            ) : (
+              <ShoppingCart className="w-4 h-4 shrink-0" />
+            )}
+            <span className="truncate">
+              {isAddingToCart ? "Menambahkan..." : addedToCart ? "Ditambahkan!" : "Keranjang"}
+            </span>
           </Button>
           <Button
             className="flex-1 h-11 text-sm"
-            disabled={!matchedVariant || !inStock}
+            disabled={!matchedVariant || !inStock || isAddingToCart}
             onClick={handleCheckout}
           >
-            Beli
+            {isAddingToCart ? "Menambahkan..." : "Beli"}
           </Button>
         </div>
       </main>
