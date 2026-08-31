@@ -45,7 +45,7 @@ function Wrapper(props: React.ComponentProps<typeof ShippingSelector>) {
 }
 
 describe("ShippingSelector", () => {
-  it("renders shipping options as radio buttons", () => {
+  it("renders shipping options in a dropdown sorted by price", () => {
     render(
       <Wrapper
         shippingRates={mockRates}
@@ -54,15 +54,24 @@ describe("ShippingSelector", () => {
       />
     );
 
-    expect(screen.getByText("JNE")).toBeInTheDocument();
-    expect(screen.getByText("City to City (CTC)")).toBeInTheDocument();
-    expect(screen.getByText("SiCepat")).toBeInTheDocument();
-    expect(screen.getByText("REG")).toBeInTheDocument();
-    expect(screen.getByText(/Rp\s*15\.000/)).toBeInTheDocument();
-    expect(screen.getByText(/Rp\s*12\.000/)).toBeInTheDocument();
+    const select = screen.getByRole("combobox");
+    expect(select).toBeInTheDocument();
+
+    const options = screen.getAllByRole("option");
+    // Placeholder + 2 rates
+    expect(options).toHaveLength(3);
+
+    // Verify sorted by price ascending: SiCepat (12000) first, then JNE (15000)
+    expect(options[1].textContent).toContain("SiCepat");
+    expect(options[1].textContent).toContain("REG");
+    expect(options[2].textContent).toContain("JNE");
+    expect(options[2].textContent).toContain("City to City (CTC)");
+
+    expect(options[1].textContent).toContain("Rp\u00a012.000");
+    expect(options[2].textContent).toContain("Rp\u00a015.000");
   });
 
-  it("calls onSelect when a radio is clicked", () => {
+  it("calls onSelect when an option is selected", () => {
     const onSelect = vi.fn();
     render(
       <Wrapper
@@ -72,7 +81,8 @@ describe("ShippingSelector", () => {
       />
     );
 
-    fireEvent.click(screen.getByText("City to City (CTC)").closest("label")!);
+    const select = screen.getByRole("combobox");
+    fireEvent.change(select, { target: { value: "jne-ctc" } });
 
     expect(onSelect).toHaveBeenCalledWith(
       expect.objectContaining({
