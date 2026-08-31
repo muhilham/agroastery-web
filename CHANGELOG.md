@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.18.0](https://github.com/muhilham/agroastery-web/compare/v0.17.0...v0.18.0) (2026-08-31)
+
+
+### Features
+
+* add global loading, error, not-found boundaries ([#83](https://github.com/muhilham/agroastery-web/issues/83)) ([04649ae](https://github.com/muhilham/agroastery-web/commit/04649ae04bb13ddee661a94824f14f63c66c0fe6))
+
+
+### Refactors
+
+* split checkout page into focused components ([#84](https://github.com/muhilham/agroastery-web/issues/84)) ([7363827](https://github.com/muhilham/agroastery-web/commit/7363827fa4b36143fe21abeafd1f31c5162efcf7))
+
 ## [0.17.0](https://github.com/muhilham/agroastery-web/compare/v0.16.3...v0.17.0) (2026-08-31)
 
 
