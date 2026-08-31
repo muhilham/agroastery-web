@@ -4,7 +4,6 @@ import ProductGrid from "@/components/product-grid";
 import { Aside } from "@/components/ui/aside";
 import { Footer } from "@/components/ui/footer";
 import { getProducts, deriveCategoriesFromProducts } from "@/lib/supabase/queries/products";
-import { getMinPrice } from "@/lib/supabase/queries/productUtils";
 import SearchBar from "./SearchBar";
 import Filters from "./Filters";
 
@@ -43,10 +42,18 @@ export default async function Page({
     );
   }
   if (minPrice !== undefined && !isNaN(minPrice)) {
-    filtered = filtered.filter((p) => getMinPrice(p.product_variants) >= minPrice);
+    filtered = filtered.filter((p) =>
+      p.product_variants.some(
+        (v) => v.is_active && (v.discounted_price ?? v.price) >= minPrice
+      )
+    );
   }
   if (maxPrice !== undefined && !isNaN(maxPrice)) {
-    filtered = filtered.filter((p) => getMinPrice(p.product_variants) <= maxPrice);
+    filtered = filtered.filter((p) =>
+      p.product_variants.some(
+        (v) => v.is_active && (v.discounted_price ?? v.price) <= maxPrice
+      )
+    );
   }
   if (inStock) {
     filtered = filtered.filter((p) =>
