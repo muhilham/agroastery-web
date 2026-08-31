@@ -11,6 +11,7 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  console.error(error);
   return (
     <div className="min-h-svh flex flex-col bg-background">
       <Navigation />
@@ -20,7 +21,7 @@ export default function Error({
             Terjadi Kesalahan
           </h1>
           <p className="text-secondary text-sm">
-            {error.message || "Something went wrong."}
+            {error.message || "Terjadi kesalahan tak terduga."}
           </p>
           <div className="flex flex-col gap-2 pt-2">
             <button
