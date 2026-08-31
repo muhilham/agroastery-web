@@ -4,22 +4,55 @@ import ProductGrid from "@/components/product-grid";
 import { Aside } from "@/components/ui/aside";
 import { Footer } from "@/components/ui/footer";
 import { getProducts, deriveCategoriesFromProducts } from "@/lib/supabase/queries/products";
+import { getMinPrice } from "@/lib/supabase/queries/productUtils";
+import SearchBar from "./SearchBar";
+import Filters from "./Filters";
 
 export const dynamic = "force-dynamic";
 
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Promise<{ category?: string }>;
+  searchParams: Promise<{
+    category?: string;
+    search?: string;
+    minPrice?: string;
+    maxPrice?: string;
+    inStock?: string;
+  }>;
 }) {
-  const { category: rawCategory } = await searchParams;
-  // Next.js decodes searchParams automatically; decodeURIComponent makes the intent explicit
-  const category = rawCategory ? decodeURIComponent(rawCategory) : undefined;
+  const params = await searchParams;
+  const category = params.category ? decodeURIComponent(params.category) : undefined;
+  const search = params.search ? params.search.toLowerCase() : undefined;
+  const minPrice = params.minPrice ? Number(params.minPrice) : undefined;
+  const maxPrice = params.maxPrice ? Number(params.maxPrice) : undefined;
+  const inStock = params.inStock === "true";
+
   const allProducts = await getProducts();
   const categories = deriveCategoriesFromProducts(allProducts);
-  const filteredProducts = category
-    ? allProducts.filter((p) => p.category_ids.includes(category))
-    : allProducts;
+
+  let filtered = allProducts;
+  if (category) {
+    filtered = filtered.filter((p) => p.category_ids.includes(category));
+  }
+  if (search) {
+    filtered = filtered.filter((p) =>
+      p.name.toLowerCase().includes(search) ||
+      (p.description ?? "").toLowerCase().includes(search) ||
+      (p.short_description ?? "").toLowerCase().includes(search)
+    );
+  }
+  if (minPrice !== undefined && !isNaN(minPrice)) {
+    filtered = filtered.filter((p) => getMinPrice(p.product_variants) >= minPrice);
+  }
+  if (maxPrice !== undefined && !isNaN(maxPrice)) {
+    filtered = filtered.filter((p) => getMinPrice(p.product_variants) <= maxPrice);
+  }
+  if (inStock) {
+    filtered = filtered.filter((p) =>
+      p.product_variants.some((v) => v.is_active && v.stock_quantity > 0)
+    );
+  }
 
   return (
     <div className="min-h-svh flex flex-col bg-background">
@@ -28,7 +61,13 @@ export default async function Page({
         <Categories categories={categories} activeCategoryId={category ?? null} />
         <div className="flex justify-between w-full">
           <Aside categories={categories} activeCategoryId={category ?? null} />
-          <ProductGrid supabaseProducts={filteredProducts} />
+          <div className="flex-1 min-w-0">
+            <div className="px-6 pb-4 space-y-3">
+              <SearchBar />
+              <Filters />
+            </div>
+            <ProductGrid supabaseProducts={filtered} />
+          </div>
         </div>
       </main>
       <Footer />
