@@ -6,7 +6,7 @@ const valid = {
   email: "budi@example.com",
   phone: "08123456789",
   purpose: "custom_blending",
-  booking_date: "2026-08-19", // a Wednesday
+  booking_date: "2026-09-02", // a Wednesday
   time_slot: "11:00",
   notes: "Bawa susu sendiri",
 };
@@ -45,7 +45,7 @@ describe("CreateBookingSchema", () => {
 
 describe("RescheduleSchema", () => {
   it("accepts valid date+slot", () => {
-    expect(RescheduleSchema.safeParse({ booking_date: "2026-08-20", time_slot: "17:00" }).success).toBe(true);
+    expect(RescheduleSchema.safeParse({ booking_date: "2026-09-03", time_slot: "17:00" }).success).toBe(true);
   });
 
   it("rejects invalid weekday", () => {
