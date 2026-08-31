@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.17.0](https://github.com/muhilham/agroastery-web/compare/v0.16.3...v0.17.0) (2026-08-31)
+
+
+### Features
+
+* add public order lookup ([#82](https://github.com/muhilham/agroastery-web/issues/82)) ([d6d6efb](https://github.com/muhilham/agroastery-web/commit/d6d6efb8621128ef57a3505b5995c3e8bdb217db))
+* add variant image gallery ([#80](https://github.com/muhilham/agroastery-web/issues/80)) ([b30523a](https://github.com/muhilham/agroastery-web/commit/b30523a7c3317a0d83936d545b298fd51ac01d12))
+* **katalog:** add search and filtering ([#81](https://github.com/muhilham/agroastery-web/issues/81)) ([ed2da68](https://github.com/muhilham/agroastery-web/commit/ed2da68ed2993d3a7f51adcd279ddc0f7c1b27a3))
+
+
+### Refactors
+
+* drop paymentMethod ops-alert hack ([#78](https://github.com/muhilham/agroastery-web/issues/78)) ([d158c8c](https://github.com/muhilham/agroastery-web/commit/d158c8cc72a037f3c9fec043a41f35d2dc8af0f3))
+
 ## [0.16.3](https://github.com/muhilham/agroastery-web/compare/v0.16.2...v0.16.3) (2026-08-30)
 
 
