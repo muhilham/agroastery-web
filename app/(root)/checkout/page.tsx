@@ -7,54 +7,24 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch } from "react-hook-form";
 import { numberToIdr } from "@/lib/numberToIdr";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
 } from "@/components/ui/form";
-import { LoaderCircle, MapPin, ShoppingBag } from "lucide-react";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { LoaderCircle, ShoppingBag } from "lucide-react";
 import { useDebounce } from "@/lib/hooks/useDebounce";
 import { useShippingCalculator } from "@/lib/hooks/useShippingCalculator";
-import { LocationDisplay } from "@/components/location-display";
-import dynamic from "next/dynamic";
-const MapPicker = dynamic(() => import("@/components/map/MapPicker"), {
-  loading: () => (
-    <div className="h-[240px] rounded-lg bg-gray-900 border border-white/10 flex items-center justify-center">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-    </div>
-  ),
-  ssr: false,
-});
 import { useCart } from "@/lib/hooks/useCart";
 import { trackBeginCheckout } from "@/lib/analytics/gtag";
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { useAddresses } from "@/lib/hooks/useAddresses";
 import type { Address } from "@/lib/hooks/useAddresses";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { guestFormSchema, loggedInFormSchema, type TForm } from "./checkoutSchemas";
-
-function CheckoutImage({ src, alt }: { src: string; alt: string }) {
-  const [imgSrc, setImgSrc] = useState(src);
-  return (
-    <Image
-      src={imgSrc}
-      alt={alt}
-      fill
-      className="object-cover"
-      sizes="48px"
-      onError={() => setImgSrc("/assets/placeholder.png")}
-    />
-  );
-}
+import OrderSummary from "@/components/checkout/OrderSummary";
+import CheckoutForm from "@/components/checkout/CheckoutForm";
+import ShippingSelector from "@/components/checkout/ShippingSelector";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -442,393 +412,42 @@ export default function CheckoutPage() {
           Checkout
         </h1>
 
-        {/* Cart summary */}
-        <div className="bg-[#1a1a1a] rounded-xl border border-white/10 p-4 mb-6">
-          <h2 className="text-primary font-medium mb-3">Pesanan ({cartCount} item)</h2>
-          <div className="space-y-3">
-            {cartItems.map((item) => (
-              <div key={item.variantId} className="flex gap-3 items-center">
-                <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-[#2a2a2a] shrink-0">
-                  <CheckoutImage src={item.image} alt={item.productName} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-primary text-sm font-medium line-clamp-1">{item.productName}</p>
-                  <p className="text-secondary text-xs">{item.variantDescription} × {item.quantity}</p>
-                </div>
-                <div className="text-right shrink-0">
-                  <span className="text-primary text-sm font-semibold">
-                    {numberToIdr({ nominal: item.unitPrice * item.quantity })}
-                  </span>
-                  {item.originalPrice > item.unitPrice && (
-                    <div className="text-xs text-gray-400 line-through">
-                      {numberToIdr({ nominal: item.originalPrice * item.quantity })}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-          <Link href="/cart" className="text-xs text-white/40 hover:text-white/60 mt-3 block">
-            Edit keranjang
-          </Link>
-        </div>
+        <OrderSummary cartItems={cartItems} cartCount={cartCount} />
 
-        {/* Form */}
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {pickupAvailable && (
-              <div className="bg-[#1a1a1a] rounded-xl border border-white/10 p-4 space-y-3">
-                <h2 className="text-primary font-semibold tracking-widest uppercase text-xs">
-                  Metode Pengambilan
-                </h2>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleFulfillmentChange("delivery")}
-                    className={`rounded-lg border p-3 text-sm font-medium transition-colors ${
-                      fulfillmentMethod === "delivery"
-                        ? "border-primary/40 bg-primary/10 text-primary"
-                        : "border-white/10 text-secondary"
-                    }`}
-                  >
-                    Kirim
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleFulfillmentChange("pickup")}
-                    className={`rounded-lg border p-3 text-sm font-medium transition-colors ${
-                      fulfillmentMethod === "pickup"
-                        ? "border-primary/40 bg-primary/10 text-primary"
-                        : "border-white/10 text-secondary"
-                    }`}
-                  >
-                    Ambil Sendiri
-                  </button>
-                </div>
-                {fulfillmentMethod === "pickup" && (
-                  <div className="rounded-xl bg-[#242424] border border-white/10 px-4 py-3 space-y-1">
-                    <p className="text-[#CCC4A9] text-sm font-medium">
-                      {process.env.NEXT_PUBLIC_PICKUP_ADDRESS}
-                    </p>
-                    <p className="text-[#CCC4A9]/60 text-xs">
-                      {process.env.NEXT_PUBLIC_PICKUP_HOURS}
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Step 1: Alamat Pengiriman */}
-            {fulfillmentMethod === "delivery" && (
-            <div className="bg-[#1a1a1a] rounded-xl border border-white/10 p-4 space-y-4">
-              <div className="flex items-center gap-3">
-                <span className="w-5 h-5 rounded-full bg-primary/20 border border-primary/30 text-primary text-[10px] font-bold flex items-center justify-center shrink-0">1</span>
-                <h2 className="text-primary font-semibold tracking-widest uppercase text-xs">Alamat Pengiriman</h2>
-              </div>
-
-              {/* Saved address selector — authenticated users with saved addresses */}
-              {user && !isLoadingAddresses && addresses.length > 0 && (
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-white">Pilih Alamat</label>
-                  <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar -mx-1 px-1">
-                    {addresses.map((addr) => (
-                      <button
-                        key={addr.id}
-                        type="button"
-                        onClick={() => handleAddressSelect(addr.id)}
-                        className={`flex-shrink-0 w-44 rounded-xl border-2 p-3 text-left transition-colors ${
-                          selectedAddressId === addr.id
-                            ? "border-primary bg-primary/10"
-                            : "border-white/10 bg-[#242424] active:bg-[#2a2a2a]"
-                        }`}
-                      >
-                        {(addr.label || addr.is_default) && (
-                          <p className="text-[10px] font-semibold uppercase tracking-widest text-primary/70 mb-1 truncate">
-                            {addr.label ?? ""}
-                            {addr.is_default ? (addr.label ? " · Utama" : "Utama") : ""}
-                          </p>
-                        )}
-                        <p className="text-xs font-medium text-[#CCC4A9] line-clamp-1">{addr.recipient_name}</p>
-                        <p className="text-[11px] text-[#CCC4A9]/50 line-clamp-2 mt-0.5 leading-tight">{addr.address_line}</p>
-                      </button>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={() => handleAddressSelect("new")}
-                      className={`flex-shrink-0 w-36 rounded-xl border-2 border-dashed p-3 flex flex-col items-center justify-center gap-1 transition-colors ${
-                        selectedAddressId === "new"
-                          ? "border-primary/50 bg-primary/5"
-                          : "border-white/[0.15] bg-transparent active:bg-white/5"
-                      }`}
-                    >
-                      <span className="text-primary text-xl leading-none font-light">+</span>
-                      <span className="text-xs text-[#CCC4A9]/50">Alamat baru</span>
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Loading addresses indicator */}
-              {user && isLoadingAddresses && (
-                <div className="flex items-center gap-2 text-sm text-[#CCC4A9]/60">
-                  <LoaderCircle className="animate-spin w-4 h-4" />
-                  <span>Memuat alamat tersimpan...</span>
-                </div>
-              )}
-
-              {(selectedAddressId === "new" || (selectedAddressId === null && !user)) && (
-                <>
-                  <FormField
-                    control={form.control}
-                    name="address"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Alamat Lengkap</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Jl. Kemang Barat No. 7, RT.9/RW.1, Bangka, Mampang Prapatan"
-                            className="resize-none"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="postalCode"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Kode Pos</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <Input
-                              placeholder="12190"
-                              maxLength={5}
-                              inputMode="numeric"
-                              {...field}
-                            />
-                            {isLoadingShipping && (
-                              <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                                <LoaderCircle className="animate-spin h-4 w-4 text-primary" />
-                              </div>
-                            )}
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-white">
-                      Pilih Lokasi (Opsional)
-                    </label>
-                    {showMap ? (
-                      <MapPicker
-                        value={{
-                          lat: watchedLat || null,
-                          lng: watchedLng || null,
-                        }}
-                        onChange={(coords) => {
-                          console.log("[Checkout] MapPicker onChange:", coords);
-                          form.setValue("lat", coords.lat);
-                          form.setValue("lng", coords.lng);
-                        }}
-                        height={240}
-                        className="w-full"
-                      />
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => setShowMap(true)}
-                        className="w-full h-[60px] rounded-xl border border-white/10 bg-[#1e1e1e] hover:bg-[#242424] active:bg-[#2a2a2a] transition-colors flex items-center justify-center gap-2.5 group"
-                      >
-                        <MapPin className="w-4 h-4 text-primary/50 group-hover:text-primary/80 transition-colors" />
-                        <span className="text-sm text-[#CCC4A9]/60 group-hover:text-[#CCC4A9]/80 transition-colors">
-                          Pilih Lokasi di Peta
-                        </span>
-                        <span className="text-[10px] text-[#CCC4A9]/25">(Opsional)</span>
-                      </button>
-                    )}
-                  </div>
-                </>
-              )}
-
-              {/* Map display for saved addresses with lat/lng */}
-              {selectedAddressId !== null && selectedAddressId !== "new" && (() => {
-                const addr = addresses.find((a) => a.id === selectedAddressId);
-                if (!addr) return null;
-                const hasCoordinates = addr.latitude != null && addr.longitude != null;
-                return (
-                  <div className="space-y-3">
-                    <div className="rounded-xl bg-[#242424] border border-white/10 px-4 py-3 space-y-1">
-                      <p className="text-[#CCC4A9] text-sm font-medium">{addr.address_line}</p>
-                      {addr.postal_code && (
-                        <p className="text-[#CCC4A9]/60 text-xs">Kode Pos: {addr.postal_code}</p>
-                      )}
-                    </div>
-                    {hasCoordinates && (
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-white/70">Lokasi Pin</label>
-                        <MapPicker
-                          value={{
-                            lat: addr.latitude,
-                            lng: addr.longitude,
-                          }}
-                          onChange={() => {}} // No-op since readOnly
-                          height={180}
-                          showSearch={false}
-                          readOnly={true}
-                          zoom={16}
-                        />
-                        <p className="text-xs text-[#CCC4A9]/40">
-                          Lokasi telah ditentukan dari alamat tersimpan
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
-
-              <LocationDisplay
-                location={location}
-                isLoading={isLoadingShipping}
-                error={shippingError}
-              />
-            </div>
-            )}
-
-            {/* Step 2: Data Penerima */}
-            <div className="bg-[#1a1a1a] rounded-xl border border-white/10 p-4 space-y-4">
-              <div className="flex items-center gap-3">
-                <span className="w-5 h-5 rounded-full bg-primary/20 border border-primary/30 text-primary text-[10px] font-bold flex items-center justify-center shrink-0">2</span>
-                <h2 className="text-primary font-semibold tracking-widest uppercase text-xs">Data Penerima</h2>
-              </div>
-
-              <FormField
-                control={form.control}
-                name="fullName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nama Lengkap</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Nama lengkap penerima" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nomor HP</FormLabel>
-                    <FormControl>
-                      <Input placeholder="08xxxxxxxxxx" inputMode="tel" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {isGuest && (
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input placeholder="budi@gmail.com" type="email" {...field} value={field.value ?? ""} />
-                      </FormControl>
-                      <p className="text-xs text-secondary mt-1">
-                        We&apos;ll send your order confirmation here
-                      </p>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
-            </div>
-
-            {/* Shipping options */}
-            {shippingRates.length > 0 && !shippingError && (
-              <div className="bg-[#1a1a1a] rounded-xl border border-white/10 p-4 space-y-3">
-                <div className="flex items-center gap-3">
-                  <span className="w-5 h-5 rounded-full bg-primary/20 border border-primary/30 text-primary text-[10px] font-bold flex items-center justify-center shrink-0">3</span>
-                  <h2 className="text-primary font-semibold tracking-widest uppercase text-xs">Opsi Pengiriman</h2>
-                </div>
-                <RadioGroup
-                  onValueChange={(value) => {
-                    const rate = shippingRates.find((r) => r.code === value) ?? null;
-                    setSelectedShipping(rate);
-                  }}
-                  className="space-y-2"
-                >
-                  {shippingRates.map((rate, index) => {
-                    const key = `${rate.code}-${rate.price}-${index}`;
-                    return (
-                      <FormItem key={key}>
-                        <FormControl>
-                          <RadioGroupItem value={rate.code} id={key} className="sr-only" />
-                        </FormControl>
-                        <FormLabel
-                          htmlFor={key}
-                          className={`flex items-center justify-between gap-3 p-3 tablet:p-4 rounded-lg border cursor-pointer transition-all min-h-[3.5rem] relative overflow-hidden ${
-                            selectedShipping?.code === rate.code
-                              ? "border-primary/40 bg-primary/10"
-                              : "border-white/10 bg-[#1e1e1e] active:bg-white/5"
-                          }`}
-                        >
-                          {selectedShipping?.code === rate.code && (
-                            <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary" />
-                          )}
-                          <div className="flex flex-col min-w-0 gap-1">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-[10px] font-bold uppercase tracking-widest bg-white/10 rounded px-1.5 py-0.5 text-[#CCC4A9]/70 shrink-0">
-                                {rate.carrier}
-                              </span>
-                              <span className="text-sm font-medium text-primary truncate">{rate.service}</span>
-                            </div>
-                            <span className="text-xs text-secondary">Tiba {rate.eta || "N/A"}</span>
-                          </div>
-                          <span className="text-sm font-semibold shrink-0 text-primary">{numberToIdr({ nominal: rate.price })}</span>
-                        </FormLabel>
-                      </FormItem>
-                    );
-                  })}
-                </RadioGroup>
-              </div>
-            )}
-
-            <FormField
-              control={form.control}
-              name="notes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Catatan (Opsional)</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Catatan untuk pesanan..."
-                      className="resize-none"
-                      rows={2}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+            <CheckoutForm
+              formControl={form.control}
+              isGuest={isGuest}
+              user={user}
+              isLoadingAddresses={isLoadingAddresses}
+              addresses={addresses}
+              selectedAddressId={selectedAddressId}
+              onAddressSelect={handleAddressSelect}
+              showMap={showMap}
+              onToggleMap={() => setShowMap(true)}
+              watchedLat={watchedLat}
+              watchedLng={watchedLng}
+              isLoadingShipping={isLoadingShipping}
+              fulfillmentMethod={fulfillmentMethod}
+              onFulfillmentChange={handleFulfillmentChange}
+              pickupAvailable={pickupAvailable}
+              location={location}
+              shippingError={shippingError}
+              submitError={submitError}
+              onMapChange={(lat, lng) => {
+                console.log("[Checkout] MapPicker onChange:", { lat, lng });
+                form.setValue("lat", lat);
+                form.setValue("lng", lng);
+              }}
             />
 
-            {submitError && (
-              <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-                {submitError}
-              </div>
+            {shippingRates.length > 0 && !shippingError && (
+              <ShippingSelector
+                shippingRates={shippingRates}
+                selectedShipping={selectedShipping}
+                onSelect={setSelectedShipping}
+              />
             )}
           </form>
         </Form>
