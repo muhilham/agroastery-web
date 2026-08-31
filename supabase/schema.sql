@@ -1122,6 +1122,9 @@ CREATE TABLE IF NOT EXISTS "public"."product_variants" (
 ALTER TABLE "public"."product_variants" OWNER TO "postgres";
 
 
+ALTER TABLE "public"."product_variants" ADD COLUMN IF NOT EXISTS "images" jsonb DEFAULT '[]'::jsonb NOT NULL;
+
+
 CREATE TABLE IF NOT EXISTS "public"."products" (
     "id" "uuid" DEFAULT "extensions"."uuid_generate_v4"() NOT NULL,
     "name" "text" NOT NULL,
