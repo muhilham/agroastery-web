@@ -24,7 +24,7 @@ vi.mock("@/lib/whatsapp", () => ({
   buildPaymentWhatsAppLink: vi.fn(() => null),
 }));
 
-import { sendOrderNotification } from "./notify";
+import { sendOrderNotification, sendPaymentNotification } from "./notify";
 
 describe("telegram order notify", () => {
   beforeEach(() => {
@@ -95,5 +95,43 @@ describe("telegram order notify", () => {
     const body = JSON.parse(mockFetch.mock.calls[0][1].body);
     expect(body.chat_id).toBe("chat");
     expect(body).not.toHaveProperty("message_thread_id");
+  });
+
+  it("includes WA link in payment notification for QRIS", async () => {
+    const { buildPaymentWhatsAppLink } = await import("@/lib/whatsapp");
+    vi.mocked(buildPaymentWhatsAppLink).mockReturnValue("https://wa.me/12345");
+
+    await sendPaymentNotification({
+      orderId: "ord-1",
+      orderNumber: "AGR-001",
+      customerName: "Budi",
+      customerPhone: "08123",
+      paymentMethod: "QRIS",
+      total: 100000,
+      paidAt: "2026-07-23T10:00:00Z",
+    });
+
+    expect(mockFetch).toHaveBeenCalledOnce();
+    const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+    expect(body.text).toContain("WA: https://wa.me/12345");
+  });
+
+  it("does not skip WA link when paymentMethod starts with ⚠️", async () => {
+    const { buildPaymentWhatsAppLink } = await import("@/lib/whatsapp");
+    vi.mocked(buildPaymentWhatsAppLink).mockReturnValue("https://wa.me/12345");
+
+    await sendPaymentNotification({
+      orderId: "ord-1",
+      orderNumber: "AGR-001",
+      customerName: "Budi",
+      customerPhone: "08123",
+      paymentMethod: "⚠️ ALERT",
+      total: 100000,
+      paidAt: "2026-07-23T10:00:00Z",
+    });
+
+    expect(mockFetch).toHaveBeenCalledOnce();
+    const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+    expect(body.text).toContain("WA: https://wa.me/12345");
   });
 });

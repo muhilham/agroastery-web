@@ -217,6 +217,70 @@ describe("pivot webhook — ecom orders", () => {
     );
   });
 
+  it("triggers sendOpsAlert when Jubelio sync fails", async () => {
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "ecom_orders") {
+        return {
+          select: () => ({
+            eq: () => ({
+              single: vi.fn().mockResolvedValue({ data: { id: "order-1", payment_status: "unpaid" }, error: null }),
+            }),
+          }),
+          update: () => ({
+            eq: () => ({
+              select: () => ({
+                single: vi.fn().mockResolvedValue({
+                  data: {
+                    id: "order-1",
+                    order_number: "AGR-001",
+                    customer_name: "Budi",
+                    customer_phone: "08123",
+                    total: 100000,
+                    shipping_address: { phone: "08123" },
+                  },
+                  error: null,
+                }),
+              }),
+            }),
+          }),
+        };
+      }
+      if (table === "ecom_order_items") {
+        return {
+          select: () => ({
+            eq: () => Promise.resolve({ data: [{ product_name: "Kopi", quantity: 1 }], error: null }),
+          }),
+        };
+      }
+      return { select: () => resolvedChain(null) };
+    });
+
+    mockCreateJubelioOrder.mockRejectedValue(new Error("Jubelio down"));
+
+    const req = webhookReq("PAYMENT.PAID", { id: "ps_1", chargeDetails: [{ paidAt: "2026-07-23T10:00:00Z" }] });
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+
+    // Wait for fire-and-forget side effects
+    await new Promise((r) => setTimeout(r, 10));
+
+    expect(mockOpsAlert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderId: "order-1",
+        orderNumber: "AGR-001",
+        issue: expect.stringContaining("JUBELIO"),
+      })
+    );
+
+    const paymentCalls = mockPaymentNotification.mock.calls;
+    for (const call of paymentCalls) {
+      const arg = call[0] as { paymentMethod?: string };
+      if (arg.paymentMethod) {
+        expect(arg.paymentMethod).not.toContain("⚠️");
+      }
+    }
+  });
+
   it("sets order to cancelled on PAYMENT.EXPIRED", async () => {
     mockFrom.mockImplementation((table: string) => {
       if (table === "ecom_orders") {
