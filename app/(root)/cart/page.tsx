@@ -102,11 +102,13 @@ export default function CartPage() {
                         onClick={async () => {
                           setUpdatingItems((prev) => new Set(prev).add(item.variantId));
                           updateQuantity(item.variantId, item.quantity - 1);
-                          setUpdatingItems((prev) => {
-                            const next = new Set(prev);
-                            next.delete(item.variantId);
-                            return next;
-                          });
+                          setTimeout(() => {
+                            setUpdatingItems((prev) => {
+                              const next = new Set(prev);
+                              next.delete(item.variantId);
+                              return next;
+                            });
+                          }, 100);
                         }}
                         disabled={item.quantity <= 1 || updatingItems.has(item.variantId)}
                         aria-label="Kurangi"
@@ -125,11 +127,13 @@ export default function CartPage() {
                         onClick={async () => {
                           setUpdatingItems((prev) => new Set(prev).add(item.variantId));
                           updateQuantity(item.variantId, item.quantity + 1);
-                          setUpdatingItems((prev) => {
-                            const next = new Set(prev);
-                            next.delete(item.variantId);
-                            return next;
-                          });
+                          setTimeout(() => {
+                            setUpdatingItems((prev) => {
+                              const next = new Set(prev);
+                              next.delete(item.variantId);
+                              return next;
+                            });
+                          }, 100);
                         }}
                         disabled={item.quantity >= 100 || updatingItems.has(item.variantId)}
                         aria-label="Tambah"

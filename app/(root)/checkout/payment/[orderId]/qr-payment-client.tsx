@@ -227,8 +227,8 @@ export default function QrPaymentClient({
             {!isExpired && (
               <div className="flex items-center justify-center gap-2 py-2">
                 <div className="relative w-3 h-3">
-                  <div className="absolute inset-0 rounded-full bg-green-400/30 animate-ping" />
-                  <div className="absolute inset-0 rounded-full bg-green-400" />
+                  <div className="absolute inset-0 rounded-full bg-primary/30 animate-ping" />
+                  <div className="absolute inset-0 rounded-full bg-primary" />
                 </div>
                 <span className="text-xs text-gray-500 font-medium">Memantau pembayaran...</span>
               </div>
