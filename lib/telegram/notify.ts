@@ -206,22 +206,17 @@ export async function sendPaymentNotification(params: PaymentNotificationParams)
     .filter((line) => line !== null)
     .join("\n");
 
-  // Alert detection: ops convention — paymentMethod prefixed with ⚠️ means
-  // manual/alert message, skip wa.me link for those.
-  const isAlert = params.paymentMethod?.startsWith("⚠️");
-  if (!isAlert) {
-    const targetPhone = params.customerPhone || params.shippingAddressPhone || "";
-    const waLink = buildPaymentWhatsAppLink({
-      phone: targetPhone,
-      customerName: params.customerName,
-      orderNumber: params.orderNumber,
-      orderId: params.orderId,
-      items: params.items ?? [],
-      total: params.total,
-    });
-    if (waLink) {
-      text += "\n\nWA: " + waLink;
-    }
+  const targetPhone = params.customerPhone || params.shippingAddressPhone || "";
+  const waLink = buildPaymentWhatsAppLink({
+    phone: targetPhone,
+    customerName: params.customerName,
+    orderNumber: params.orderNumber,
+    orderId: params.orderId,
+    items: params.items ?? [],
+    total: params.total,
+  });
+  if (waLink) {
+    text += "\n\nWA: " + waLink;
   }
 
   const sendError = await sendTelegramMessage(text);
