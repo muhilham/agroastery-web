@@ -26,6 +26,7 @@ function CartImage({ src, alt }: { src: string; alt: string }) {
 export default function CartPage() {
   const { cartItems, cartTotal, cartCount, removeFromCart, updateQuantity } = useCart();
   const [mounted, setMounted] = useState(false);
+  const [updatingItems, setUpdatingItems] = useState<Set<string>>(new Set());
   useEffect(() => { setMounted(true); }, []);
 
   if (!mounted) {
@@ -98,22 +99,46 @@ export default function CartPage() {
                     <div className="flex items-center gap-2 mt-2">
                       <button
                         className="rounded-full w-8 h-8 flex items-center justify-center border border-white/20 text-primary disabled:opacity-40 active:bg-white/10"
-                        onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
-                        disabled={item.quantity <= 1}
+                        onClick={async () => {
+                          setUpdatingItems((prev) => new Set(prev).add(item.variantId));
+                          updateQuantity(item.variantId, item.quantity - 1);
+                          setUpdatingItems((prev) => {
+                            const next = new Set(prev);
+                            next.delete(item.variantId);
+                            return next;
+                          });
+                        }}
+                        disabled={item.quantity <= 1 || updatingItems.has(item.variantId)}
                         aria-label="Kurangi"
                       >
-                        <Minus className="w-3 h-3" />
+                        {updatingItems.has(item.variantId) ? (
+                          <LoaderCircle className="animate-spin w-3 h-3" />
+                        ) : (
+                          <Minus className="w-3 h-3" />
+                        )}
                       </button>
                       <span className="text-primary text-sm font-medium w-6 text-center">
                         {item.quantity}
                       </span>
                       <button
                         className="rounded-full w-8 h-8 flex items-center justify-center border border-white/20 text-primary disabled:opacity-40 active:bg-white/10"
-                        onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
-                        disabled={item.quantity >= 100}
+                        onClick={async () => {
+                          setUpdatingItems((prev) => new Set(prev).add(item.variantId));
+                          updateQuantity(item.variantId, item.quantity + 1);
+                          setUpdatingItems((prev) => {
+                            const next = new Set(prev);
+                            next.delete(item.variantId);
+                            return next;
+                          });
+                        }}
+                        disabled={item.quantity >= 100 || updatingItems.has(item.variantId)}
                         aria-label="Tambah"
                       >
-                        <Plus className="w-3 h-3" />
+                        {updatingItems.has(item.variantId) ? (
+                          <LoaderCircle className="animate-spin w-3 h-3" />
+                        ) : (
+                          <Plus className="w-3 h-3" />
+                        )}
                       </button>
                       <span className="text-secondary text-xs ml-1 truncate">
                         = {numberToIdr({ nominal: item.unitPrice * item.quantity })}
