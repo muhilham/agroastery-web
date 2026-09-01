@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { numberToIdr } from "@/lib/numberToIdr";
+import { COFFEE_BLUR_DATA_URL } from "@/lib/blurDataUrl";
 import type { CartItem } from "@/lib/stores/cart";
 
 function CheckoutImage({ src, alt }: { src: string; alt: string }) {
@@ -15,6 +16,8 @@ function CheckoutImage({ src, alt }: { src: string; alt: string }) {
       fill
       className="object-cover"
       sizes="48px"
+      placeholder="blur"
+      blurDataURL={COFFEE_BLUR_DATA_URL}
       onError={() => setImgSrc("/assets/placeholder.png")}
     />
   );

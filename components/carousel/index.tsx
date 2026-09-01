@@ -5,6 +5,7 @@ import { EmblaOptionsType } from "embla-carousel";
 import useEmblaCarousel from "embla-carousel-react";
 import { Thumb } from "./thumb";
 import Image from "next/image";
+import { COFFEE_BLUR_DATA_URL } from "@/lib/blurDataUrl";
 
 type ImageItem = { image: string; alt?: string } | string;
 
@@ -80,6 +81,8 @@ export const EmblaCarousel: React.FC<PropType> = ({
                   className="object-contain"
                   sizes="(max-width:768px) 100vw, 360px"
                   priority={index === 0}
+                  placeholder="blur"
+                  blurDataURL={COFFEE_BLUR_DATA_URL}
                 />
               </div>
               <div className="text-primary border rounded-xl fixed left-10 text-xs bottom-5 border-primary px-4 py-1">
