@@ -121,7 +121,7 @@ describe("parseCoffeeName", () => {
   });
 
   it("caps at 60 characters", () => {
-    expect(parseCoffeeName("a".repeat(80)).length).toBe(60);
+    expect(parseCoffeeName("a".repeat(80))?.length).toBe(60);
   });
 
   it("returns null for empty or whitespace-only", () => {

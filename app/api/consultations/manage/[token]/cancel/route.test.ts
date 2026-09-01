@@ -31,7 +31,7 @@ const req = () => new NextRequest("http://localhost/api/consultations/manage/t/c
 const futureDate = "2099-01-06"; // a Tuesday
 
 describe("POST cancel", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => void vi.clearAllMocks());
 
   it("404s for unknown token", async () => {
     mockSingle.mockResolvedValue({ data: null, error: { message: "nf" } });

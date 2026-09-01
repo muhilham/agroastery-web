@@ -31,7 +31,7 @@ function req(body: unknown) {
 }
 
 describe("POST reschedule", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => void vi.clearAllMocks());
 
   it("404s for unknown token", async () => {
     mockSingle.mockResolvedValue({ data: null, error: { message: "nf" } });
