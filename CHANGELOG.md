@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.22.1](https://github.com/muhilham/agroastery-web/compare/v0.22.0...v0.22.1) (2026-09-01)
+
+
+### Refactors
+
+* replace floating WA button with footer link + product page link ([#117](https://github.com/muhilham/agroastery-web/issues/117)) ([2fdb87b](https://github.com/muhilham/agroastery-web/commit/2fdb87b252f588286cb58dcfc9ed020e49d61264))
+
 ## [0.22.0](https://github.com/muhilham/agroastery-web/compare/v0.21.0...v0.22.0) (2026-09-01)
 
 
