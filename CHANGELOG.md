@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.22.0](https://github.com/muhilham/agroastery-web/compare/v0.21.0...v0.22.0) (2026-09-01)
+
+
+### Features
+
+* add floating WhatsApp button on all pages ([#114](https://github.com/muhilham/agroastery-web/issues/114)) ([f53f428](https://github.com/muhilham/agroastery-web/commit/f53f42817537bd6d5db1a61ee7bca49651c7b35e))
+
 ## [0.21.0](https://github.com/muhilham/agroastery-web/compare/v0.20.0...v0.21.0) (2026-09-01)
 
 
