@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.21.0](https://github.com/muhilham/agroastery-web/compare/v0.20.0...v0.21.0) (2026-09-01)
+
+
+### Features
+
+* add breadcrumb structured data ([#112](https://github.com/muhilham/agroastery-web/issues/112)) ([bb1df91](https://github.com/muhilham/agroastery-web/commit/bb1df91c93b44a618e969293ad6a8dd720482951))
+* add canonical URLs and metadataBase ([#111](https://github.com/muhilham/agroastery-web/issues/111)) ([81ad9f2](https://github.com/muhilham/agroastery-web/commit/81ad9f217a74bfd2b1d1299ebd9cf0c517902ed6))
+
+
+### Performance
+
+* add reportWebVitals for LCP/CLS/INP monitoring ([#109](https://github.com/muhilham/agroastery-web/issues/109)) ([19af426](https://github.com/muhilham/agroastery-web/commit/19af426724c4d1cd79d4217568accc6e46e6533c))
+
 ## [0.20.0](https://github.com/muhilham/agroastery-web/compare/v0.19.0...v0.20.0) (2026-09-01)
 
 
