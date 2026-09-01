@@ -5,6 +5,12 @@ import { Footer } from "@/components/ui/footer";
 import Link from "next/link";
 import { numberToIdr } from "@/lib/numberToIdr";
 import { ArrowLeft, ExternalLink } from "lucide-react";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Detail Pesanan | Agroastery",
+  description: "Detail pesanan kopi spesialti Anda",
+};
 
 const STATUS_LABELS: Record<string, string> = {
   pending_payment: "Menunggu Pembayaran",

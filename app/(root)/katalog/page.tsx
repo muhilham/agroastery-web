@@ -6,6 +6,12 @@ import { Footer } from "@/components/ui/footer";
 import { getProducts, deriveCategoriesFromProducts } from "@/lib/supabase/queries/products";
 import SearchBar from "./SearchBar";
 import Filters from "./Filters";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Katalog | Agroastery",
+  description: "Jelajahi koleksi kopi spesialti pilihan — biji kopi terbaik dari seluruh Indonesia",
+};
 
 export const dynamic = "force-dynamic";
 
