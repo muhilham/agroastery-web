@@ -6,6 +6,7 @@ import { getMinPrice, getProductImageUrl } from "@/lib/supabase/queries/productU
 import { numberToIdr } from "@/lib/numberToIdr";
 import type { SupabaseProduct } from "@/types/product";
 import SupabaseProductDetail from "@/components/section/product-detail/SupabaseProductDetail";
+import { BreadcrumbJsonLd } from "@/components/BreadcrumbJsonLd";
 
 const getCachedProductBySlug = cache(getProductBySlug);
 
@@ -150,6 +151,14 @@ export default async function Page({ params }: PageProps) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonStr }}
+      />
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Beranda", url: "/" },
+          { name: "Katalog", url: "/katalog" },
+          { name: product.name, url: `/product/${slug}` },
+        ]}
+        siteUrl={siteUrl}
       />
       <SupabaseProductDetail product={product} />
     </>
