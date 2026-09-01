@@ -7,6 +7,7 @@ import { Footer } from "@/components/ui/footer";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
+import { COFFEE_BLUR_DATA_URL } from "@/lib/blurDataUrl";
 import { Minus, Plus, Trash2, ShoppingBag, LoaderCircle } from "lucide-react";
 
 function CartImage({ src, alt }: { src: string; alt: string }) {
@@ -18,6 +19,8 @@ function CartImage({ src, alt }: { src: string; alt: string }) {
       fill
       className="object-cover"
       sizes="(max-width: 768px) 64px, 80px"
+      placeholder="blur"
+      blurDataURL={COFFEE_BLUR_DATA_URL}
       onError={() => setImgSrc("/assets/placeholder.png")}
     />
   );

@@ -3,6 +3,7 @@
 import React from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { COFFEE_BLUR_DATA_URL } from "@/lib/blurDataUrl";
 
 type ThumbProps = {
   selected: boolean;
@@ -33,7 +34,7 @@ export const Thumb: React.FC<ThumbProps> = ({
           "focus:outline-none",
         )}
       >
-        <Image src={src} alt={alt} fill className="object-cover" sizes="80px" />
+        <Image src={src} alt={alt} fill className="object-cover" sizes="80px" placeholder="blur" blurDataURL={COFFEE_BLUR_DATA_URL} />
       </button>
     </div>
   );
