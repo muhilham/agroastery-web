@@ -21,7 +21,7 @@ function stripHtml(html: string): string {
     "&amp;": "&",
     "&lt;": "<",
     "&gt;": ">",
-    "&quot;": '"',
+    "&quot;" : '"',
     "&#39;": "'",
     "&nbsp;": " ",
   };
@@ -93,6 +93,43 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata 
   };
 }
 
+function productJsonLd(product: SupabaseProduct, siteUrl: string): Record<string, unknown> {
+  const minPrice = getMinPrice(product.product_variants);
+  const imageUrl = getProductImageUrl(product);
+  const activeVariants = product.product_variants.filter((v) => v.is_active);
+  const inStock = activeVariants.some((v) => v.stock_quantity > 0);
+  const description = stripHtml(product.description ?? "").slice(0, 200);
+  const fullImageUrl = imageUrl.startsWith("http") ? imageUrl : `${siteUrl}${imageUrl}`;
+  const highPrice = activeVariants.length > 0
+    ? Math.max(...activeVariants.map((v) => v.price))
+    : minPrice;
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.name,
+    description: description || product.short_description || product.name,
+    image: fullImageUrl,
+    url: `${siteUrl}/product/${product.slug}`,
+    offers: {
+      "@type": "AggregateOffer",
+      priceCurrency: "IDR",
+      lowPrice: minPrice,
+      highPrice,
+      offerCount: activeVariants.length,
+      availability: inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+    },
+    brand: {
+      "@type": "Brand",
+      name: "Agroastery",
+    },
+  };
+}
+
+function escapeJsonLd(str: string): string {
+  return str.replace(/<\/script>/gi, "<\\/script>").replace(/<!--/g, "<\\!--");
+}
+
 export default async function Page({ params }: PageProps) {
   const { slug } = await params;
   const product = await getCachedProductBySlug(slug);
@@ -101,5 +138,17 @@ export default async function Page({ params }: PageProps) {
     notFound();
   }
 
-  return <SupabaseProductDetail product={product} />;
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://agroastery.com";
+  const jsonLd = productJsonLd(product, siteUrl);
+  const jsonStr = escapeJsonLd(JSON.stringify(jsonLd));
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonStr }}
+      />
+      <SupabaseProductDetail product={product} />
+    </>
+  );
 }
