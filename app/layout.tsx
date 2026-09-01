@@ -49,7 +49,7 @@ export default function RootLayout({
       <body className="bg-background" style={{ fontFamily: "Montserrat, system-ui, sans-serif" }}>
         {children}
         <WebVitals />
-        <FloatingWhatsApp />
+        <FloatingWhatsApp phone={process.env.ORIGIN_CONTACT_PHONE?.replace(/^\+/, "") ?? "628****2726"} />
         {gaId && <GoogleAnalytics gaId={gaId} />}
       </body>
     </html>
