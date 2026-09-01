@@ -7,6 +7,12 @@ import Navigation from "@/components/navigation";
 import { Footer } from "@/components/ui/footer";
 import AddressCard from "./AddressCard";
 import { Plus, ChevronLeft } from "lucide-react";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Alamat Saya | Agroastery",
+  description: "Kelola alamat pengiriman Anda",
+};
 
 export default async function AddressesPage() {
   const supabase = await createSupabaseServerClient();

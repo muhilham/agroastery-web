@@ -5,6 +5,12 @@ import Link from "next/link";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { numberToIdr } from "@/lib/numberToIdr";
 import { TrackingTimeline } from "./TrackingTimeline";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Lacak Pesanan | Agroastery",
+  description: "Lacak status pengiriman pesanan kopi Anda",
+};
 
 const STATUS_LABELS: Record<string, string> = {
   pending_payment: "Menunggu Pembayaran",

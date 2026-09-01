@@ -1,6 +1,12 @@
 import { redirect } from "next/navigation";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import QrPaymentClient from "./qr-payment-client";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Pembayaran | Agroastery",
+  description: "Selesaikan pembayaran pesanan kopi Anda",
+};
 
 export default async function PaymentPage({
   params,

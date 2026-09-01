@@ -6,6 +6,12 @@ import Navigation from "@/components/navigation";
 import { Footer } from "@/components/ui/footer";
 import ProfileEditForm from "./ProfileEditForm";
 import { MapPin, ShoppingBag, ChevronRight } from "lucide-react";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Akun Saya | Agroastery",
+  description: "Kelola profil, alamat, dan pesanan Anda",
+};
 
 export default async function AccountPage() {
   const supabase = await createSupabaseServerClient();

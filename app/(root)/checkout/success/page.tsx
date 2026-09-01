@@ -5,6 +5,12 @@ import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { MapPin } from "lucide-react";
 import PurchaseTracking from "./PurchaseTracking";
 import type { PurchaseItem } from "@/lib/analytics/gtag";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Pesanan Berhasil | Agroastery",
+  description: "Pesanan kopi spesialti Anda telah diterima",
+};
 
 type PageProps = {
   searchParams: Promise<{ order?: string }>;
