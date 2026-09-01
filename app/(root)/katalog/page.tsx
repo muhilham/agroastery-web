@@ -7,6 +7,7 @@ import { getProducts, deriveCategoriesFromProducts } from "@/lib/supabase/querie
 import SearchBar from "./SearchBar";
 import Filters from "./Filters";
 import type { Metadata } from "next";
+import { BreadcrumbJsonLd } from "@/components/BreadcrumbJsonLd";
 
 export const metadata: Metadata = {
   title: "Katalog | Agroastery",
@@ -69,6 +70,12 @@ export default async function Page({
 
   return (
     <div className="min-h-svh flex flex-col bg-background">
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Beranda", url: "/" },
+          { name: "Katalog", url: "/katalog" },
+        ]}
+      />
       <Navigation />
       <main className="pt-20 tablet:px-10 desktop:px-20">
         <Categories categories={categories} activeCategoryId={category ?? null} />
