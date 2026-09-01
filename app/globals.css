@@ -82,8 +82,3 @@ gmp-place-autocomplete::part(input)::placeholder {
 .autocomplete-wrapper {
   overflow: visible !important;
 }
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
