@@ -74,6 +74,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata 
   return {
     title: `${product.name} | Agroastery`,
     description,
+    alternates: {
+      canonical: `${siteUrl}/product/${slug}`,
+    },
     openGraph: {
       title: `${product.name} | Agroastery`,
       description,

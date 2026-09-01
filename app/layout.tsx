@@ -8,6 +8,7 @@ export const metadata: Metadata = {
   title: "Agroastery",
   description:
     "At AGROASTERY we are passionate about sourcing and roasting the highest quality coffee beans from around the world. Our mission is to bring you the perfect cup of coffee every time.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://agroastery.com"),
   openGraph: {
     title: "Agroastery",
     description:
