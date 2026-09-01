@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import { WebVitals } from "@/components/WebVitals";
+import { FloatingWhatsApp } from "@/components/FloatingWhatsApp";
 import "./globals.css";
 import "../style/embla.css";
 
@@ -48,6 +49,7 @@ export default function RootLayout({
       <body className="bg-background" style={{ fontFamily: "Montserrat, system-ui, sans-serif" }}>
         {children}
         <WebVitals />
+        <FloatingWhatsApp />
         {gaId && <GoogleAnalytics gaId={gaId} />}
       </body>
     </html>
