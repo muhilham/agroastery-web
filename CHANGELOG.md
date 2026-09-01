@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.20.0](https://github.com/muhilham/agroastery-web/compare/v0.19.0...v0.20.0) (2026-09-01)
+
+
+### Features
+
+* add blurDataURL placeholders to product images ([#108](https://github.com/muhilham/agroastery-web/issues/108)) ([64534a4](https://github.com/muhilham/agroastery-web/commit/64534a450a9e948497b2678a58f4961074dea4ff))
+* add per-page metadata for 11 pages ([#107](https://github.com/muhilham/agroastery-web/issues/107)) ([725be27](https://github.com/muhilham/agroastery-web/commit/725be2731c0a6256459fcdc1d52147a62f70965a))
+* add Product JSON-LD structured data ([#104](https://github.com/muhilham/agroastery-web/issues/104)) ([953c02b](https://github.com/muhilham/agroastery-web/commit/953c02b1bd3ca2265a5df6c6582f00d760f6721d))
+* sort shipping by cost, use dropdown ([#105](https://github.com/muhilham/agroastery-web/issues/105)) ([9d9034d](https://github.com/muhilham/agroastery-web/commit/9d9034dee876619e9d9bd565b0384e6fb410c74c))
+
 ## [0.19.0](https://github.com/muhilham/agroastery-web/compare/v0.18.0...v0.19.0) (2026-08-31)
 
 
