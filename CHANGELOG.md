@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.23.0](https://github.com/muhilham/agroastery-web/compare/v0.22.1...v0.23.0) (2026-09-02)
+
+
+### Features
+
+* configure AI crawler access in robots.txt ([#119](https://github.com/muhilham/agroastery-web/issues/119)) ([999e163](https://github.com/muhilham/agroastery-web/commit/999e1638d644886574a602175be466dbfe6d518b))
+
+
+### Bug Fixes
+
+* 11 homepage UX fixes — hero CTA, tagline, values copy, prices, scroll fade, testimonials heading ([#125](https://github.com/muhilham/agroastery-web/issues/125)) ([c5bf70e](https://github.com/muhilham/agroastery-web/commit/c5bf70e64d9c76f715c652a87aca45a4ac21b402))
+* resolve 3 pre-existing tsc errors in test files ([#120](https://github.com/muhilham/agroastery-web/issues/120)) ([85f6b41](https://github.com/muhilham/agroastery-web/commit/85f6b4151bcbe82b6cc9a736d39081050f96e79d))
+
 ## [0.22.1](https://github.com/muhilham/agroastery-web/compare/v0.22.0...v0.22.1) (2026-09-01)
 
 
