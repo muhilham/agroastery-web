@@ -10,6 +10,8 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Pesanan Saya | Agroastery",
   description: "Lihat riwayat pesanan kopi spesialti Anda",
+  robots: { index: false },
+  alternates: { canonical: "/orders" },
 };
 
 const STATUS_LABELS: Record<string, string> = {
