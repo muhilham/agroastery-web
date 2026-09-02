@@ -13,6 +13,34 @@ export default function Home() {
   return (
     <div>
       <div className="bg-[#1A1A1A] text-[#f5ebc9]">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "LocalBusiness",
+              name: "Agroastery",
+              image:
+                "https://github.com/user-attachments/assets/79b22a6a-f341-40f6-ac74-27c6af123b7e",
+              address: {
+                "@type": "PostalAddress",
+                streetAddress: "Jl. Kemang Barat No.7I",
+                addressLocality: "Jakarta Selatan",
+                addressRegion: "DKI Jakarta",
+                postalCode: "12730",
+                addressCountry: "ID",
+              },
+              telephone: "+628979092726",
+              openingHours: "Mo-Su 10:00-20:00",
+              priceRange: "Rp30,000-Rp150,000",
+              aggregateRating: {
+                "@type": "AggregateRating",
+                ratingValue: "5.0",
+                reviewCount: "25000",
+              },
+            }),
+          }}
+        />
         <header>
           <Navigation />
         </header>

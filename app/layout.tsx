@@ -5,14 +5,15 @@ import "./globals.css";
 import "../style/embla.css";
 
 export const metadata: Metadata = {
-  title: "Agroastery",
+  title: "Biji Kopi Specialty untuk Cafe — Agroastery",
   description:
-    "At AGROASTERY we are passionate about sourcing and roasting the highest quality coffee beans from around the world. Our mission is to bring you the perfect cup of coffee every time.",
+    "Supplier biji kopi specialty untuk cafe di Jakarta Selatan. 100.000+ order, rating 5.0. Konsultasi menu gratis. Belanja langsung dari roastery.",
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://agroastery.com"),
   openGraph: {
-    title: "Agroastery",
+    url: "/",
+    title: "Biji Kopi Specialty untuk Cafe — Agroastery",
     description:
-      "At AGROASTERY we are passionate about sourcing and roasting the highest quality coffee beans from around the world. Our mission is to bring you the perfect cup of coffee every time.",
+      "Supplier biji kopi specialty untuk cafe di Jakarta Selatan. 100.000+ order, rating 5.0. Konsultasi menu gratis. Belanja langsung dari roastery.",
     images: [
       {
         url: "https://github.com/user-attachments/assets/79b22a6a-f341-40f6-ac74-27c6af123b7e",
@@ -24,9 +25,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Agroastery",
+    title: "Biji Kopi Specialty untuk Cafe — Agroastery",
     description:
-      "At AGROASTERY we are passionate about sourcing and roasting the highest quality coffee beans from around the world. Our mission is to bring you the perfect cup of coffee every time.",
+      "Supplier biji kopi specialty untuk cafe di Jakarta Selatan. 100.000+ order, rating 5.0. Konsultasi menu gratis. Belanja langsung dari roastery.",
     images: [
       "https://github.com/user-attachments/assets/79b22a6a-f341-40f6-ac74-27c6af123b7e",
     ],
@@ -39,7 +40,7 @@ export default function RootLayout({
 }>) {
   const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
   return (
-    <html lang="en">
+    <html lang="id">
       <head>
         {/* Preconnect to third-party origins used at checkout */}
         <link rel="preconnect" href="https://maps.googleapis.com" />

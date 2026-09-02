@@ -11,6 +11,8 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Akun Saya | Agroastery",
   description: "Kelola profil, alamat, dan pesanan Anda",
+  robots: { index: false },
+  alternates: { canonical: "/account" },
 };
 
 export default async function AccountPage() {

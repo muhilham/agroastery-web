@@ -97,6 +97,48 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata 
   };
 }
 
+function faqJsonLd(product: SupabaseProduct, siteUrl: string): Record<string, unknown> {
+  const productUrl = `${siteUrl}/product/${product.slug}`;
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: `Berapa gram per porsi ${product.name}?`,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: `Kami menyediakan berbagai ukuran gramase untuk ${product.name}. Silakan pilih varian yang tersedia sesuai kebutuhan cafe atau konsumsi pribadi Anda.`,
+        },
+      },
+      {
+        "@type": "Question",
+        name: `Apakah ${product.name} bisa digiling?`,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: `Ya, ${product.name} dapat digiling sesuai metode seduh pilihan Anda. Pilih opsi gilingan saat checkout — espresso, V60, French Press, atau lainnya.`,
+        },
+      },
+      {
+        "@type": "Question",
+        name: `Berapa lama resting period ${product.name}?`,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: `Resting period bervariasi tergantung profil roast. Umumnya kopi kami optimal setelah 7-14 hari post-roast. Detail spesifik tercantum pada kemasan produk.`,
+        },
+      },
+      {
+        "@type": "Question",
+        name: `${product.name} cocok untuk espresso atau susu?`,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: `${product.name} memiliki karakter yang dapat dinikmati sebagai espresso maupun basis minuman susu. Cek catatan rasa pada deskripsi produk untuk rekomendasi terbaik.`,
+        },
+      },
+    ],
+  };
+}
+
 function productJsonLd(product: SupabaseProduct, siteUrl: string): Record<string, unknown> {
   const minPrice = getMinPrice(product.product_variants);
   const imageUrl = getProductImageUrl(product);
@@ -145,12 +187,18 @@ export default async function Page({ params }: PageProps) {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://agroastery.com";
   const jsonLd = productJsonLd(product, siteUrl);
   const jsonStr = escapeJsonLd(JSON.stringify(jsonLd));
+  const faqLd = faqJsonLd(product, siteUrl);
+  const faqStr = escapeJsonLd(JSON.stringify(faqLd));
 
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonStr }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: faqStr }}
       />
       <BreadcrumbJsonLd
         items={[

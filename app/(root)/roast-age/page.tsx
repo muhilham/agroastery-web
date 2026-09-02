@@ -6,6 +6,7 @@ export const metadata = {
   title: "Roast Age — Agroastery",
   description:
     "Track your coffee's roast age: see days 3, 7, 14, and 21 after roast, and which rest day today is.",
+  alternates: { canonical: "/roast-age" },
 };
 
 export default function RestingPeriodPage() {

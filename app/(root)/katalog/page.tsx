@@ -12,6 +12,7 @@ import { BreadcrumbJsonLd } from "@/components/BreadcrumbJsonLd";
 export const metadata: Metadata = {
   title: "Katalog | Agroastery",
   description: "Jelajahi koleksi kopi spesialti pilihan — biji kopi terbaik dari seluruh Indonesia",
+  alternates: { canonical: "/katalog" },
 };
 
 export const dynamic = "force-dynamic";
@@ -78,6 +79,7 @@ export default async function Page({
       />
       <Navigation />
       <main className="pt-20 tablet:px-10 desktop:px-20">
+        <h1 className="sr-only">Biji Kopi Specialty untuk Cafe</h1>
         <Categories categories={categories} activeCategoryId={category ?? null} />
         <div className="flex justify-between w-full">
           <Aside categories={categories} activeCategoryId={category ?? null} />
