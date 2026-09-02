@@ -51,7 +51,7 @@ export default function Home() {
                   href="/katalog"
                   className="flex items-center justify-center w-36 h-10 px-4 border border-[#f5ebc9] rounded-full text-sm tracking-wider transition-all duration-700 hover:bg-[#f5ebc9] hover:text-neutral-900"
                 >
-                  Shop Direct
+                  Shop Now
                 </a>
                 <a
                   href="/konsultasi"
