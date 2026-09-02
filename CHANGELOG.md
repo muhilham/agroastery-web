@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.25.0](https://github.com/muhilham/agroastery-web/compare/v0.24.0...v0.25.0) (2026-09-02)
+
+
+### Features
+
+* SEO fixes — canonical, noindex, schema, lang, descriptions, FAQ, konsultasi CTA ([#129](https://github.com/muhilham/agroastery-web/issues/129)) ([88dc726](https://github.com/muhilham/agroastery-web/commit/88dc72617fcbe77186da037bbaf0a2f6e3a271d3)), closes [#128](https://github.com/muhilham/agroastery-web/issues/128)
+
 ## [0.24.0](https://github.com/muhilham/agroastery-web/compare/v0.23.0...v0.24.0) (2026-09-02)
 
 
