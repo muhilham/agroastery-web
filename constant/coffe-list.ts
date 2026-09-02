@@ -7,6 +7,7 @@ export const coffeList: I_ContentInterface[] = [
       "Arabica semi-washed dari 1600 mdpl, ideal untuk espresso dan latte dengan body ringan, sweetness tinggi dan acidity rendah.",
     image: "/assets/coffe/blend-gayo.png",
     href: "/product/biji-kopi-standard-gayo-full-arabica",
+    price: 59000,
   },
   {
     title: "BLEND KOPI SUSU EKONOMIS",
@@ -14,6 +15,7 @@ export const coffeList: I_ContentInterface[] = [
       "Campuran 50% Arabica dan 50% Robusta, ideal untuk es kopi susu dengan rasa seimbang dan harga ekonomis.",
     image: "/assets/coffe/blend-kopi-susu.png",
     href: "/product/biji-kopi-blend-5050-kopi-susu-ekonomis",
+    price: 32000,
   },
   {
     title: "HOUSE BLEND ARABICA & ROBUSTA",
@@ -21,6 +23,7 @@ export const coffeList: I_ContentInterface[] = [
       "Espresso blend dengan karakter cokelat manis dan sweetness kuat, cocok untuk kopi susu hingga long black.",
     image: "/assets/coffe/blend-house.png",
     href: "/product/house-blend-espresso-arabica-fine-robusta-es46",
+    price: 43000,
   },
   {
     title: "SOLOK SELATAN FULL ARABICA",
@@ -28,5 +31,6 @@ export const coffeList: I_ContentInterface[] = [
       "Arabica berkualitas dengan sangrai optimal, pas untuk espresso, americano, long black, latte, dan cappuccino.",
     image: "/assets/coffe/blend-solok.png",
     href: "/product/biji-kopi-standard-solok-selatan-full-arabica",
+    price: 61000,
   },
 ];

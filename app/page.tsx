@@ -7,6 +7,7 @@ import { testimonialContent } from "@/constant/testimonial";
 import { Footer } from "@/components/ui/footer";
 import Navigation from "@/components/navigation";
 import { useRouter } from "next/navigation";
+import { numberToIdr } from "@/lib/numberToIdr";
 export default function Home() {
   const router = useRouter();
   return (
@@ -26,7 +27,7 @@ export default function Home() {
                   100,000+ orders. Rated 5.0 by 25,000+ buyers.
                 </p>
                 <p className="text-sm font-light text-[#cabfa9]">
-                  Seven years of roasting — now direct.
+                  Seven years roasting — now direct to you.
                 </p>
               </div>
               <div className="flex items-center">
@@ -45,14 +46,20 @@ export default function Home() {
                     : "Up to 11% cheaper than Shopee/Tokopedia"}
                 </span>
               </div>
-              <a
-                href="/katalog"
-                className="flex items-center justify-center w-36 h-10 px-4 border border-[#f5ebc9] rounded-full text-sm tracking-wider transition-all duration-700 hover:bg-[#f5ebc9] hover:text-neutral-900"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Shop Direct
-              </a>
+              <div className="flex gap-3 flex-wrap">
+                <a
+                  href="/katalog"
+                  className="flex items-center justify-center w-36 h-10 px-4 border border-[#f5ebc9] rounded-full text-sm tracking-wider transition-all duration-700 hover:bg-[#f5ebc9] hover:text-neutral-900"
+                >
+                  Shop Direct
+                </a>
+                <a
+                  href="/konsultasi"
+                  className="flex items-center justify-center h-10 px-4 border border-[#f5ebc9]/40 rounded-full text-sm tracking-wider transition-all duration-700 hover:border-[#f5ebc9] text-[#f5ebc9]/80 hover:text-[#f5ebc9]"
+                >
+                  Konsultasi untuk Cafe
+                </a>
+              </div>
             </div>
           </section>
 
@@ -62,7 +69,7 @@ export default function Home() {
               <h2 className="text-3xl font-extralight tracking-wider sm:px-6">
                 REDEFINING THE NEW STANDARD
               </h2>
-              <div className="w-full flex gap-6 sm:overflow-x-scroll sm:px-6 no-scrollbar">
+              <div className="w-full flex gap-6 sm:overflow-x-scroll sm:px-6 no-scrollbar scroll-fade-mobile">
                 {topSectionContent.map((value, index) => (
                   <div
                     key={index}
@@ -87,9 +94,17 @@ export default function Home() {
                 ))}
               </div>
               <p className="font-extralight text-xl text-[#f5ebc9] sm:text-base sm:px-6">
-                AGROASTERY unique practice and principal shape every blend that
-                will be served on your cup
+                AGROASTERY's unique practices and principles shape every blend
+                that will be served on your cup.
               </p>
+              <div className="text-center sm:px-6">
+                <a
+                  href="/katalog"
+                  className="inline-flex items-center justify-center h-10 px-6 border border-[#f5ebc9] rounded-full text-sm tracking-wider transition-all duration-700 hover:bg-[#f5ebc9] hover:text-neutral-900"
+                >
+                  Belanja Sekarang
+                </a>
+              </div>
             </section>
 
             {/* Featured Section */}
@@ -97,7 +112,7 @@ export default function Home() {
               <h2 className="text-3xl font-extralight tracking-wider sm:px-6">
                 UNIQUE BLEND FOR EACH OCCASION
               </h2>
-              <div className="flex flex-wrap no-scrollbar gap-6 sm:flex-nowrap sm:overflow-x-scroll sm:px-6">
+              <div className="flex flex-wrap no-scrollbar gap-6 sm:flex-nowrap sm:overflow-x-scroll sm:px-6 scroll-fade-mobile">
                 {coffeList.map((product) => (
                   <div
                     key={product.title}
@@ -112,6 +127,11 @@ export default function Home() {
                       <p className="max-w-[400px] font-extralight leading-relaxed text-[#ccc4a9]">
                         {product.subtitle}
                       </p>
+                      {product.price && (
+                        <p className="text-sm font-medium text-[#f5ebc9] mt-2">
+                          Mulai {numberToIdr({ nominal: product.price })}
+                        </p>
+                      )}
                     </div>
                     <Image
                       src={product.image}
@@ -128,9 +148,28 @@ export default function Home() {
             {/* Opinion Section */}
             <section className="w-full flex flex-col gap-8">
               <h2 className="text-3xl font-extralight tracking-wider sm:px-6">
-                UNFILTERED OPINION
+                KATA MEREKA
               </h2>
-              <div className="w-full flex gap-6 no-scrollbar sm:flex-nowrap sm:overflow-x-scroll sm:px-6">
+
+              <div className="flex items-center gap-2 sm:px-6">
+                <div className="flex gap-0.5">
+                  {[...Array(5)].map((_, i) => (
+                    <svg
+                      key={i}
+                      className="w-4 h-4 text-[#f5ebc9]"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      stroke="currentColor"
+                      strokeWidth="0"
+                    >
+                      <path d="M12 2l2.4 7.2H22l-6 4.4 2.3 7.4L12 16.8 5.7 21l2.3-7.4-6-4.4h7.6z" />
+                    </svg>
+                  ))}
+                </div>
+                <span className="text-sm text-[#f5ebc9]">5.0 — dari 25.000+ pembeli</span>
+              </div>
+
+              <div className="w-full flex gap-6 no-scrollbar sm:flex-nowrap sm:overflow-x-scroll sm:px-6 scroll-fade-mobile">
                 {testimonialContent.map((opinion) => (
                   <div
                     key={opinion.name}
@@ -145,6 +184,15 @@ export default function Home() {
                     <h4 className="text-lg font-light">- {opinion.name}</h4>
                   </div>
                 ))}
+              </div>
+
+              <div className="text-center sm:px-6">
+                <a
+                  href="/katalog"
+                  className="inline-flex items-center justify-center h-10 px-6 border border-[#f5ebc9] rounded-full text-sm tracking-wider transition-all duration-700 hover:bg-[#f5ebc9] hover:text-neutral-900"
+                >
+                  Lihat Katalog
+                </a>
               </div>
             </section>
           </div>
