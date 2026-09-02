@@ -3,6 +3,7 @@ export interface I_ContentInterface {
     subtitle: string;
     image: string;
     href?: string;
+    price?: number;
 }
 
 export interface I_TestimonialInterface {
