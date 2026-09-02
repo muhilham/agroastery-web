@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.26.0](https://github.com/muhilham/agroastery-web/compare/v0.25.0...v0.26.0) (2026-09-02)
+
+
+### Features
+
+* add /kebijakan-privasi and /syarat-ketentuan pages ([ff4824a](https://github.com/muhilham/agroastery-web/commit/ff4824a9fa2954bfe809dbc6cf12dea63d8f066f))
+
 ## [0.25.0](https://github.com/muhilham/agroastery-web/compare/v0.24.0...v0.25.0) (2026-09-02)
 
 
