@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 import { formatBookingDateId } from "@/lib/consultations/format";
+import { buildCalendarLinks } from "@/lib/consultations/calendar";
 import { ADDRESS } from "@/constant/resource-and-link";
 import ConsultationTracking from "./ConsultationTracking";
 
@@ -16,41 +17,6 @@ export const metadata: Metadata = {
     "Slot konsultasi kopi kamu sudah terkonfirmasi. Siap datang ke roastery Agroastery di Jakarta Selatan — cek detail jadwal dan kelola booking di sini.",
   robots: { index: false, follow: false },
 };
-
-/** Format a WIB datetime as basic UTC (YYYYMMDDTHHMMSSZ) for calendar links. */
-function toUtcStamp(dateStr: string, timeStr: string, addHours = 0): string {
-  const [y, m, d] = dateStr.split("-").map(Number);
-  const [hh, mm] = timeStr.split(":").map(Number);
-  // WIB is UTC+7 — shift back to UTC, then apply session length.
-  const utc = new Date(Date.UTC(y, m - 1, d, hh - 7 + addHours, mm));
-  return utc.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
-}
-
-function calendarLinks(dateStr: string, timeStr: string) {
-  const start = toUtcStamp(dateStr, timeStr);
-  const end = toUtcStamp(dateStr, timeStr, 2);
-  const gcal = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
-    "Konsultasi Kopi Agroastery"
-  )}&dates=${start}/${end}&location=${encodeURIComponent(
-    `Agroastery Private Bar, ${ADDRESS}`
-  )}&details=${encodeURIComponent("Sesi konsultasi kopi 2 jam di roastery Agroastery.")}`;
-  const ics = [
-    "BEGIN:VCALENDAR",
-    "VERSION:2.0",
-    "PRODID:-//Agroastery//Konsultasi//ID",
-    "BEGIN:VEVENT",
-    `UID:konsultasi-${dateStr}-${timeStr.replace(":", "")}@agroastery.com`,
-    `DTSTAMP:${toUtcStamp(dateStr, timeStr)}`,
-    `DTSTART:${start}`,
-    `DTEND:${end}`,
-    "SUMMARY:Konsultasi Kopi Agroastery",
-    `LOCATION:Agroastery Private Bar\\, ${ADDRESS.replace(/,/g, "\\,")}`,
-    "DESCRIPTION:Sesi konsultasi kopi 2 jam di roastery Agroastery.",
-    "END:VEVENT",
-    "END:VCALENDAR",
-  ].join("\r\n");
-  return { gcal, ics: `data:text/calendar;charset=utf-8,${encodeURIComponent(ics)}` };
-}
 
 type Props = { searchParams: Promise<{ booking?: string }> };
 
@@ -83,7 +49,7 @@ export default async function KonsultasiSuccessPage({ searchParams }: Props) {
     : "#";
 
   const shouldTrackBooking = !!booking && booking.status === "confirmed" && !!bookingId;
-  const calendar = booking ? calendarLinks(booking.booking_date, booking.time_slot) : null;
+  const calendar = booking ? buildCalendarLinks(booking.booking_date, booking.time_slot) : null;
 
   return (
     <div className="min-h-svh bg-background flex flex-col">
