@@ -17,6 +17,9 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './'),
+      // 'server-only' throws when imported outside the react-server condition
+      // (Next internals pulled in by lib/testing/seo.ts require it).
+      'server-only': path.resolve(__dirname, './lib/testing/server-only-stub.js'),
     },
   },
 });
