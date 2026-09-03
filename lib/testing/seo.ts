@@ -32,13 +32,14 @@ export async function renderMetaTags(
 ): Promise<{ document: Document; html: string }> {
   const React = await import("react");
   const { renderToReadableStream } = await import("react-dom/server");
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { createMetadataComponents } = (await import(
     "next/dist/lib/metadata/metadata.js" as string
   )) as any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { workAsyncStorage } = (await import(
     "next/dist/server/app-render/work-async-storage.external.js" as string
+  )) as any;
+  const { workUnitAsyncStorage } = (await import(
+    "next/dist/server/app-render/work-unit-async-storage.external.js" as string
   )) as any;
 
   const loader = (mod: MetadataModule) => [
@@ -52,29 +53,6 @@ export async function renderMetaTags(
     subtree = [segments[i], { children: subtree }, {}];
   }
   const tree = ["", { children: subtree }, { layout: loader(rootLayout) }];
-
-  // createMetadataComponents eagerly builds searchParams/pathname accessors
-  // that read workAsyncStorage — the whole call must run inside the store.
-  const build = () => {
-    const { Metadata } = createMetadataComponents({
-      tree,
-      pathname,
-      parsedQuery: {},
-      metadataContext: { trailingSlash: false, isStaticMetadataRouteFile: false },
-      interpolatedParams: {},
-      serveStreamingMetadata: false,
-      isRuntimePrefetchable: true,
-    });
-    return renderToReadableStream(React.createElement(Metadata));
-  };
-
-  let stream;
-  try {
-    stream = await workAsyncStorage.run(workStore, build);
-  } catch (e) {
-    console.error("METADATA RENDER FAILED", e);
-    throw e;
-  }
 
   const workStore = {
     route: `/${segments.join("/")}/page`,
@@ -102,11 +80,27 @@ export async function renderMetaTags(
     revalidate: 0,
   };
 
-  let stream;
+  // createMetadataComponents eagerly builds searchParams/pathname accessors
+  // that read workAsyncStorage — construct and render it inside the store.
+  let stream: ReadableStream<Uint8Array>;
   try {
     stream = await workAsyncStorage.run(
       workStore,
-      () => renderToReadableStream(React.createElement(Metadata)),
+      () => workUnitAsyncStorage.run({ type: "request" }, () => {
+        const { Metadata } = createMetadataComponents({
+          tree,
+          pathname,
+          parsedQuery: {},
+          metadataContext: {
+            trailingSlash: false,
+            isStaticMetadataRouteFile: false,
+          },
+          interpolatedParams: {},
+          serveStreamingMetadata: false,
+          isRuntimePrefetchable: true,
+        });
+        return renderToReadableStream(React.createElement(Metadata));
+      }),
     );
   } catch (e) {
     console.error("METADATA RENDER FAILED", e);

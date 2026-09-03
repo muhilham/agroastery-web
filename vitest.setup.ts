@@ -1,4 +1,11 @@
 import '@testing-library/jest-dom';
+import { AsyncLocalStorage } from "node:async_hooks";
+
+// Next's server internals expect the runtime bootstrap to have exposed this
+// Node primitive globally. Vitest's jsdom environment does not do that.
+if (!globalThis.AsyncLocalStorage) {
+  globalThis.AsyncLocalStorage = AsyncLocalStorage;
+}
 
 // Next's metadata internals (lib/testing/seo.ts, issue #133) `require('server-only')`,
 // a build-time marker package that throws at runtime outside the react-server

@@ -49,8 +49,7 @@ describe("/konsultasi metadata — rendered tags", () => {
     const canonical = document
       .querySelector('link[rel="canonical"]')
       ?.getAttribute("href");
-    expect(canonical).toMatch(/^https?:\/\//);
-    expect(canonical).toContain("/konsultasi");
+    expect(canonical).toBe("https://agroastery.com/konsultasi");
 
     expect(
       document
@@ -62,6 +61,11 @@ describe("/konsultasi metadata — rendered tags", () => {
         .querySelector('meta[property="og:title"]')
         ?.getAttribute("content"),
     ).toContain("Konsultasi");
+    expect(
+      document
+        .querySelector('meta[property="og:description"]')
+        ?.getAttribute("content"),
+    ).toContain("Jakarta Selatan");
     expect(
       document
         .querySelector('meta[name="twitter:card"]')
