@@ -14,12 +14,13 @@ export function useAddresses() {
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
-      setAddresses([]);
+      // Defer to a microtask: synchronous setState in an effect body triggers cascading renders.
+      queueMicrotask(() => setAddresses([]));
       return;
     }
 
     let cancelled = false;
-    setIsLoading(true);
+    queueMicrotask(() => setIsLoading(true));
 
     fetch("/api/account/addresses")
       .then((res) => {

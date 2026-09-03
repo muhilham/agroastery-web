@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { numberToIdr } from "@/lib/numberToIdr";
+import { formatBookingDateId } from "@/lib/consultations/format";
 import { buildWhatsAppLink } from "@/lib/whatsapp";
 import { ADDRESS } from "@/constant/resource-and-link";
 import {
@@ -65,6 +66,11 @@ export default function BookingFlow() {
 
   const selected = dates.find((d) => d.date === selectedDate);
 
+  // Latest date offered by the rolling availability window, for the "Tersedia hingga ..." label.
+  const bookingWindowLabel = dates.length
+    ? formatBookingDateId(dates[dates.length - 1].date)
+    : null;
+
   async function onSubmit(values: FormValues) {
     setIsSubmitting(true);
     setSubmitError(null);
@@ -96,8 +102,9 @@ export default function BookingFlow() {
   }
 
   return (
-    <div className="max-w-lg mx-auto">
-      <div className="mb-8">
+    <div className="max-w-lg mx-auto flex flex-col">
+      {/* Intro info wall — on mobile (sm:) it moves below the booking form */}
+      <div className="mb-8 order-1 sm:order-2">
         <h1 className="text-2xl font-semibold text-primary mb-2">Konsultasi Kopi</h1>
         <p className="text-secondary text-sm mb-3">
           2 jam &middot; {numberToIdr({ nominal: CONSULTATION_FEE_IDR })}
@@ -155,13 +162,16 @@ export default function BookingFlow() {
         </a>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-4 order-2 sm:order-1">
         <div className="bg-[#1a1a1a] rounded-xl border border-white/10 p-4 space-y-3">
           <div className="flex items-center gap-3">
             <span className="w-5 h-5 rounded-full bg-primary/20 border border-primary/30 text-primary text-[10px] font-bold flex items-center justify-center shrink-0">1</span>
             <h2 className="text-primary font-semibold tracking-widest uppercase text-xs">Pilih Tanggal</h2>
           </div>
-          <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1 py-1">
+          {bookingWindowLabel && (
+            <p className="text-xs text-secondary -mt-1">Tersedia hingga {bookingWindowLabel}</p>
+          )}
+          <div className="flex gap-2 overflow-x-auto no-scrollbar scroll-fade-mobile -mx-1 px-1 py-1">
             {dates.map((d) => {
               const [y, m, dd] = d.date.split("-").map(Number);
               const weekday = new Date(Date.UTC(y, m - 1, dd)).getUTCDay();
@@ -273,6 +283,10 @@ export default function BookingFlow() {
             <Button type="submit" disabled={isSubmitting} className="w-full">
               {isSubmitting ? "Memproses..." : `Bayar ${numberToIdr({ nominal: CONSULTATION_FEE_IDR })} & Konfirmasi`}
             </Button>
+            <p className="text-[11px] text-secondary/80 leading-relaxed text-center">
+              Bersifat reservasi — pembatalan atau penjadwalan ulang minimal 24 jam sebelum
+              sesi. Tidak hadir tanpa kabar dikenakan biaya penuh.
+            </p>
           </form>
         )}
       </div>

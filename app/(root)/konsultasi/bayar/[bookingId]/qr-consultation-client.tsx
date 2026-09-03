@@ -112,6 +112,21 @@ export default function QrConsultationClient({
         </p>
       </div>
 
+      {/* Payment method strip */}
+      <div className="flex flex-wrap items-center justify-center gap-2 mb-4">
+        <span className="rounded-md border border-white/15 bg-[#242424] px-2.5 py-1 text-[11px] font-semibold tracking-wide text-primary">
+          QRIS
+        </span>
+        {["GoPay", "OVO", "DANA", "ShopeePay", "m-banking"].map((m) => (
+          <span
+            key={m}
+            className="rounded-md border border-white/10 bg-[#242424] px-2.5 py-1 text-[11px] font-medium text-white/60"
+          >
+            {m}
+          </span>
+        ))}
+      </div>
+
       <div className="bg-white rounded-2xl p-6 shadow-sm flex flex-col items-center gap-4">
         {qrString ? (
           <div className={`relative transition-opacity duration-300 ${isExpired ? "opacity-30" : "opacity-100"}`}>
@@ -160,7 +175,7 @@ export default function QrConsultationClient({
         {refreshError && <p className="text-destructive text-sm text-center">{refreshError}</p>}
 
         <p className="text-xs text-secondary text-center">
-          Mendukung QRIS — GoPay, OVO, Dana, dan semua bank
+          Satu QRIS untuk semua — scan lewat GoPay, OVO, DANA, ShopeePay, atau m-banking
         </p>
       </div>
 

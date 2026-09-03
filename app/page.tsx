@@ -122,7 +122,7 @@ export default function Home() {
                 ))}
               </div>
               <p className="font-extralight text-xl text-[#f5ebc9] sm:text-base sm:px-6">
-                AGROASTERY's unique practices and principles shape every blend
+                AGROASTERY&apos;s unique practices and principles shape every blend
                 that will be served on your cup.
               </p>
               <div className="text-center sm:px-6">
@@ -170,6 +170,34 @@ export default function Home() {
                     />
                   </div>
                 ))}
+              </div>
+            </section>
+
+            {/* Konsultasi Section */}
+            <section className="w-full flex flex-col gap-8">
+              <h2 className="text-3xl font-extralight tracking-wider sm:px-6">
+                KONSULTASI UNTUK CAFE
+              </h2>
+              <div className="flex flex-col gap-6 p-6 border border-[#f5ebc9] rounded-3xl sm:mx-6">
+                <div className="flex flex-col gap-2">
+                  <h3 className="text-lg font-light tracking-wider">
+                    Bingung milih kopi? Datang aja langsung.
+                  </h3>
+                  <p className="max-w-[560px] font-extralight leading-relaxed text-[#ccc4a9]">
+                    Sesi privat 2 jam di roastery kami di Jakarta Selatan — diskusi
+                    menu, cicip blend di mesin espresso dan EK43, sampai penawaran
+                    harga wholesale. Buat kamu yang mau nyobain dulu sebelum ambil
+                    stok buat cafe.
+                  </p>
+                </div>
+                <div>
+                  <a
+                    href="/konsultasi"
+                    className="inline-flex items-center justify-center h-10 px-6 border border-[#f5ebc9] rounded-full text-sm tracking-wider transition-all duration-700 hover:bg-[#f5ebc9] hover:text-neutral-900"
+                  >
+                    Booking Konsultasi
+                  </a>
+                </div>
               </div>
             </section>
 

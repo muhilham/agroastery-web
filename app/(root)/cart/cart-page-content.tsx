@@ -30,7 +30,9 @@ export default function CartPageContent() {
   const { cartItems, cartTotal, cartCount, removeFromCart, updateQuantity } = useCart();
   const [mounted, setMounted] = useState(false);
   const [updatingItems, setUpdatingItems] = useState<Set<string>>(new Set());
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    queueMicrotask(() => setMounted(true));
+  }, []);
 
   if (!mounted) {
     return (
