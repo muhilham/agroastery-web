@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.27.0](https://github.com/muhilham/agroastery-web/compare/v0.26.0...v0.27.0) (2026-09-03)
+
+
+### Features
+
+* **konsultasi:** UX & SEO improvements, entry points ([#123](https://github.com/muhilham/agroastery-web/issues/123)) ([#132](https://github.com/muhilham/agroastery-web/issues/132)) ([982c26b](https://github.com/muhilham/agroastery-web/commit/982c26b6c19d540fd3617066cd75dc8c1f6f9e33))
+
 ## [0.26.0](https://github.com/muhilham/agroastery-web/compare/v0.25.0...v0.26.0) (2026-09-02)
 
 
