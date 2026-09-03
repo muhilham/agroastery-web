@@ -82,11 +82,10 @@ export async function renderMetaTags(
 
   // createMetadataComponents eagerly builds searchParams/pathname accessors
   // that read workAsyncStorage — construct and render it inside the store.
-  let stream: ReadableStream<Uint8Array>;
-  try {
-    stream = await workAsyncStorage.run(
-      workStore,
-      () => workUnitAsyncStorage.run({ type: "request" }, () => {
+  const stream = await workAsyncStorage.run(
+    workStore,
+    () =>
+      workUnitAsyncStorage.run({ type: "request" }, () => {
         const { Metadata } = createMetadataComponents({
           tree,
           pathname,
@@ -101,11 +100,7 @@ export async function renderMetaTags(
         });
         return renderToReadableStream(React.createElement(Metadata));
       }),
-    );
-  } catch (e) {
-    console.error("METADATA RENDER FAILED", e);
-    throw e;
-  }
+  );
   const html = await streamToString(stream);
 
   // Tests run in vitest's jsdom environment — parse via the live DOM.

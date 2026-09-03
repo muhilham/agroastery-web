@@ -34,8 +34,6 @@ export const metadata: Metadata = {
   },
 };
 
-/** Latest session end: last slot start + 2-hour session. */
-
 export default function KonsultasiPage() {
   return (
     <div className="min-h-svh bg-background flex flex-col">
