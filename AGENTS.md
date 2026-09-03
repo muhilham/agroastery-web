@@ -104,6 +104,14 @@ Copy `.env.example` to `.env.local`. Required for local dev:
 
 Vitest requires a crypto polyfill — always use `pnpm test` (not `vitest` directly) which runs `vitest-runner.js`.
 
+### SEO regression layer
+
+SEO coverage has two tiers: object-level tests use `expectSeo()` against a page module's exported static `metadata`; DOM-level tests use `renderMetaTags()` to run the root layout and page through Next's own metadata resolver. Use the latter when testing resolved tags such as absolute canonicals (via `metadataBase`), Open Graph/Twitter inheritance, or robots output.
+
+`renderMetaTags()` imports Next's externalized CJS metadata internals. Keep the `server-only` require-cache stub in `vitest.setup.ts`, because a Vite alias does not intercept that CJS require. Do not add Next metadata internals to `test.server.deps.inline`: doing so creates a second async-local-storage module identity and breaks the metadata work store.
+
+The client-component homepage is intentionally outside this metadata layer; its inline JSON-LD is a known accepted gap. Dynamic `generateMetadata` pages need their own data mocks before adding DOM metadata coverage.
+
 ## Deployment Notes
 
 - Railway uses standalone output (configured in `next.config.ts` and `railway.toml`)
