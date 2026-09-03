@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.27.1](https://github.com/muhilham/agroastery-web/compare/v0.27.0...v0.27.1) (2026-09-03)
+
+
+### Tests
+
+* **seo:** add two-tier page test layer for /konsultasi (issue [#133](https://github.com/muhilham/agroastery-web/issues/133)) ([#135](https://github.com/muhilham/agroastery-web/issues/135)) ([46a7338](https://github.com/muhilham/agroastery-web/commit/46a73384d9c8a4f2cffdfafb96db51c111fcfb1a))
+
 ## [0.27.0](https://github.com/muhilham/agroastery-web/compare/v0.26.0...v0.27.0) (2026-09-03)
 
 
