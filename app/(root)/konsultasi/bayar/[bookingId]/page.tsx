@@ -2,8 +2,16 @@ import { notFound, redirect } from "next/navigation";
 import Navigation from "@/components/navigation";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import QrConsultationClient from "./qr-consultation-client";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Pembayaran Konsultasi — Agroastery",
+  description:
+    "Selesaikan pembayaran sesi konsultasi kopi 2 jam di roastery Agroastery, Jakarta Selatan, lewat QRIS.",
+  robots: { index: false, follow: false },
+};
 
 type Props = { params: Promise<{ bookingId: string }> };
 

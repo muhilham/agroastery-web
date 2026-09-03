@@ -321,11 +321,22 @@ const SupabaseProductDetail = ({ product }: Props) => {
             </svg>
             Tanya via WhatsApp
           </a>
+          {/* Cafe-owner consultation CTA */}
           <a
             href="/konsultasi"
-            className="flex items-center justify-center gap-1.5 text-xs text-primary hover:text-primary/80 transition-colors mt-1"
+            className="mt-4 flex items-center gap-3 rounded-xl border border-white/10 bg-[#242424] p-3.5 group hover:border-primary/50 transition-colors"
           >
-            Butuh bantuan milih? → Konsultasi 2 jam
+            <div className="flex-1">
+              <p className="text-sm text-white/80 group-hover:text-primary transition-colors">
+                Punya cafe? Cicip dulu sebelum ambil stok wholesale.
+              </p>
+              <p className="text-xs text-secondary mt-0.5">
+                Sesi privat 2 jam di roastery — diskusi menu dan blend bersama barista kami.
+              </p>
+            </div>
+            <span className="shrink-0 text-xs font-medium text-primary tracking-wide">
+              Konsultasi →
+            </span>
           </a>
         </div>
 

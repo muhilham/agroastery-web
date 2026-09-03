@@ -27,6 +27,21 @@ vi.mock("@/lib/pivot/client", () => ({
 
 import { POST } from "./route";
 
+/** Next WIB date strictly after today matching the given JS weekday (3 = Wed). */
+function nextWibWeekday(weekday: number): string {
+  const now = new Date(
+    new Date().toLocaleString("en-US", { timeZone: "Asia/Jakarta" })
+  );
+  for (let i = 1; i <= 7; i++) {
+    const d = new Date(now);
+    d.setDate(d.getDate() + i);
+    if (d.getDay() === weekday) {
+      return d.toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
+    }
+  }
+  throw new Error(`No date with weekday ${weekday} within 7 days`);
+}
+
 function req(body: unknown): NextRequest {
   return new NextRequest("http://localhost/api/consultations", {
     method: "POST",
@@ -39,7 +54,7 @@ const validBody = {
   email: "budi@example.com",
   phone: "08123456789",
   purpose: "custom_blending",
-  booking_date: "2026-09-02",
+  booking_date: nextWibWeekday(3),
   time_slot: "11:00",
 };
 

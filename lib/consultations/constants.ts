@@ -14,10 +14,10 @@ export const CONSULTATION_FEE_IDR = 250_000;
 /** Rolling booking window in weeks. */
 export const CONSULTATION_WINDOW_WEEKS = 4;
 
-/** Human-readable purpose labels keyed by DB enum value. */
+/** Human-readable purpose labels keyed by DB enum value. Values must never change. */
 export const CONSULTATION_PURPOSES = {
-  custom_blending: "Cari blend yang cocok untuk menu saya",
-  product_testing: "Coba produk/biji kopi AGR",
+  custom_blending: "Saya ingin racikan kopi yang pas untuk menu saya",
+  product_testing: "Saya mau cicip biji kopi Agroastery sebelum ambil stok",
 } as const;
 
 export type ConsultationPurpose = keyof typeof CONSULTATION_PURPOSES;

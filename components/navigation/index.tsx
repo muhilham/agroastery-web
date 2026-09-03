@@ -38,7 +38,9 @@ export default function Navigation() {
   const { cartCount } = useCart();
   const { user, signIn, signOut } = useAuth();
 
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    queueMicrotask(() => setMounted(true));
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {

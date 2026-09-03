@@ -1,12 +1,35 @@
 import { describe, it, expect } from "vitest";
 import { CreateBookingSchema, RescheduleSchema } from "./schema";
 
+/**
+ * Next WIB date (YYYY-MM-DD) strictly after today whose JS weekday matches.
+ * Dynamic so the suite doesn't rot once hardcoded dates fall out of the
+ * rolling booking window (schema rejects past dates and >4-week dates).
+ */
+function nextWibWeekday(weekday: number): string {
+  const now = new Date(
+    new Date().toLocaleString("en-US", { timeZone: "Asia/Jakarta" })
+  );
+  for (let i = 1; i <= 7; i++) {
+    const d = new Date(now);
+    d.setDate(d.getDate() + i);
+    if (d.getDay() === weekday) {
+      return d.toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
+    }
+  }
+  throw new Error(`No date with weekday ${weekday} within 7 days`);
+}
+
+const WEDNESDAY = nextWibWeekday(3);
+const THURSDAY = nextWibWeekday(4);
+const MONDAY = nextWibWeekday(1);
+
 const valid = {
   name: "Budi",
   email: "budi@example.com",
   phone: "08123456789",
   purpose: "custom_blending",
-  booking_date: "2026-09-02", // a Wednesday
+  booking_date: WEDNESDAY,
   time_slot: "11:00",
   notes: "Bawa susu sendiri",
 };
@@ -29,8 +52,8 @@ describe("CreateBookingSchema", () => {
     expect(CreateBookingSchema.safeParse({ ...valid, time_slot: "10:00" }).success).toBe(false);
   });
 
-  it("rejects non-Tue/Wed/Thu date (2026-09-07 is Monday)", () => {
-    expect(CreateBookingSchema.safeParse({ ...valid, booking_date: "2026-09-07" }).success).toBe(false);
+  it("rejects non-Tue/Wed/Thu date (Monday)", () => {
+    expect(CreateBookingSchema.safeParse({ ...valid, booking_date: MONDAY }).success).toBe(false);
   });
 
   it("rejects malformed date", () => {
@@ -45,10 +68,10 @@ describe("CreateBookingSchema", () => {
 
 describe("RescheduleSchema", () => {
   it("accepts valid date+slot", () => {
-    expect(RescheduleSchema.safeParse({ booking_date: "2026-09-03", time_slot: "17:00" }).success).toBe(true);
+    expect(RescheduleSchema.safeParse({ booking_date: THURSDAY, time_slot: "17:00" }).success).toBe(true);
   });
 
   it("rejects invalid weekday", () => {
-    expect(RescheduleSchema.safeParse({ booking_date: "2026-09-07", time_slot: "11:00" }).success).toBe(false);
+    expect(RescheduleSchema.safeParse({ booking_date: MONDAY, time_slot: "11:00" }).success).toBe(false);
   });
 });

@@ -28,6 +28,7 @@ export const footer: I_FooterInterface[] = [
   { href: "https://www.instagram.com/agroastery/", label: "Instagram" },
   { href: "https://www.tiktok.com/@agroastery", label: "Tiktok" },
   { href: "/roast-age", label: "Roast Age" },
+  { href: "/konsultasi", label: "Konsultasi" },
   { href: "/syarat-ketentuan", label: "Syarat & Ketentuan" },
   { href: "/kebijakan-privasi", label: "Kebijakan Privasi" },
 ];

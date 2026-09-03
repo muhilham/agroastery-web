@@ -19,6 +19,25 @@ vi.mock("@/lib/resend/sendConsultationEmail", () => ({
 
 import { POST } from "./route";
 
+/** Next WIB date strictly after today matching the given JS weekday (3 = Wed, 4 = Thu). */
+function nextWibWeekday(weekday: number): string {
+  const now = new Date(
+    new Date().toLocaleString("en-US", { timeZone: "Asia/Jakarta" })
+  );
+  for (let i = 1; i <= 7; i++) {
+    const d = new Date(now);
+    d.setDate(d.getDate() + i);
+    if (d.getDay() === weekday) {
+      return d.toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
+    }
+  }
+  throw new Error(`No date with weekday ${weekday} within 7 days`);
+}
+
+const WEDNESDAY = nextWibWeekday(3);
+const THURSDAY = nextWibWeekday(4);
+
+
 function ctx(token: string) {
   return { params: Promise.resolve({ token }) };
 }
@@ -35,23 +54,23 @@ describe("POST reschedule", () => {
 
   it("404s for unknown token", async () => {
     mockSingle.mockResolvedValue({ data: null, error: { message: "nf" } });
-    const res = await POST(req({ booking_date: "2026-09-02", time_slot: "11:00" }), ctx("bad"));
+    const res = await POST(req({ booking_date: WEDNESDAY, time_slot: "11:00" }), ctx("bad"));
     expect(res.status).toBe(404);
   });
 
   it("400s when booking not confirmed", async () => {
-    mockSingle.mockResolvedValue({ data: { id: "b", status: "cancelled", booking_date: "2026-09-02" }, error: null });
-    const res = await POST(req({ booking_date: "2026-09-02", time_slot: "11:00" }), ctx("t"));
+    mockSingle.mockResolvedValue({ data: { id: "b", status: "cancelled", booking_date: WEDNESDAY }, error: null });
+    const res = await POST(req({ booking_date: WEDNESDAY, time_slot: "11:00" }), ctx("t"));
     expect(res.status).toBe(400);
   });
 
   it("409s with SLOT_TAKEN on unique violation", async () => {
     mockSingle.mockResolvedValue({
-      data: { id: "b", status: "confirmed", booking_date: "2026-09-02", email: "b@e.com", name: "B", time_slot: "11:00" },
+      data: { id: "b", status: "confirmed", booking_date: WEDNESDAY, email: "b@e.com", name: "B", time_slot: "11:00" },
       error: null,
     });
     mockUpdateEq.mockResolvedValue({ error: { code: "23505", message: "dup" } });
-    const res = await POST(req({ booking_date: "2026-09-03", time_slot: "14:00" }), ctx("t"));
+    const res = await POST(req({ booking_date: THURSDAY, time_slot: "14:00" }), ctx("t"));
     expect(res.status).toBe(409);
     const json = await res.json();
     expect(json.code).toBe("SLOT_TAKEN");
@@ -59,11 +78,11 @@ describe("POST reschedule", () => {
 
   it("reschedules a confirmed booking", async () => {
     mockSingle.mockResolvedValue({
-      data: { id: "b", status: "confirmed", booking_date: "2026-09-02", email: "b@e.com", name: "B", time_slot: "11:00", manage_token: "t" },
+      data: { id: "b", status: "confirmed", booking_date: WEDNESDAY, email: "b@e.com", name: "B", time_slot: "11:00", manage_token: "t" },
       error: null,
     });
     mockUpdateEq.mockResolvedValue({ error: null });
-    const res = await POST(req({ booking_date: "2026-09-03", time_slot: "14:00" }), ctx("t"));
+    const res = await POST(req({ booking_date: THURSDAY, time_slot: "14:00" }), ctx("t"));
     expect(res.status).toBe(200);
   });
 });

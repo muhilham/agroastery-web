@@ -6,7 +6,8 @@ import { useEffect, useState } from "react";
 function usePageContext() {
   const [path, setPath] = useState("");
   useEffect(() => {
-    setPath(window.location.pathname);
+    // Defer to a microtask: synchronous setState in an effect body triggers cascading renders.
+    queueMicrotask(() => setPath(window.location.pathname));
   }, []);
   return path;
 }

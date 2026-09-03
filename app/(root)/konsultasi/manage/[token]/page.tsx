@@ -1,8 +1,17 @@
 import Navigation from "@/components/navigation";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import ManageBookingClient from "./manage-booking-client";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Kelola Booking Konsultasi — Agroastery",
+  description:
+    "Ubah jadwal atau batalkan booking konsultasi kopi kamu di roastery Agroastery, Jakarta Selatan.",
+  // Private per-user tokenized page — never indexable.
+  robots: { index: false, follow: false },
+};
 
 type Props = { params: Promise<{ token: string }> };
 

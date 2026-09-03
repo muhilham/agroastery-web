@@ -146,7 +146,8 @@ export default function ManageBookingClient({
       {showReschedule && (
         <div className="rounded-xl border border-white/15 p-4 mb-4">
           <h2 className="text-sm font-medium mb-3">Pilih jadwal baru</h2>
-          <div className="flex gap-2 overflow-x-auto pb-2 mb-3">
+          <p className="hidden sm:block text-[11px] text-secondary mb-1">Geser untuk lihat tanggal lain →</p>
+          <div className="flex gap-2 overflow-x-auto no-scrollbar scroll-fade-mobile pb-2 mb-3">
             {dates.map((d) => {
               const [y, m, dd] = d.date.split("-").map(Number);
               const weekday = new Date(Date.UTC(y, m - 1, dd)).getUTCDay();
