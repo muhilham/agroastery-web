@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.27.3](https://github.com/muhilham/agroastery-web/compare/v0.27.2...v0.27.3) (2026-09-09)
+
+
+### Bug Fixes
+
+* **checkout:** audit cleanup — debug logs, no-rates dead-end, step numbers, phone validation ([#142](https://github.com/muhilham/agroastery-web/issues/142)) ([cc792f3](https://github.com/muhilham/agroastery-web/commit/cc792f3adce623b71fe87b28bb71d407597c31f7))
+
 ## [0.27.2](https://github.com/muhilham/agroastery-web/compare/v0.27.1...v0.27.2) (2026-09-09)
 
 
