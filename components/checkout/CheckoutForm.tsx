@@ -292,10 +292,10 @@ export default function CheckoutForm({
         </div>
       )}
 
-      {/* Step 2: Data Penerima */}
+      {/* Step: Data Penerima — numbered 1 in pickup mode (alamat card hidden) */}
       <div className="bg-[#1a1a1a] rounded-xl border border-white/10 p-4 space-y-4">
         <div className="flex items-center gap-3">
-          <span className="w-5 h-5 rounded-full bg-primary/20 border border-primary/30 text-primary text-[10px] font-bold flex items-center justify-center shrink-0">2</span>
+          <span className="w-5 h-5 rounded-full bg-primary/20 border border-primary/30 text-primary text-[10px] font-bold flex items-center justify-center shrink-0">{fulfillmentMethod === "delivery" ? "2" : "1"}</span>
           <h2 className="text-primary font-semibold tracking-widest uppercase text-xs">Data Penerima</h2>
         </div>
 
@@ -338,7 +338,7 @@ export default function CheckoutForm({
                   <Input placeholder="budi@gmail.com" type="email" {...field} value={field.value ?? ""} />
                 </FormControl>
                 <p className="text-xs text-secondary mt-1">
-                  We&apos;ll send your order confirmation here
+                  Konfirmasi pesanan akan dikirim ke email ini
                 </p>
                 <FormMessage />
               </FormItem>

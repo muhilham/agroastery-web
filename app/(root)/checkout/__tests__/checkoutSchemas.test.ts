@@ -100,3 +100,31 @@ describe("fulfillmentMethod", () => {
     expect(result.success).toBe(false);
   });
 });
+
+describe("phone normalization (Postel's law)", () => {
+  const ok = (phone: string) => ({ ...validBase, fulfillmentMethod: "pickup", phone });
+
+  it("normalizes local, 62, +62, and spaced formats to +62…", () => {
+    for (const [input, expected] of [
+      ["081234567890", "+6281234567890"],
+      ["6281234567890", "+6281234567890"],
+      ["+62 812-3456-7890", "+6281234567890"],
+      ["0812 3456 789", "+628123456789"],
+    ] as const) {
+      const result = loggedInFormSchema.safeParse(ok(input));
+      expect(result.success, input).toBe(true);
+      if (result.success) expect(result.data.phone).toBe(expected);
+    }
+  });
+
+  it("rejects alphabetic junk that the old min(6) rule let through", () => {
+    expect(loggedInFormSchema.safeParse(ok("abcdefg")).success).toBe(false);
+    expect(loggedInFormSchema.safeParse(ok("123")).success).toBe(false);
+    expect(loggedInFormSchema.safeParse(ok("987654321")).success).toBe(false);
+    expect(loggedInFormSchema.safeParse(ok("")).success).toBe(false);
+  });
+
+  it("rejects absurdly long digit runs", () => {
+    expect(loggedInFormSchema.safeParse(ok("0812345678901234567")).success).toBe(false);
+  });
+});

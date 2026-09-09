@@ -73,7 +73,9 @@ export async function createBiteshipDraft(
       : {}),
 
     destination_contact_name: addr.recipient_name,
-    destination_contact_phone: addr.phone,
+    // Couriers historically received the locally-typed format ("08…"); the
+    // checkout schema now normalizes to +62…, so convert back at this boundary.
+    destination_contact_phone: addr.phone?.replace(/^\+62/, "0") ?? addr.phone,
     destination_address: addr.address_line,
     ...(addr.postal_code ? { destination_postal_code: Number(addr.postal_code) } : {}),
     ...(addr.latitude != null && addr.longitude != null

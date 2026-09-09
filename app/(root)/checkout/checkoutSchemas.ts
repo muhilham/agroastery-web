@@ -1,8 +1,24 @@
 import { z } from "zod";
 
+// Postel's law on intake: accept the shapes Indonesians actually type
+// ("0812…", "62812…", "+62 812-3456-7890"), normalize to +62…, and reject
+// anything without enough real digits (previously "abcdefg" passed min(6)).
+const phoneSchema = z
+  .string()
+  .trim()
+  .transform((raw) => {
+    const digits = raw.replace(/[\s\-().]/g, "");
+    if (/^\+?628\d+$/.test(digits)) return `+62${digits.slice(digits.startsWith("+") ? 3 : 2)}`;
+    if (/^62\d+$/.test(digits)) return `+62${digits.slice(2)}`;
+    if (/^0\d+$/.test(digits)) return `+62${digits.slice(1)}`;
+    if (/^8\d+$/.test(digits)) return `+62${digits}`;
+    return digits; // fail .regex below, but keep raw-ish value for the message
+  })
+  .pipe(z.string().regex(/^\+62\d{8,14}$/, "Nomor HP tidak valid. Contoh: 081234567890"));
+
 const baseSchema = z.object({
   fullName: z.string().min(2, "Minimal 2 karakter").max(50),
-  phone: z.string().min(6, "Nomor tidak valid").max(20),
+  phone: phoneSchema,
   address: z.string().max(300).optional(),
   postalCode: z.string().max(5).optional(),
   lat: z.number().min(-90).max(90).optional(),
