@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.27.2](https://github.com/muhilham/agroastery-web/compare/v0.27.1...v0.27.2) (2026-09-09)
+
+
+### Bug Fixes
+
+* **analytics:** make GA4 purchase events actually fire on checkout success ([#137](https://github.com/muhilham/agroastery-web/issues/137)) ([e2dc73e](https://github.com/muhilham/agroastery-web/commit/e2dc73eb95cd6022d1bcb67a35b42ad22b6ba1cf))
+* **checkout:** correct shipping quote payload + server-side rate enforcement ([#139](https://github.com/muhilham/agroastery-web/issues/139)) ([37b094c](https://github.com/muhilham/agroastery-web/commit/37b094ce404c5bd92ffd63d5ca8253b27467d4f0))
+
 ## [0.27.1](https://github.com/muhilham/agroastery-web/compare/v0.27.0...v0.27.1) (2026-09-03)
 
 
