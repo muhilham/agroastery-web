@@ -33,6 +33,15 @@ vi.mock("@/lib/checkout/validateShippingCost", () => ({
   isShippingCostInvalid: vi.fn().mockReturnValue(false),
 }));
 
+const mockFetchBiteshipRates = vi.fn();
+vi.mock("@/lib/biteship/rates", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/biteship/rates")>("@/lib/biteship/rates");
+  return {
+    ...actual,
+    fetchBiteshipRates: (...a: unknown[]) => mockFetchBiteshipRates(...a),
+  };
+});
+
 const mockValidateStockAvailability = vi.fn();
 const mockDecrementStock = vi.fn();
 
@@ -68,6 +77,112 @@ describe("POST /api/checkout", () => {
     vi.clearAllMocks();
     mockValidateStockAvailability.mockReturnValue({ valid: true });
     mockDecrementStock.mockResolvedValue({ success: true });
+  });
+
+  // ---- Shipping re-quote (issue #138) ----
+  const deliveryBody = {
+    ...baseBody,
+    shippingAddress: { ...baseBody.shippingAddress, postalCode: "40115" },
+    shippingCourier: "jne",
+    shippingService: "reg",
+  };
+
+  function rateEntry(price: number, courier = "jne", service = "reg") {
+    return {
+      courier_code: courier,
+      courier_name: courier.toUpperCase(),
+      courier_service_code: service,
+      courier_service_name: service.toUpperCase(),
+      price,
+      currency: "IDR",
+    };
+  }
+
+  function mockHappyDb() {
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "product_variants") {
+        return { select: () => ({ in: () => Promise.resolve({ data: [{ id: "11111111-1111-1111-1111-111111111111", product_id: "p1", sku: "SKU1", price: 100000, ship_weight_grams: 500, stock_quantity: 10, is_active: true }], error: null }) }) };
+      }
+      if (table === "products") {
+        return { select: () => ({ in: () => Promise.resolve({ data: [{ id: "p1", name: "Kopi Arabika", is_global: true, is_global_discountable: true }], error: null }) }) };
+      }
+      if (table === "product_variant_option_values") {
+        return { select: () => ({ in: () => Promise.resolve({ data: [], error: null }) }) };
+      }
+      if (table === "ecom_orders") {
+        return {
+          select: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: null, error: null }) }) }),
+          insert: () => ({ select: () => ({ single: () => Promise.resolve({ data: { id: "order-1", order_number: "AGR-X", total: 115000, status: "pending_payment" }, error: null }) }) }),
+          update: () => ({ eq: () => Promise.resolve({ error: null }) }),
+        };
+      }
+      if (table === "ecom_order_items") return { insert: () => Promise.resolve({ error: null }) };
+      if (table === "profiles") return { upsert: () => Promise.resolve({ error: null }) };
+      return { select: () => Promise.resolve({ data: null, error: null }) };
+    });
+    mockCreateQrisPaymentSession.mockResolvedValue({
+      paymentSessionId: "ps_1", qrUrl: "https://qr.test", qrString: "qr", qrExpiresAt: "2026-08-31T12:00:00Z",
+    });
+  }
+
+  it("delivery checkout passes when server re-quote matches the submitted cost", async () => {
+    mockHappyDb();
+    mockFetchBiteshipRates.mockResolvedValue([rateEntry(15000)]);
+
+    const res = await POST(checkoutReq(deliveryBody));
+    expect(res.status).toBe(200);
+    const args = mockFetchBiteshipRates.mock.calls[0][0];
+    // per-line totalized, qty collapsed to 1, dims 20x15x10
+    expect(args.items).toEqual([
+      { name: "Kopi Arabika", description: "Kopi Arabika", value: 100000, weight: 500, quantity: 1, length: 20, width: 15, height: 10 },
+    ]);
+    expect(args.destinationPostalCode).toBe(40115);
+  });
+
+  it("returns 409 SHIPPING_RATE_STALE when the quoted price drifted", async () => {
+    mockHappyDb();
+    mockFetchBiteshipRates.mockResolvedValue([rateEntry(18000)]);
+
+    const res = await POST(checkoutReq(deliveryBody));
+    expect(res.status).toBe(409);
+    const json = await res.json();
+    expect(json.code).toBe("SHIPPING_RATE_STALE");
+    expect(json.latestCost).toBe(18000);
+    // no order inserted, no payment session
+    expect(mockDecrementStock).not.toHaveBeenCalled();
+    expect(mockCreateQrisPaymentSession).not.toHaveBeenCalled();
+  });
+
+  it("returns 400 SHIPPING_RATE_UNAVAILABLE when courier pair gone from quote", async () => {
+    mockHappyDb();
+    mockFetchBiteshipRates.mockResolvedValue([rateEntry(15000, "sicepat", "reg")]);
+
+    const res = await POST(checkoutReq(deliveryBody));
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.code).toBe("SHIPPING_RATE_UNAVAILABLE");
+  });
+
+  it("returns 503 when Biteship re-quote fails", async () => {
+    mockHappyDb();
+    mockFetchBiteshipRates.mockRejectedValue(new Error("biteship down"));
+
+    const res = await POST(checkoutReq(deliveryBody));
+    expect(res.status).toBe(503);
+    const json = await res.json();
+    expect(json.code).toBe("SHIPPING_SERVICE_UNAVAILABLE");
+  });
+
+  it("skips re-quote for pickup orders", async () => {
+    mockHappyDb();
+    const res = await POST(checkoutReq({
+      ...baseBody,
+      fulfillmentMethod: "pickup",
+      shippingCourier: "pickup",
+      shippingCost: 0,
+    }));
+    expect(res.status).toBe(200);
+    expect(mockFetchBiteshipRates).not.toHaveBeenCalled();
   });
 
   it("creates guest checkout with pending_payment status", async () => {

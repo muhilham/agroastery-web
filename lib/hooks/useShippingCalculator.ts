@@ -27,11 +27,12 @@ async function getShippingRates(p: ShippingCalcParams) {
     : (() => {
         if (!p.weightGrams || p.weightGrams <= 0) throw new Error('weightGrams must be > 0');
         if (!p.quantity || p.quantity <= 0) throw new Error('quantity must be > 0');
+        if (!p.name) throw new Error('name is required when items[] is not provided');
         const name = ensureNonEmpty(p.name, 'name');
         return [{
           name,
           description: p.description ?? name,
-          value: Math.max(0, Math.trunc(p.price)),
+          value: Math.max(0, Math.trunc(p.price ?? 0)),
           length: p.length ?? 20,
           width: p.width ?? 15,
           height: p.height ?? 10,
