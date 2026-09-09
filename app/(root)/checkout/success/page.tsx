@@ -22,6 +22,7 @@ export default async function CheckoutSuccessPage({ searchParams }: PageProps) {
   let orderNumber: string | null = null;
   let customerEmail: string | null = null;
   let isPickup = false;
+  let orderStatus: string | null = null;
   let paymentStatus: string | null = null;
   let total: number | null = null;
   let shippingCost = 0;
@@ -32,13 +33,14 @@ export default async function CheckoutSuccessPage({ searchParams }: PageProps) {
     const { data } = await admin
       .from("ecom_orders")
       .select(
-        "order_number, customer_email, shipping_courier, payment_status, total, shipping_cost, ecom_order_items(product_name, unit_price, quantity, variant_id)"
+        "order_number, customer_email, shipping_courier, status, payment_status, total, shipping_cost, ecom_order_items(product_name, unit_price, quantity, variant_id)"
       )
       .eq("id", orderId)
       .single();
     orderNumber = (data?.order_number as string) ?? null;
     customerEmail = (data?.customer_email as string) ?? null;
     isPickup = data?.shipping_courier === "pickup";
+    orderStatus = (data?.status as string) ?? null;
     paymentStatus = (data?.payment_status as string) ?? null;
     total = (data?.total as number) ?? null;
     shippingCost = (data?.shipping_cost as number) ?? 0;
@@ -57,8 +59,17 @@ export default async function CheckoutSuccessPage({ searchParams }: PageProps) {
     }));
   }
 
+  // Fire the GA4 purchase on the confirmation page itself. The old gate
+  // (payment_status === "paid") never matched: Pivot's successReturnUrl
+  // lands here on a fresh server render that races the payment webhook,
+  // so the DB still says "unpaid" at that moment — zero purchases fired
+  // for 30 days. Reaching /checkout/success with a live order is the
+  // purchase signal; only exclude orders that are already dead.
   const shouldTrackPurchase =
-    paymentStatus === "paid" && !!orderNumber && total !== null;
+    !!orderNumber &&
+    total !== null &&
+    paymentStatus !== "expired" &&
+    orderStatus !== "cancelled";
 
   return (
     <div className="min-h-svh bg-background flex flex-col">
