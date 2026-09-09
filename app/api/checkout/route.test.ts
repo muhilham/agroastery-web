@@ -60,7 +60,10 @@ const baseBody = {
     recipientName: "Budi",
     phone: "081234567890",
     addressLine: "Jl. Contoh No. 1",
+    postalCode: "40115",
   },
+  shippingCourier: "jne",
+  shippingService: "reg",
   shippingCost: 15000,
 };
 
@@ -73,10 +76,16 @@ function checkoutReq(body: Record<string, unknown>): NextRequest {
 }
 
 describe("POST /api/checkout", () => {
+  let lastOrderInsert: Record<string, unknown> | null = null;
+
   beforeEach(() => {
+    lastOrderInsert = null;
     vi.clearAllMocks();
     mockValidateStockAvailability.mockReturnValue({ valid: true });
     mockDecrementStock.mockResolvedValue({ success: true });
+    // Default: a fresh quote agreeing with baseBody.shippingCost (15000),
+    // so legacy tests exercise the happy re-quote path unless overridden.
+    mockFetchBiteshipRates.mockResolvedValue([rateEntry(15000)]);
   });
 
   // ---- Shipping re-quote (issue #138) ----
@@ -112,7 +121,10 @@ describe("POST /api/checkout", () => {
       if (table === "ecom_orders") {
         return {
           select: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: null, error: null }) }) }),
-          insert: () => ({ select: () => ({ single: () => Promise.resolve({ data: { id: "order-1", order_number: "AGR-X", total: 115000, status: "pending_payment" }, error: null }) }) }),
+          insert: (payload: Record<string, unknown>) => {
+            lastOrderInsert = payload;
+            return { select: () => ({ single: () => Promise.resolve({ data: { id: "order-1", order_number: "AGR-X", total: 115000, status: "pending_payment" }, error: null }) }) };
+          },
           update: () => ({ eq: () => Promise.resolve({ error: null }) }),
         };
       }
@@ -127,9 +139,9 @@ describe("POST /api/checkout", () => {
 
   it("delivery checkout passes when server re-quote matches the submitted cost", async () => {
     mockHappyDb();
-    mockFetchBiteshipRates.mockResolvedValue([rateEntry(15000)]);
+    mockFetchBiteshipRates.mockResolvedValue([{ ...rateEntry(15000), duration: "2 - 3 days" }]);
 
-    const res = await POST(checkoutReq(deliveryBody));
+    const res = await POST(checkoutReq({ ...deliveryBody, shippingEtd: "99 days" }));
     expect(res.status).toBe(200);
     const args = mockFetchBiteshipRates.mock.calls[0][0];
     // per-line totalized, qty collapsed to 1, dims 20x15x10
@@ -137,6 +149,10 @@ describe("POST /api/checkout", () => {
       { name: "Kopi Arabika", description: "Kopi Arabika", value: 100000, weight: 500, quantity: 1, length: 20, width: 15, height: 10 },
     ]);
     expect(args.destinationPostalCode).toBe(40115);
+    // server-verified etd persisted, not the client-submitted "99 days"
+    expect(lastOrderInsert).not.toBeNull();
+    expect(lastOrderInsert!.shipping_etd).toBe("2 - 3 days");
+    expect(lastOrderInsert!.shipping_cost).toBe(15000);
   });
 
   it("returns 409 SHIPPING_RATE_STALE when the quoted price drifted", async () => {
@@ -171,6 +187,21 @@ describe("POST /api/checkout", () => {
     expect(res.status).toBe(503);
     const json = await res.json();
     expect(json.code).toBe("SHIPPING_SERVICE_UNAVAILABLE");
+  });
+
+  it("rejects delivery checkout that omits courier+service (no re-quote bypass)", async () => {
+    mockHappyDb();
+    const res = await POST(checkoutReq({
+      ...baseBody,
+      shippingCourier: undefined,
+      shippingService: undefined,
+      shippingCost: 0,
+    }));
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.code).toBe("VALIDATION_ERROR");
+    expect(mockFetchBiteshipRates).not.toHaveBeenCalled();
+    expect(mockDecrementStock).not.toHaveBeenCalled();
   });
 
   it("skips re-quote for pickup orders", async () => {

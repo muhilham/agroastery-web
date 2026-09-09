@@ -169,6 +169,7 @@ export async function POST(request: NextRequest) {
     }
 
     let shippingCost = data.shippingCost;
+    let shippingEtd: string | null = data.shippingEtd ?? null;
 
     const isBiteshipDelivery =
       data.fulfillmentMethod === "delivery" &&
@@ -248,6 +249,15 @@ export async function POST(request: NextRequest) {
         );
       }
       shippingCost = match.price;
+
+      // Persist the server-verified ETD too: shipping_etd feeds the buyer-facing
+      // ETA (orders page, Biteship draft), so it must not come from the client.
+      const serverEtd =
+        match.duration ??
+        (match.shipment_duration_range
+          ? `${match.shipment_duration_range} ${match.shipment_duration_unit ?? ""}`.trim()
+          : null);
+      shippingEtd = serverEtd ?? data.shippingEtd ?? null;
     }
 
     // Idempotency: if this key was already used, return the existing order (no double-deduction)
@@ -318,7 +328,7 @@ export async function POST(request: NextRequest) {
           shipping_courier: data.shippingCourier ?? null,
           shipping_service: data.shippingService ?? null,
           shipping_cost: shippingCost,
-          shipping_etd: data.shippingEtd ?? null,
+          shipping_etd: shippingEtd,
           payment_status: "unpaid",
           subtotal,
           total,
