@@ -277,15 +277,12 @@ export default function CheckoutPageContent() {
 
   const onSubmit = async (values: TForm) => {
     if (cartItems.length === 0) {
-      console.log("[Checkout] Cart is empty, returning");
       return;
     }
     if (values.fulfillmentMethod === "delivery" && !selectedShipping) {
-      console.log("[Checkout] No shipping selected");
       setSubmitError("Pilih opsi pengiriman terlebih dahulu");
       return;
     }
-    console.log("[Checkout] Starting submission...");
     setIsSubmitting(true);
     setSubmitError(null);
 
@@ -357,16 +354,6 @@ export default function CheckoutPageContent() {
     }
   };
 
-  // Debug: log form errors when they change
-  useEffect(() => {
-    const subscription = form.watch(() => {
-      if (Object.keys(form.formState.errors).length > 0) {
-        console.log("[Checkout] Form errors:", form.formState.errors);
-      }
-    });
-    return () => subscription.unsubscribe();
-  }, [form]);
-
   // Loading state during cart hydration — also gate on mounted so SSR and first
   // client render both show the skeleton (prevents hydration mismatch)
   if (!mounted || !hydrated) {
@@ -433,7 +420,7 @@ export default function CheckoutPageContent() {
         <OrderSummary cartItems={cartItems} cartCount={cartCount} />
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form id="checkout-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <CheckoutForm
               formControl={form.control}
               isGuest={isGuest}
@@ -453,7 +440,6 @@ export default function CheckoutPageContent() {
               location={location}
               shippingError={shippingError}
               onMapChange={(lat, lng) => {
-                console.log("[Checkout] MapPicker onChange:", { lat, lng });
                 form.setValue("lat", lat);
                 form.setValue("lng", lng);
               }}
@@ -465,6 +451,29 @@ export default function CheckoutPageContent() {
                 selectedShipping={selectedShipping}
                 onSelect={setSelectedShipping}
               />
+            )}
+
+            {/* No-rates dead-end recovery: when a quote was attempted and
+                returned nothing/failed, explain why at the spot where the
+                selector would be and offer the map escape hatch. Gated on
+                shippingError so a pristine form (no address typed yet) does
+                not show a false alarm. */}
+            {fulfillmentMethod === "delivery" && !isLoadingShipping && shippingRates.length === 0 && shippingError && (
+              <div className="bg-[#1a1a1a] rounded-xl border border-amber-500/30 p-4">
+                <h2 className="text-amber-400 font-semibold tracking-widest uppercase text-xs mb-2">Opsi Pengiriman</h2>
+                <p className="text-sm text-secondary">
+                  {shippingError}
+                </p>
+                {!showMap && (
+                  <button
+                    type="button"
+                    onClick={() => setShowMap(true)}
+                    className="mt-3 text-sm text-primary underline underline-offset-4"
+                  >
+                    Coba tandai lokasi di peta
+                  </button>
+                )}
+              </div>
             )}
 
             <FormField
@@ -523,27 +532,10 @@ export default function CheckoutPageContent() {
             <span>{numberToIdr({ nominal: total })}</span>
           </div>
           <Button
-            onClick={() => {
-              console.log("[Checkout] Button clicked!");
-              console.log("[Checkout] Form values:", form.getValues());
-              console.log("[Checkout] Form errors:", form.formState.errors);
-              console.log("[Checkout] isValid:", form.formState.isValid);
-              console.log("[Checkout] isSubmitting:", isSubmitting);
-              console.log("[Checkout] isLoadingShipping:", isLoadingShipping);
-              console.log("[Checkout] selectedShipping:", selectedShipping);
-              console.log("[Checkout] cartCount:", cartCount);
-              
-              // Check if button should be disabled
-              const isDisabled = isSubmitting || cartCount === 0 || (fulfillmentMethod === "delivery" && (isLoadingShipping || !selectedShipping));
-              console.log("[Checkout] Button disabled?", isDisabled);
-              
-              if (!isDisabled) {
-                console.log("[Checkout] Calling form.handleSubmit...");
-                form.handleSubmit(onSubmit)();
-              } else {
-                console.log("[Checkout] Button is disabled, not submitting");
-              }
-            }}
+            type="submit"
+            // The pay button lives in the fixed bottom bar, OUTSIDE the form
+            // element; the form="" association is what makes submit work.
+            form="checkout-form"
             className="w-full h-12"
             disabled={isSubmitting || cartCount === 0 || (fulfillmentMethod === "delivery" && (isLoadingShipping || !selectedShipping))}
           >
