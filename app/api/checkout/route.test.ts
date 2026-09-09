@@ -204,6 +204,18 @@ describe("POST /api/checkout", () => {
     expect(mockDecrementStock).not.toHaveBeenCalled();
   });
 
+  it("returns 400 MISSING_DESTINATION when delivery has courier but no postal/geo", async () => {
+    mockHappyDb();
+    const res = await POST(checkoutReq({
+      ...baseBody,
+      shippingAddress: { recipientName: "Budi", phone: "081234567890", addressLine: "Jl. Contoh No. 1", postalCode: "" },
+    }));
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.code).toBe("MISSING_DESTINATION");
+    expect(mockFetchBiteshipRates).not.toHaveBeenCalled();
+  });
+
   it("skips re-quote for pickup orders", async () => {
     mockHappyDb();
     const res = await POST(checkoutReq({

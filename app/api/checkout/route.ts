@@ -183,9 +183,13 @@ export async function POST(request: NextRequest) {
         Number.isFinite(data.shippingAddress.latitude) &&
         typeof data.shippingAddress.longitude === "number" &&
         Number.isFinite(data.shippingAddress.longitude);
-      const destPostal = Number(data.shippingAddress.postalCode);
+      const destPostalRaw = data.shippingAddress.postalCode;
+      const destPostal = Number(destPostalRaw);
       const hasPostal =
-        data.shippingAddress.postalCode !== undefined && Number.isFinite(destPostal);
+        destPostalRaw != null &&
+        destPostalRaw.trim() !== "" &&
+        Number.isFinite(destPostal) &&
+        Number.isInteger(destPostal);
 
       if (!hasGeo && !hasPostal) {
         return NextResponse.json(
