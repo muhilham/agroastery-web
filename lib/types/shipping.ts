@@ -16,19 +16,21 @@ export type ShippingCalcItem = ShippingItem;
 export type ShippingCalcParams = {
   originPostalCode: string | number;
   destinationPostalCode?: string | number;
-  quantity: number;
-  price: number; // IDR per unit
-  name: string;
+  quantity?: number;
+  price?: number; // IDR per unit
+  name?: string;
   description?: string;
   length?: number;
   width?: number;
   height?: number;
-  weightGrams: number; // from variant.shipWeightGrams
+  weightGrams?: number; // from variant.shipWeightGrams
   couriers?: string; // comma separated
   // Optional geolocation for destination; if provided, use these over postal code
   destinationLatitude?: number | null;
   destinationLongitude?: number | null;
-  // Optional: when provided, sent directly instead of building from scalar fields above
+  /** Preferred: per-line quote items (see buildQuoteItems in
+   * lib/checkout/shippingQuote.ts). When non-empty, sent as-is and the
+   * scalar fields above are ignored (validated at runtime in the hook). */
   items?: ShippingCalcItem[];
 };
 

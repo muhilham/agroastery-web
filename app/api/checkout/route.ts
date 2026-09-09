@@ -5,6 +5,8 @@ import { sendOrderNotification } from "@/lib/telegram/notify";
 import { getActiveGlobalDiscounts, getActiveProductDiscounts } from "@/lib/supabase/queries/discounts";
 import { calculateDiscountedPrice } from "@/lib/utils/discount";
 import { isShippingCostInvalid } from "@/lib/checkout/validateShippingCost";
+import { buildQuoteItems, CHECKOUT_COURIERS_POSTAL, CHECKOUT_COURIERS_GEO } from "@/lib/checkout/shippingQuote";
+import { fetchBiteshipRates, findRateMatch } from "@/lib/biteship/rates";
 import { validateStockAvailability, decrementStock } from "@/lib/checkout/stockValidation";
 import { CheckoutSchema } from "./checkoutSchema";
 
@@ -142,9 +144,10 @@ export async function POST(request: NextRequest) {
       return sum + discountedPrice * item.quantity;
     }, 0);
 
-    // Server-side shipping cost verification: re-calculate total weight and validate
-    // that client-sent shipping cost is non-negative (Biteship re-verification would
-    // require caching the rate quote; for now we validate the cost is reasonable)
+    // Server-side shipping cost verification: the client-submitted cost must
+    // match a FRESH Biteship quote for the chosen courier+service (issue #138).
+    // Without a re-quote, any tampered/changed-in-between price persisted to
+    // ecom_orders. Mirrors the agr-client-portal findRateMatch pattern.
     const totalShipWeight = itemsWithDiscounts.reduce((sum, { shipWeightGrams, item }) => {
       return sum + shipWeightGrams * item.quantity;
     }, 0);
@@ -165,6 +168,102 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    let shippingCost = data.shippingCost;
+    let shippingEtd: string | null = data.shippingEtd ?? null;
+
+    const isBiteshipDelivery =
+      data.fulfillmentMethod === "delivery" &&
+      Boolean(data.shippingCourier) &&
+      data.shippingCourier !== "pickup" &&
+      Boolean(data.shippingService);
+
+    if (isBiteshipDelivery) {
+      const hasGeo =
+        typeof data.shippingAddress.latitude === "number" &&
+        Number.isFinite(data.shippingAddress.latitude) &&
+        typeof data.shippingAddress.longitude === "number" &&
+        Number.isFinite(data.shippingAddress.longitude);
+      const destPostalRaw = data.shippingAddress.postalCode;
+      const destPostal = Number(destPostalRaw);
+      const hasPostal =
+        destPostalRaw != null &&
+        destPostalRaw.trim() !== "" &&
+        Number.isFinite(destPostal) &&
+        Number.isInteger(destPostal);
+
+      if (!hasGeo && !hasPostal) {
+        return NextResponse.json(
+          { error: "Alamat pengiriman membutuhkan kode pos atau koordinat", code: "MISSING_DESTINATION" },
+          { status: 400 }
+        );
+      }
+
+      // Rebuild the quote payload from SERVER-VERIFIED data (DB weights),
+      // identical builder + courier set to the client quote path.
+      const quoteItems = buildQuoteItems(
+        itemsWithDiscounts.map(({ productName, discountedPrice, shipWeightGrams, item }) => ({
+          name: productName,
+          unitPrice: discountedPrice,
+          weightGramsPerUnit: shipWeightGrams,
+          quantity: item.quantity,
+        }))
+      );
+      const originPostal = Number(
+        process.env.ORIGIN_POSTAL_CODE ?? process.env.NEXT_PUBLIC_ORIGIN_POSTAL_CODE ?? "12440"
+      );
+
+      let pricing;
+      try {
+        pricing = await fetchBiteshipRates({
+          originPostalCode: originPostal,
+          ...(hasGeo
+            ? {
+                destinationLatitude: data.shippingAddress.latitude as number,
+                destinationLongitude: data.shippingAddress.longitude as number,
+              }
+            : { destinationPostalCode: destPostal }),
+          couriers: hasGeo ? CHECKOUT_COURIERS_GEO : CHECKOUT_COURIERS_POSTAL,
+          items: quoteItems,
+        });
+      } catch (err) {
+        console.error("[checkout] Biteship re-quote failed:", err);
+        return NextResponse.json(
+          { error: "Layanan pengiriman tidak tersedia saat ini", code: "SHIPPING_SERVICE_UNAVAILABLE" },
+          { status: 503 }
+        );
+      }
+
+      const match = findRateMatch(pricing, data.shippingCourier!, data.shippingService!);
+      if (!match) {
+        return NextResponse.json(
+          { error: "Kurir tidak lagi tersedia untuk tujuan ini", code: "SHIPPING_RATE_UNAVAILABLE" },
+          { status: 400 }
+        );
+      }
+      if (match.price !== data.shippingCost) {
+        // Rate drifted between quote and submit — surface the fresh price so
+        // the client can refresh the selector and the buyer confirms it.
+        return NextResponse.json(
+          {
+            error: "Ongkos kirim berubah, silakan pilih ulang",
+            code: "SHIPPING_RATE_STALE",
+            latestCost: match.price,
+          },
+          { status: 409 }
+        );
+      }
+      shippingCost = match.price;
+
+      // Persist the server-verified ETD too: shipping_etd feeds the buyer-facing
+      // ETA (orders page, Biteship draft), so it must not come from the client.
+      const serverEtd =
+        match.duration ??
+        (match.shipment_duration_range
+          ? `${match.shipment_duration_range} ${match.shipment_duration_unit ?? ""}`.trim()
+          : null);
+      shippingEtd = serverEtd ?? data.shippingEtd ?? null;
+    }
+
     // Idempotency: if this key was already used, return the existing order (no double-deduction)
     if (data.idempotencyKey) {
       const { data: existingOrder } = await admin
@@ -182,7 +281,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const total = subtotal + data.shippingCost;
+    const total = subtotal + shippingCost;
 
     // Build verified items from pre-computed discounted prices
     const verifiedItems = itemsWithDiscounts.map(({ item, productName, variantDescription, discountedPrice, shipWeightGrams, sku }) => ({
@@ -232,8 +331,8 @@ export async function POST(request: NextRequest) {
           },
           shipping_courier: data.shippingCourier ?? null,
           shipping_service: data.shippingService ?? null,
-          shipping_cost: data.shippingCost,
-          shipping_etd: data.shippingEtd ?? null,
+          shipping_cost: shippingCost,
+          shipping_etd: shippingEtd,
           payment_status: "unpaid",
           subtotal,
           total,
@@ -365,7 +464,7 @@ export async function POST(request: NextRequest) {
         unitPrice: item.unitPrice,
       })),
       subtotal,
-      shippingCost: data.shippingCost,
+      shippingCost,
       total,
       shippingAddress: {
         address_line: data.shippingAddress.addressLine,

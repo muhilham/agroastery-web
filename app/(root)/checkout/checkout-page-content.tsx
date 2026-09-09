@@ -31,10 +31,11 @@ import { guestFormSchema, loggedInFormSchema, type TForm } from "./checkoutSchem
 import OrderSummary from "@/components/checkout/OrderSummary";
 import CheckoutForm from "@/components/checkout/CheckoutForm";
 import ShippingSelector from "@/components/checkout/ShippingSelector";
+import { buildQuoteItems, CHECKOUT_COURIERS_POSTAL, CHECKOUT_COURIERS_GEO } from "@/lib/checkout/shippingQuote";
 
 export default function CheckoutPageContent() {
   const router = useRouter();
-  const { cartItems, cartTotal, cartCount, clearCart, totalWeight, hydrated } = useCart();
+  const { cartItems, cartTotal, cartCount, clearCart, hydrated } = useCart();
   const [mounted, setMounted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const idempotencyKey = useRef<string>(crypto.randomUUID());
@@ -102,30 +103,35 @@ export default function CheckoutPageContent() {
   const watchedLat = useWatch({ control: form.control, name: "lat" });
   const watchedLng = useWatch({ control: form.control, name: "lng" });
 
-  const shippingWeight = useMemo(() => Math.max(totalWeight, 100), [totalWeight]);
+  // One quote line per cart line: totalized weight, qty collapsed to 1,
+  // dims matching createDraft (issue #138 — Biteship multiplies weight×qty
+  // per item, so merged weight + real quantity inflated rates up to 4x).
+  const quoteItems = useMemo(
+    () =>
+      buildQuoteItems(
+        cartItems.map((i) => ({
+          name: i.productName,
+          unitPrice: i.unitPrice,
+          weightGramsPerUnit: i.shipWeightGrams,
+          quantity: i.quantity,
+        }))
+      ),
+    [cartItems]
+  );
 
   const handleCalculateShippingByPostal = useCallback(async (postalCode: string) => {
     if (cartItems.length === 0) return;
     try {
-      // TODO: Pass cart items[] directly for accurate per-item weight pricing
-      // (useShippingCalculator now supports items[] via ShippingCalcParams.items)
       await calculateShipping({
         originPostalCode: process.env.NEXT_PUBLIC_ORIGIN_POSTAL_CODE || "12440",
         destinationPostalCode: postalCode,
-        couriers: "anteraja,jne,sicepat",
-        name: cartItems[0]?.productName ?? "Kopi Agroastery",
-        description: "Pesanan Agroastery",
-        price: cartTotal,
-        quantity: cartCount,
-        weightGrams: shippingWeight,
-        length: 20,
-        width: 20,
-        height: 20,
+        couriers: CHECKOUT_COURIERS_POSTAL,
+        items: quoteItems,
       });
     } catch {
       // error already surfaced via shippingError state
     }
-  }, [cartItems, cartTotal, cartCount, shippingWeight, calculateShipping]);
+  }, [cartItems, quoteItems, calculateShipping]);
 
   const handleCalculateShippingByGeo = useCallback(async (lat: number, lng: number) => {
     if (cartItems.length === 0) return;
@@ -134,20 +140,13 @@ export default function CheckoutPageContent() {
         originPostalCode: process.env.NEXT_PUBLIC_ORIGIN_POSTAL_CODE || "12440",
         destinationLatitude: lat,
         destinationLongitude: lng,
-        couriers: "anteraja,jne,sicepat,lalamove,grab,gojek",
-        name: cartItems[0]?.productName ?? "Kopi Agroastery",
-        description: "Pesanan Agroastery",
-        price: cartTotal,
-        quantity: cartCount,
-        weightGrams: shippingWeight,
-        length: 20,
-        width: 20,
-        height: 20,
+        couriers: CHECKOUT_COURIERS_GEO,
+        items: quoteItems,
       });
     } catch {
       // error already surfaced via shippingError state
     }
-  }, [cartItems, cartTotal, cartCount, shippingWeight, calculateShipping]);
+  }, [cartItems, quoteItems, calculateShipping]);
 
   const applyAddressToForm = useCallback((addr: Address) => {
     form.setValue("fullName", addr.recipient_name, { shouldValidate: true });
@@ -234,7 +233,7 @@ export default function CheckoutPageContent() {
       resetShipping();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedPostalCode, watchedLat, watchedLng, selectedAddressId]);
+  }, [debouncedPostalCode, watchedLat, watchedLng, selectedAddressId, quoteItems]);
 
   useEffect(() => {
     // Fire for "new" address mode (logged-in) OR guest mode (null + no user)
@@ -245,7 +244,7 @@ export default function CheckoutPageContent() {
       handleCalculateShippingByGeo(watchedLat as number, watchedLng as number);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watchedLat, watchedLng, selectedAddressId]);
+  }, [watchedLat, watchedLng, selectedAddressId, quoteItems]);
 
   const handleAddressSelect = useCallback((id: string) => {
     setSelectedAddressId(id);
@@ -331,6 +330,19 @@ export default function CheckoutPageContent() {
       const data = await res.json();
       if (!res.ok) {
         setSubmitError(data.error ?? "Gagal memproses pesanan");
+        // Rate drift/unavailable: refresh quotes so the buyer re-selects with
+        // current prices instead of retrying the stale one.
+        if (data.code === "SHIPPING_RATE_STALE" || data.code === "SHIPPING_RATE_UNAVAILABLE") {
+          setSelectedShipping(null);
+          const postal = form.getValues("postalCode");
+          const lat = form.getValues("lat");
+          const lng = form.getValues("lng");
+          if (typeof lat === "number" && typeof lng === "number") {
+            void handleCalculateShippingByGeo(lat, lng);
+          } else if (postal) {
+            void handleCalculateShippingByPostal(postal);
+          }
+        }
         setIsSubmitting(false);
         return;
       }

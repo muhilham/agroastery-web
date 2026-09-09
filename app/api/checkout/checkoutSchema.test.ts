@@ -10,9 +10,24 @@ describe("CheckoutSchema", () => {
       customerName: "Budi",
       customerPhone: "081234567890",
       shippingAddress: { recipientName: "Budi", phone: "081234567890", addressLine: "Jl. Contoh No. 1" },
+      shippingCourier: "jne",
+      shippingService: "reg",
     });
     expect(result.success).toBe(true);
     if (result.success) expect(result.data.fulfillmentMethod).toBe("delivery");
+  });
+
+  it("rejects a delivery payload without courier+service (issue #138 re-quote contract)", () => {
+    const result = CheckoutSchema.safeParse({
+      items: baseItems,
+      customerName: "Budi",
+      customerPhone: "081234567890",
+      shippingAddress: { recipientName: "Budi", phone: "081234567890", addressLine: "Jl. Contoh No. 1" },
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].path).toEqual(["shippingCourier"]);
+    }
   });
 
   it("accepts a pickup payload with no postalCode/latitude/longitude", () => {
