@@ -420,7 +420,7 @@ export default function CheckoutPageContent() {
         <OrderSummary cartItems={cartItems} cartCount={cartCount} />
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form id="checkout-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <CheckoutForm
               formControl={form.control}
               isGuest={isGuest}
@@ -453,14 +453,16 @@ export default function CheckoutPageContent() {
               />
             )}
 
-            {/* No-rates dead-end recovery: the pay button is disabled until a
-                courier is chosen, so explain why and offer the escape hatch
-                (map pin) right where the selector would be. */}
-            {fulfillmentMethod === "delivery" && !isLoadingShipping && shippingRates.length === 0 && (
+            {/* No-rates dead-end recovery: when a quote was attempted and
+                returned nothing/failed, explain why at the spot where the
+                selector would be and offer the map escape hatch. Gated on
+                shippingError so a pristine form (no address typed yet) does
+                not show a false alarm. */}
+            {fulfillmentMethod === "delivery" && !isLoadingShipping && shippingRates.length === 0 && shippingError && (
               <div className="bg-[#1a1a1a] rounded-xl border border-amber-500/30 p-4">
                 <h2 className="text-amber-400 font-semibold tracking-widest uppercase text-xs mb-2">Opsi Pengiriman</h2>
                 <p className="text-sm text-secondary">
-                  {shippingError ?? "Kurir belum tersedia untuk tujuan ini."}
+                  {shippingError}
                 </p>
                 {!showMap && (
                   <button
@@ -531,6 +533,9 @@ export default function CheckoutPageContent() {
           </div>
           <Button
             type="submit"
+            // The pay button lives in the fixed bottom bar, OUTSIDE the form
+            // element; the form="" association is what makes submit work.
+            form="checkout-form"
             className="w-full h-12"
             disabled={isSubmitting || cartCount === 0 || (fulfillmentMethod === "delivery" && (isLoadingShipping || !selectedShipping))}
           >
