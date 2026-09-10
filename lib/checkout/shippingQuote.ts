@@ -13,6 +13,36 @@ export const QUOTE_MIN_WEIGHT_GRAMS = 100;
 export const CHECKOUT_COURIERS_POSTAL = "anteraja,jne,sicepat";
 export const CHECKOUT_COURIERS_GEO = "anteraja,jne,sicepat,lalamove,grab,gojek";
 
+/** Roastery coordinates (Kemang) — used as origin geo fallback (#151). */
+export const DEFAULT_ORIGIN_LAT = -6.263450138760574;
+export const DEFAULT_ORIGIN_LNG = 106.81945752406575;
+
+/**
+ * Origin lat/lng for checkout quotes. Biteship only returns geo-dispatch
+ * couriers (gojek/grab/lalamove instant & sameday) when the rates request
+ * carries origin coordinates — postal alone hides them (verified live,
+ * issue #151). BOTH the client selector (/api/shipping/rates) and the
+ * server re-quote (/api/checkout) must send identical origin geo, or buyers
+ * get offered rates the server can never match. Override via
+ * ORIGIN_LATITUDE / ORIGIN_LONGITUDE; null when overrides are non-numeric.
+ */
+export function checkoutOriginGeo():
+  | { originLatitude: number; originLongitude: number }
+  | null {
+  // Blank env vars mean "not set" (Number("") === 0 would pin the origin to
+  // null island); a present-but-non-numeric override disables geo for BOTH
+  // quote paths so client and server can never disagree.
+  const raw = (v: string | undefined, fallback: number) => {
+    const t = (v ?? "").trim();
+    return t === "" ? String(fallback) : t;
+  };
+  const lat = Number(raw(process.env.ORIGIN_LATITUDE, DEFAULT_ORIGIN_LAT));
+  const lng = Number(raw(process.env.ORIGIN_LONGITUDE, DEFAULT_ORIGIN_LNG));
+  return Number.isFinite(lat) && Number.isFinite(lng)
+    ? { originLatitude: lat, originLongitude: lng }
+    : null;
+}
+
 export type QuoteLine = {
   name: string;
   /** Declared unit price (IDR). */

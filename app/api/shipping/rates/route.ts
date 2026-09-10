@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { checkoutOriginGeo } from "@/lib/checkout/shippingQuote";
 
 export const dynamic = 'force-dynamic';
 
@@ -54,12 +55,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Shipping service unavailable" }, { status: 503 });
     }
 
-    // Include origin coordinates as well (env-overridable), default to provided coordinates
-    const DEFAULT_ORIGIN_LAT = -6.263450138760574;
-    const DEFAULT_ORIGIN_LNG = 106.81945752406575;
-    const originLatitude = Number(process.env.ORIGIN_LATITUDE ?? DEFAULT_ORIGIN_LAT);
-    const originLongitude = Number(process.env.ORIGIN_LONGITUDE ?? DEFAULT_ORIGIN_LNG);
-    const includeOriginGeo = Number.isFinite(originLatitude) && Number.isFinite(originLongitude);
+    // Origin geo shared with the /api/checkout re-quote (#151): Biteship only
+    // prices geo-dispatch couriers when origin coords are present, so both
+    // quote paths must send the exact same values.
+    const originGeo = checkoutOriginGeo();
 
     const res = await fetch("https://api.biteship.com/v1/rates/couriers", {
       method: "POST",
@@ -69,7 +68,9 @@ export async function POST(req: Request) {
       },
       body: JSON.stringify({
         origin_postal_code: Number(body.origin_postal_code),
-        ...(includeOriginGeo ? { origin_latitude: originLatitude, origin_longitude: originLongitude } : {}),
+        ...(originGeo
+          ? { origin_latitude: originGeo.originLatitude, origin_longitude: originGeo.originLongitude }
+          : {}),
         couriers: body.couriers,
         items: body.items,
         ...(hasGeo
