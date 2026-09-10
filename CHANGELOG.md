@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.28.3](https://github.com/muhilham/agroastery-web/compare/v0.28.2...v0.28.3) (2026-09-10)
+
+
+### Bug Fixes
+
+* **api:** harden Biteship rates proxy + live quote-parity canary ([#155](https://github.com/muhilham/agroastery-web/issues/155)) ([af3b6b4](https://github.com/muhilham/agroastery-web/commit/af3b6b4ca11090ca86ecf762d6002f84e2dd4621))
+
 ## [0.28.2](https://github.com/muhilham/agroastery-web/compare/v0.28.1...v0.28.2) (2026-09-10)
 
 
