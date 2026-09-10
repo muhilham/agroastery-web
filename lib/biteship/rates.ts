@@ -9,6 +9,10 @@ const RATES_TIMEOUT_MS = 10_000;
 
 export type FetchRatesParams = {
   originPostalCode: number;
+  /** Origin geo (#151): required for Biteship to return geo-dispatch
+   * couriers (instant/sameday). Send whenever the client quote sends it. */
+  originLatitude?: number;
+  originLongitude?: number;
   destinationPostalCode?: number;
   destinationLatitude?: number;
   destinationLongitude?: number;
@@ -29,6 +33,18 @@ export async function fetchBiteshipRates(params: FetchRatesParams): Promise<Bite
     couriers: params.couriers,
     items: params.items,
   };
+  // #151: geo-dispatch couriers (instant/sameday) are only priced by Biteship
+  // when the request carries origin coordinates — the client selector sends
+  // them via /api/shipping/rates, so the server re-quote must send the same.
+  if (
+    typeof params.originLatitude === "number" &&
+    Number.isFinite(params.originLatitude) &&
+    typeof params.originLongitude === "number" &&
+    Number.isFinite(params.originLongitude)
+  ) {
+    body.origin_latitude = params.originLatitude;
+    body.origin_longitude = params.originLongitude;
+  }
   const hasGeo =
     typeof params.destinationLatitude === "number" &&
     Number.isFinite(params.destinationLatitude) &&

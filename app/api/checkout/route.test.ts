@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
+import { checkoutOriginGeo, CHECKOUT_COURIERS_GEO } from "@/lib/checkout/shippingQuote";
 
 const mockFrom = vi.fn();
 const mockRpc = vi.fn();
@@ -167,6 +168,32 @@ describe("POST /api/checkout", () => {
     // no order inserted, no payment session
     expect(mockDecrementStock).not.toHaveBeenCalled();
     expect(mockCreateQrisPaymentSession).not.toHaveBeenCalled();
+  });
+
+  // #151: Biteship hides geo-dispatch couriers (instant/sameday) without
+  // origin coords. The client selector sends them; the server re-quote must
+  // send the SAME values or every geo-courier selection 400s forever.
+  it("re-quote carries origin geo identical to the client selector (#151)", async () => {
+    mockHappyDb();
+    mockFetchBiteshipRates.mockResolvedValue([{ ...rateEntry(31000, "gojek", "instant"), duration: "2 hours" }]);
+
+    const geoBody = {
+      ...deliveryBody,
+      shippingAddress: { ...deliveryBody.shippingAddress, latitude: -6.2018, longitude: 106.8088 },
+      shippingCourier: "gojek",
+      shippingService: "instant",
+      shippingCost: 31000,
+    };
+    const res = await POST(checkoutReq(geoBody));
+    expect(res.status).toBe(200);
+
+    const args = mockFetchBiteshipRates.mock.calls[0][0];
+    const origin = checkoutOriginGeo();
+    expect(origin).not.toBeNull();
+    expect(args.originLatitude).toBe(origin!.originLatitude);
+    expect(args.originLongitude).toBe(origin!.originLongitude);
+    expect(args.destinationLatitude).toBe(-6.2018);
+    expect(args.couriers).toBe(CHECKOUT_COURIERS_GEO);
   });
 
   it("returns 400 SHIPPING_RATE_UNAVAILABLE when courier pair gone from quote", async () => {

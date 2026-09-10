@@ -5,7 +5,7 @@ import { sendOrderNotification } from "@/lib/telegram/notify";
 import { getActiveGlobalDiscounts, getActiveProductDiscounts } from "@/lib/supabase/queries/discounts";
 import { calculateDiscountedPrice } from "@/lib/utils/discount";
 import { isShippingCostInvalid } from "@/lib/checkout/validateShippingCost";
-import { buildQuoteItems, CHECKOUT_COURIERS_POSTAL, CHECKOUT_COURIERS_GEO } from "@/lib/checkout/shippingQuote";
+import { buildQuoteItems, CHECKOUT_COURIERS_POSTAL, CHECKOUT_COURIERS_GEO, checkoutOriginGeo } from "@/lib/checkout/shippingQuote";
 import { fetchBiteshipRates, findRateMatch } from "@/lib/biteship/rates";
 import { validateStockAvailability, decrementStock } from "@/lib/checkout/stockValidation";
 import { CheckoutSchema } from "./checkoutSchema";
@@ -216,6 +216,9 @@ export async function POST(request: NextRequest) {
       try {
         pricing = await fetchBiteshipRates({
           originPostalCode: originPostal,
+          // #151 parity with the client selector: Biteship hides geo-dispatch
+          // couriers (instant/sameday) unless origin coords are present.
+          ...(checkoutOriginGeo() ?? {}),
           ...(hasGeo
             ? {
                 destinationLatitude: data.shippingAddress.latitude as number,
