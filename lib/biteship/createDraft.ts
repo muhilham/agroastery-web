@@ -1,4 +1,5 @@
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
+import { checkoutOriginGeo } from '@/lib/checkout/shippingQuote';
 
 type BiteshipDraftResponse = {
   success: boolean;
@@ -56,10 +57,10 @@ export async function createBiteshipDraft(
     longitude?: number | null;
   };
 
-  const DEFAULT_ORIGIN_LAT = -6.263450138760574;
-  const DEFAULT_ORIGIN_LNG = 106.81945752406575;
-  const originLat = Number(process.env.ORIGIN_LATITUDE ?? DEFAULT_ORIGIN_LAT);
-  const originLng = Number(process.env.ORIGIN_LONGITUDE ?? DEFAULT_ORIGIN_LNG);
+  // Same shared origin resolver as both quote paths (#151): blank env is
+  // "not set" (falls back to the roastery), non-numeric disables geo —
+  // previously an empty ORIGIN_LATITUDE produced a Number("") === 0 origin.
+  const originGeo = checkoutOriginGeo();
   const originPostal =
     process.env.ORIGIN_POSTAL_CODE ?? process.env.NEXT_PUBLIC_ORIGIN_POSTAL_CODE;
 
@@ -68,8 +69,8 @@ export async function createBiteshipDraft(
     origin_contact_phone: process.env.ORIGIN_CONTACT_PHONE,
     origin_address: process.env.ORIGIN_ADDRESS,
     ...(originPostal ? { origin_postal_code: Number(originPostal) } : {}),
-    ...(Number.isFinite(originLat) && Number.isFinite(originLng)
-      ? { origin_coordinate: { latitude: originLat, longitude: originLng } }
+    ...(originGeo
+      ? { origin_coordinate: { latitude: originGeo.originLatitude, longitude: originGeo.originLongitude } }
       : {}),
 
     destination_contact_name: addr.recipient_name,
