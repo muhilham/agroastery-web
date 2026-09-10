@@ -19,9 +19,9 @@ export const LocationDisplay = ({ location, isLoading, error }: LocationDisplayP
 
   if (error && !location) {
     return (
-      <div className="mt-2 flex items-center text-sm text-red-600">
-        <AlertTriangle className="mr-2 h-4 w-4" />
-        <span>{error}</span>
+      <div className="mt-2 flex items-start text-sm text-red-400 bg-[#242424] border border-white/10 p-3 rounded-xl">
+        <AlertTriangle className="mr-2 h-4 w-4 mt-0.5 flex-shrink-0" />
+        <span className="leading-snug">{error}</span>
       </div>
     );
   }
@@ -40,8 +40,8 @@ export const LocationDisplay = ({ location, isLoading, error }: LocationDisplayP
     .join(', ');
 
   return (
-    <div className="mt-2 flex items-start text-sm text-gray-700 bg-gray-50 p-3 rounded-md border">
-      <MapPin className="mr-2 h-4 w-4 mt-0.5 flex-shrink-0 text-gray-500" />
+    <div className="mt-2 flex items-start text-sm text-[#CCC4A9] bg-[#242424] border border-white/10 p-3 rounded-xl">
+      <MapPin className="mr-2 h-4 w-4 mt-0.5 flex-shrink-0 text-primary/70" />
       <span className="leading-snug">{locationString}</span>
     </div>
   );

@@ -28,7 +28,7 @@ import { guestFormSchema, loggedInFormSchema, type TForm } from "./checkoutSchem
 import OrderSummary from "@/components/checkout/OrderSummary";
 import CheckoutForm from "@/components/checkout/CheckoutForm";
 import ShippingSelector from "@/components/checkout/ShippingSelector";
-import { useCheckoutShipping } from "@/lib/checkout/useCheckoutShipping";
+import { useCheckoutShipping, destinationFromAddress } from "@/lib/checkout/useCheckoutShipping";
 
 export default function CheckoutPageContent() {
   const router = useRouter();
@@ -39,6 +39,8 @@ export default function CheckoutPageContent() {
   const profilePrefilledRef = useRef(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [showMap, setShowMap] = useState(false);
+  // #148 S2: selected address/form yields no quotable destination
+  const [noDestination, setNoDestination] = useState(false);
   const { user, loading: authLoading } = useAuth();
   const { addresses, isLoading: isLoadingAddresses } = useAddresses();
   const [selectedAddressId, setSelectedAddressId] = useState<string | "new" | null>(null);
@@ -75,8 +77,9 @@ export default function CheckoutPageContent() {
 
   // "new address" (logged-in) or guest/unset mode => watch-driven quoting is
   // active (matches the pre-extraction `selectedAddressId !== "new" && !== null`
-  // early-returns exactly)
-  const quoteGateOpen = selectedAddressId === "new" || selectedAddressId === null;
+  // early-returns exactly). #148 S2: also while a saved address was revealed
+  // as unquotable and the buyer is filling postal/map in-place.
+  const quoteGateOpen = selectedAddressId === "new" || selectedAddressId === null || noDestination;
   const getQuoteFields = useCallback(() => {
     const [postalCode, lat, lng] = form.getValues(["postalCode", "lat", "lng"]);
     return { postalCode, lat, lng };
@@ -93,6 +96,7 @@ export default function CheckoutPageContent() {
     watchedLng,
     quoteForAddress,
     refreshAfterDrift,
+    requoteDestination,
   } = useCheckoutShipping({ control: form.control, cartItems, quoteGateOpen, getValues: getQuoteFields });
 
   const handleFulfillmentChange = useCallback(
@@ -101,9 +105,15 @@ export default function CheckoutPageContent() {
       if (method === "pickup") {
         setSelectedShipping(null);
         resetShipping();
+        return;
       }
+      // #148 S1: returning to delivery — the watch effects never re-fired
+      // (inputs unchanged), so rates would be gone with no explanation.
+      // Re-quote the current destination; flag when it can't be resolved.
+      const destinationKnown = requoteDestination();
+      setNoDestination(!destinationKnown);
     },
-    [form, setSelectedShipping, resetShipping]
+    [form, setSelectedShipping, resetShipping, requoteDestination]
   );
 
   const applyAddressToForm = useCallback((addr: Address) => {
@@ -141,7 +151,7 @@ export default function CheckoutPageContent() {
     const defaultAddr = addresses.find((a) => a.is_default === true) ?? addresses[0];
     setSelectedAddressId(defaultAddr.id);
     applyAddressToForm(defaultAddr);
-    quoteForAddress(defaultAddr);
+    setNoDestination(!quoteForAddress(defaultAddr));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, isLoadingAddresses, addresses]);
 
@@ -176,25 +186,26 @@ export default function CheckoutPageContent() {
   const handleAddressSelect = useCallback((id: string) => {
     setSelectedAddressId(id);
     if (id === "new") {
-      form.setValue("fullName", "");
-      form.setValue("phone", "");
+      // #148 S3: name/phone belong to Data Penerima (the recipient), not the
+      // address — marketplaces keep contact data when the address changes.
       form.setValue("address", "");
       form.setValue("postalCode", "");
       form.setValue("lat", undefined);
       form.setValue("lng", undefined);
       setShowMap(false);
       resetShipping();
+      setNoDestination(false);
       return;
     }
     const addr = addresses.find((a) => a.id === id);
     if (!addr) return;
     applyAddressToForm(addr);
     setShowMap(false);
-    if ((addr.latitude != null && addr.longitude != null) || addr.postal_code) {
-      quoteForAddress(addr);
-    } else {
-      resetShipping();
-    }
+    // #148 S2: quote via the shared resolver (geo → saved postal → code
+    // embedded in the address line). When nothing is quotable, surface the
+    // postal/map fields instead of an inert summary card.
+    const quoted = quoteForAddress(addr);
+    setNoDestination(!quoted);
   }, [addresses, applyAddressToForm, form, resetShipping, quoteForAddress]);
 
   const shippingCost = selectedShipping?.price ?? 0;
@@ -356,6 +367,8 @@ export default function CheckoutPageContent() {
               pickupAvailable={pickupAvailable}
               location={location}
               shippingError={shippingError}
+              addressInputOpen={noDestination}
+              hasPin={typeof watchedLat === "number" && typeof watchedLng === "number"}
               onMapChange={(lat, lng) => {
                 form.setValue("lat", lat);
                 form.setValue("lng", lng);
@@ -370,16 +383,15 @@ export default function CheckoutPageContent() {
               />
             )}
 
-            {/* No-rates dead-end recovery: when a quote was attempted and
-                returned nothing/failed, explain why at the spot where the
-                selector would be and offer the map escape hatch. Gated on
-                shippingError so a pristine form (no address typed yet) does
-                not show a false alarm. */}
-            {fulfillmentMethod === "delivery" && !isLoadingShipping && shippingRates.length === 0 && shippingError && (
+            {/* No-rates dead-end recovery: explain at the spot where the
+                selector would be and offer the map escape hatch. Shown for
+                failed/empty attempts AND when the chosen destination can't be
+                resolved at all (#148 S1/S2). */}
+            {fulfillmentMethod === "delivery" && !isLoadingShipping && shippingRates.length === 0 && !selectedShipping && (shippingError || noDestination) && (
               <div className="bg-[#1a1a1a] rounded-xl border border-amber-500/30 p-4">
                 <h2 className="text-amber-400 font-semibold tracking-widest uppercase text-xs mb-2">Opsi Pengiriman</h2>
                 <p className="text-sm text-secondary">
-                  {shippingError}
+                  {shippingError ?? "Tujuan pengiriman belum punya kode pos atau titik peta, jadi ongkir belum bisa dihitung."}
                 </p>
                 {!showMap && (
                   <button

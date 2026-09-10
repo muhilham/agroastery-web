@@ -1,7 +1,25 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { useForm } from "react-hook-form";
-import { useCheckoutShipping } from "./useCheckoutShipping";
+import { useCheckoutShipping, destinationFromAddress } from "./useCheckoutShipping";
+
+describe("destinationFromAddress (#148 S2)", () => {
+  it("prefers geo over postal", () => {
+    expect(
+      destinationFromAddress({ latitude: -6.2, longitude: 106.8, postal_code: "40115", address_line: "x" })
+    ).toEqual({ lat: -6.2, lng: 106.8 });
+  });
+  it("falls back to the code embedded in address_line when postal_code is null", () => {
+    expect(
+      destinationFromAddress({ latitude: null, longitude: null, postal_code: null, address_line: "Jl. Kemang, Jakarta Selatan 12790, Indonesia" })
+    ).toEqual({ postalCode: "12790" });
+  });
+  it("returns null when nothing quotable exists", () => {
+    expect(
+      destinationFromAddress({ latitude: null, longitude: null, postal_code: null, address_line: "Jl. Tanpa Kode" })
+    ).toBeNull();
+  });
+});
 
 import { CHECKOUT_COURIERS_POSTAL, CHECKOUT_COURIERS_GEO } from "./shippingQuote";
 import type { TForm } from "@/app/(root)/checkout/checkoutSchemas";

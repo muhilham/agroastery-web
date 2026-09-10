@@ -15,6 +15,7 @@ import { LocationDisplay } from "@/components/location-display";
 import dynamic from "next/dynamic";
 import type { TForm } from "@/app/(root)/checkout/checkoutSchemas";
 import type { Address } from "@/lib/hooks/useAddresses";
+import { destinationFromAddress } from "@/lib/checkout/useCheckoutShipping";
 import type { VerifiedLocation } from "@/lib/types/shipping";
 
 const MapPicker = dynamic(() => import("@/components/map/MapPicker"), {
@@ -45,6 +46,12 @@ interface CheckoutFormProps {
   location: VerifiedLocation | null;
   shippingError: string | null;
   onMapChange: (lat: number, lng: number) => void;
+  /** #148 S2: reveal postal/map inputs even in saved-address mode when the
+   * selected address yields no quotable destination (fields are pre-filled
+   * from the saved address). */
+  addressInputOpen?: boolean;
+  /** #148 S4: a map pin is set — rates are computed from it, not the postal. */
+  hasPin?: boolean;
 }
 
 export default function CheckoutForm({
@@ -66,6 +73,8 @@ export default function CheckoutForm({
   location,
   shippingError,
   onMapChange,
+  addressInputOpen = false,
+  hasPin = false,
 }: CheckoutFormProps) {
   return (
     <div className="space-y-4">
@@ -143,6 +152,14 @@ export default function CheckoutForm({
                     )}
                     <p className="text-xs font-medium text-[#CCC4A9] line-clamp-1">{addr.recipient_name}</p>
                     <p className="text-[11px] text-[#CCC4A9]/50 line-clamp-2 mt-0.5 leading-tight">{addr.address_line}</p>
+                    {/* #148 nit: show what the courier quote will key off */}
+                    <p className="text-[10px] text-[#CCC4A9]/35 mt-1">
+                      {addr.latitude != null && addr.longitude != null
+                        ? "Peta ✓"
+                        : destinationFromAddress(addr)
+                          ? "Kode pos"
+                          : "Perlu kode pos/peta"}
+                    </p>
                   </button>
                 ))}
                 <button
@@ -169,7 +186,7 @@ export default function CheckoutForm({
             </div>
           )}
 
-          {(selectedAddressId === "new" || (selectedAddressId === null && !user)) && (
+          {(selectedAddressId === "new" || (selectedAddressId === null && !user) || addressInputOpen) && (
             <>
               <FormField
                 control={formControl}
@@ -214,6 +231,14 @@ export default function CheckoutForm({
                   </FormItem>
                 )}
               />
+
+              {/* #148 S4: make the pin override visible while it is active —
+                  rates are computed from the pin, not from this field. */}
+              {hasPin && (
+                <p className="text-xs text-[#CCC4A9]/50 -mt-2">
+                  Ongkir dihitung dari titik peta, bukan dari kode pos ini.
+                </p>
+              )}
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-white">
