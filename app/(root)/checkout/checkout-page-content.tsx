@@ -1,8 +1,7 @@
 "use client";
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import Navigation from "@/components/navigation";
 import { Footer } from "@/components/ui/footer";
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useWatch } from "react-hook-form";
 import { numberToIdr } from "@/lib/numberToIdr";
@@ -17,8 +16,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { LoaderCircle, ShoppingBag } from "lucide-react";
-import { useDebounce } from "@/lib/hooks/useDebounce";
-import { useShippingCalculator } from "@/lib/hooks/useShippingCalculator";
 import { useCart } from "@/lib/hooks/useCart";
 import { trackBeginCheckout } from "@/lib/analytics/gtag";
 import Link from "next/link";
@@ -31,7 +28,7 @@ import { guestFormSchema, loggedInFormSchema, type TForm } from "./checkoutSchem
 import OrderSummary from "@/components/checkout/OrderSummary";
 import CheckoutForm from "@/components/checkout/CheckoutForm";
 import ShippingSelector from "@/components/checkout/ShippingSelector";
-import { buildQuoteItems, CHECKOUT_COURIERS_POSTAL, CHECKOUT_COURIERS_GEO } from "@/lib/checkout/shippingQuote";
+import { useCheckoutShipping } from "@/lib/checkout/useCheckoutShipping";
 
 export default function CheckoutPageContent() {
   const router = useRouter();
@@ -71,6 +68,19 @@ export default function CheckoutPageContent() {
     mode: "onChange",
   });
 
+  const fulfillmentMethod = useWatch({ control: form.control, name: "fulfillmentMethod" });
+  const pickupAvailable = Boolean(
+    process.env.NEXT_PUBLIC_PICKUP_ADDRESS && process.env.NEXT_PUBLIC_PICKUP_HOURS
+  );
+
+  // "new address" (logged-in) or guest/unset mode => watch-driven quoting is
+  // active (matches the pre-extraction `selectedAddressId !== "new" && !== null`
+  // early-returns exactly)
+  const quoteGateOpen = selectedAddressId === "new" || selectedAddressId === null;
+  const getQuoteFields = useCallback(() => {
+    const [postalCode, lat, lng] = form.getValues(["postalCode", "lat", "lng"]);
+    return { postalCode, lat, lng };
+  }, [form]);
   const {
     shippingRates,
     location,
@@ -78,14 +88,12 @@ export default function CheckoutPageContent() {
     shippingError,
     selectedShipping,
     setSelectedShipping,
-    calculateShipping,
     resetShipping,
-  } = useShippingCalculator();
-
-  const fulfillmentMethod = useWatch({ control: form.control, name: "fulfillmentMethod" });
-  const pickupAvailable = Boolean(
-    process.env.NEXT_PUBLIC_PICKUP_ADDRESS && process.env.NEXT_PUBLIC_PICKUP_HOURS
-  );
+    watchedLat,
+    watchedLng,
+    quoteForAddress,
+    refreshAfterDrift,
+  } = useCheckoutShipping({ control: form.control, cartItems, quoteGateOpen, getValues: getQuoteFields });
 
   const handleFulfillmentChange = useCallback(
     (method: "delivery" | "pickup") => {
@@ -97,56 +105,6 @@ export default function CheckoutPageContent() {
     },
     [form, setSelectedShipping, resetShipping]
   );
-
-  const watchedPostalCode = useWatch({ control: form.control, name: "postalCode" });
-  const debouncedPostalCode = useDebounce(watchedPostalCode, 800);
-  const watchedLat = useWatch({ control: form.control, name: "lat" });
-  const watchedLng = useWatch({ control: form.control, name: "lng" });
-
-  // One quote line per cart line: totalized weight, qty collapsed to 1,
-  // dims matching createDraft (issue #138 — Biteship multiplies weight×qty
-  // per item, so merged weight + real quantity inflated rates up to 4x).
-  const quoteItems = useMemo(
-    () =>
-      buildQuoteItems(
-        cartItems.map((i) => ({
-          name: i.productName,
-          unitPrice: i.unitPrice,
-          weightGramsPerUnit: i.shipWeightGrams,
-          quantity: i.quantity,
-        }))
-      ),
-    [cartItems]
-  );
-
-  const handleCalculateShippingByPostal = useCallback(async (postalCode: string) => {
-    if (cartItems.length === 0) return;
-    try {
-      await calculateShipping({
-        originPostalCode: process.env.NEXT_PUBLIC_ORIGIN_POSTAL_CODE || "12440",
-        destinationPostalCode: postalCode,
-        couriers: CHECKOUT_COURIERS_POSTAL,
-        items: quoteItems,
-      });
-    } catch {
-      // error already surfaced via shippingError state
-    }
-  }, [cartItems, quoteItems, calculateShipping]);
-
-  const handleCalculateShippingByGeo = useCallback(async (lat: number, lng: number) => {
-    if (cartItems.length === 0) return;
-    try {
-      await calculateShipping({
-        originPostalCode: process.env.NEXT_PUBLIC_ORIGIN_POSTAL_CODE || "12440",
-        destinationLatitude: lat,
-        destinationLongitude: lng,
-        couriers: CHECKOUT_COURIERS_GEO,
-        items: quoteItems,
-      });
-    } catch {
-      // error already surfaced via shippingError state
-    }
-  }, [cartItems, quoteItems, calculateShipping]);
 
   const applyAddressToForm = useCallback((addr: Address) => {
     form.setValue("fullName", addr.recipient_name, { shouldValidate: true });
@@ -183,11 +141,7 @@ export default function CheckoutPageContent() {
     const defaultAddr = addresses.find((a) => a.is_default === true) ?? addresses[0];
     setSelectedAddressId(defaultAddr.id);
     applyAddressToForm(defaultAddr);
-    if (defaultAddr.latitude != null && defaultAddr.longitude != null) {
-      handleCalculateShippingByGeo(defaultAddr.latitude, defaultAddr.longitude);
-    } else if (defaultAddr.postal_code) {
-      handleCalculateShippingByPostal(defaultAddr.postal_code);
-    }
+    quoteForAddress(defaultAddr);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, isLoadingAddresses, addresses]);
 
@@ -219,33 +173,6 @@ export default function CheckoutPageContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, isLoadingAddresses, addresses]);
 
-  useEffect(() => {
-    // Fire for "new" address mode (logged-in) OR guest mode (null + no user)
-    if (selectedAddressId !== "new" && selectedAddressId !== null) return;
-    const latValid = typeof watchedLat === "number" && Number.isFinite(watchedLat);
-    const lngValid = typeof watchedLng === "number" && Number.isFinite(watchedLng);
-    if (latValid && lngValid) return;
-
-    const postalValid = z.string().length(5).safeParse(debouncedPostalCode);
-    if (postalValid.success) {
-      handleCalculateShippingByPostal(postalValid.data);
-    } else {
-      resetShipping();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedPostalCode, watchedLat, watchedLng, selectedAddressId, quoteItems]);
-
-  useEffect(() => {
-    // Fire for "new" address mode (logged-in) OR guest mode (null + no user)
-    if (selectedAddressId !== "new" && selectedAddressId !== null) return;
-    const latValid = typeof watchedLat === "number" && Number.isFinite(watchedLat);
-    const lngValid = typeof watchedLng === "number" && Number.isFinite(watchedLng);
-    if (latValid && lngValid) {
-      handleCalculateShippingByGeo(watchedLat as number, watchedLng as number);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [watchedLat, watchedLng, selectedAddressId, quoteItems]);
-
   const handleAddressSelect = useCallback((id: string) => {
     setSelectedAddressId(id);
     if (id === "new") {
@@ -263,14 +190,12 @@ export default function CheckoutPageContent() {
     if (!addr) return;
     applyAddressToForm(addr);
     setShowMap(false);
-    if (addr.latitude != null && addr.longitude != null) {
-      handleCalculateShippingByGeo(addr.latitude, addr.longitude);
-    } else if (addr.postal_code) {
-      handleCalculateShippingByPostal(addr.postal_code);
+    if ((addr.latitude != null && addr.longitude != null) || addr.postal_code) {
+      quoteForAddress(addr);
     } else {
       resetShipping();
     }
-  }, [addresses, applyAddressToForm, form, resetShipping, handleCalculateShippingByGeo, handleCalculateShippingByPostal]);
+  }, [addresses, applyAddressToForm, form, resetShipping, quoteForAddress]);
 
   const shippingCost = selectedShipping?.price ?? 0;
   const total = cartTotal + shippingCost;
@@ -330,15 +255,7 @@ export default function CheckoutPageContent() {
         // Rate drift/unavailable: refresh quotes so the buyer re-selects with
         // current prices instead of retrying the stale one.
         if (data.code === "SHIPPING_RATE_STALE" || data.code === "SHIPPING_RATE_UNAVAILABLE") {
-          setSelectedShipping(null);
-          const postal = form.getValues("postalCode");
-          const lat = form.getValues("lat");
-          const lng = form.getValues("lng");
-          if (typeof lat === "number" && typeof lng === "number") {
-            void handleCalculateShippingByGeo(lat, lng);
-          } else if (postal) {
-            void handleCalculateShippingByPostal(postal);
-          }
+          refreshAfterDrift();
         }
         setIsSubmitting(false);
         return;
