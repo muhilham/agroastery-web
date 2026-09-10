@@ -337,6 +337,20 @@ export default function CheckoutPageContent() {
     );
   }
 
+  // #157 P1: the pay button sits in a fixed bottom bar — when RHF rejects a
+  // submit, inline errors render far above it with no signal. Scroll to and
+  // focus the first invalid field so the failure is impossible to miss.
+  // Plain function: this sits after the component's conditional returns, so
+  // a hook here would break rules-of-hooks.
+  const focusFirstInvalid = () => {
+    const el = document.querySelector<HTMLElement>(
+      '#checkout-form [aria-invalid="true"]'
+    );
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.focus({ preventScroll: true });
+  };
+
   return (
     <Fragment>
       <Navigation />
@@ -348,7 +362,7 @@ export default function CheckoutPageContent() {
         <OrderSummary cartItems={cartItems} cartCount={cartCount} />
 
         <Form {...form}>
-          <form id="checkout-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form id="checkout-form" onSubmit={form.handleSubmit(onSubmit, focusFirstInvalid)} className="space-y-4">
             <CheckoutForm
               formControl={form.control}
               isGuest={isGuest}
@@ -380,6 +394,7 @@ export default function CheckoutPageContent() {
                 shippingRates={shippingRates}
                 selectedShipping={selectedShipping}
                 onSelect={setSelectedShipping}
+                isLoading={isLoadingShipping}
               />
             )}
 

@@ -145,17 +145,17 @@ describe("#148 S1 — delivery→pickup→delivery round-trip keeps quoting", ()
 
     // default address auto-selects and quotes
     await settle();
-    expect(await screen.findByRole("combobox")).toBeInTheDocument();
+    expect(await screen.findByRole("radiogroup", { name: /opsi pengiriman/i })).toBeInTheDocument();
     const callsAfterQuote = mockFetch.mock.calls.length;
 
-    fireEvent.click(screen.getByRole("button", { name: /ambil sendiri/i }));
+    fireEvent.click(screen.getByRole("radio", { name: /ambil sendiri/i }));
     await settle(100);
-    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+    expect(screen.queryByRole("radiogroup", { name: /opsi pengiriman/i })).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: /^kirim$/i }));
+    fireEvent.click(screen.getByRole("radio", { name: /^kirim$/i }));
     await settle();
     // rates came back WITHOUT re-tapping the address card
-    expect(screen.getByRole("combobox")).toBeInTheDocument();
+    expect(screen.getByRole("radiogroup", { name: /opsi pengiriman/i })).toBeInTheDocument();
     expect(mockFetch.mock.calls.length).toBeGreaterThan(callsAfterQuote);
   });
 });
@@ -177,14 +177,14 @@ describe("#148 S2 — saved address with no usable destination is recoverable", 
       fireEvent.change(postal, { target: { value: "40115" } });
       await new Promise((r) => setTimeout(r, 1100));
     });
-    expect(await screen.findByRole("combobox")).toBeInTheDocument();
+    expect(await screen.findByRole("radiogroup", { name: /opsi pengiriman/i })).toBeInTheDocument();
   });
 
   it("quotes directly from a postal code embedded in the address line", async () => {
     setup([{ ...ADDRESS_NO_DEST, address_line: "Jl. Kemang, Jakarta 12790" }]);
     render(<CheckoutPageContent />);
     await settle();
-    expect(await screen.findByRole("combobox")).toBeInTheDocument();
+    expect(await screen.findByRole("radiogroup", { name: /opsi pengiriman/i })).toBeInTheDocument();
     expect(screen.queryByText(/belum punya kode pos/i)).not.toBeInTheDocument();
   });
 });

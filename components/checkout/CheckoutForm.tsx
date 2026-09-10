@@ -81,31 +81,45 @@ export default function CheckoutForm({
       {pickupAvailable && (
         <div className="bg-[#1a1a1a] rounded-xl border border-white/10 p-4 space-y-3">
           <h2 className="text-primary font-semibold tracking-widest uppercase text-xs">
-            Metode Pengambilan
+            Metode Pengiriman
           </h2>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => onFulfillmentChange("delivery")}
-              className={`rounded-lg border p-3 text-sm font-medium transition-colors ${
+          {/* #157: real radios in a radiogroup (native arrow-key nav + SR
+              state) replacing two aria-less buttons; 48px min-height. */}
+          <div role="radiogroup" aria-label="Metode pengiriman" className="grid grid-cols-2 gap-2">
+            <label
+              className={`flex items-center justify-center gap-2 rounded-lg border p-3 min-h-[48px] text-sm font-medium transition-colors cursor-pointer ${
                 fulfillmentMethod === "delivery"
                   ? "border-primary/40 bg-primary/10 text-primary"
                   : "border-white/10 text-secondary"
               }`}
             >
+              <input
+                type="radio"
+                name="fulfillmentMethod"
+                value="delivery"
+                checked={fulfillmentMethod === "delivery"}
+                onChange={() => onFulfillmentChange("delivery")}
+                className="sr-only"
+              />
               Kirim
-            </button>
-            <button
-              type="button"
-              onClick={() => onFulfillmentChange("pickup")}
-              className={`rounded-lg border p-3 text-sm font-medium transition-colors ${
+            </label>
+            <label
+              className={`flex items-center justify-center gap-2 rounded-lg border p-3 min-h-[48px] text-sm font-medium transition-colors cursor-pointer ${
                 fulfillmentMethod === "pickup"
                   ? "border-primary/40 bg-primary/10 text-primary"
                   : "border-white/10 text-secondary"
               }`}
             >
+              <input
+                type="radio"
+                name="fulfillmentMethod"
+                value="pickup"
+                checked={fulfillmentMethod === "pickup"}
+                onChange={() => onFulfillmentChange("pickup")}
+                className="sr-only"
+              />
               Ambil Sendiri
-            </button>
+            </label>
           </div>
           {fulfillmentMethod === "pickup" && (
             <div className="rounded-xl bg-[#242424] border border-white/10 px-4 py-3 space-y-1">
@@ -197,6 +211,7 @@ export default function CheckoutForm({
                     <FormControl>
                       <Textarea
                         placeholder="Jl. Kemang Barat No. 7, RT.9/RW.1, Bangka, Mampang Prapatan"
+                        autoComplete="street-address"
                         className="resize-none"
                         {...field}
                       />
@@ -211,14 +226,31 @@ export default function CheckoutForm({
                 name="postalCode"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Kode Pos</FormLabel>
+                    {/* #157: our FormLabel renders htmlFor on the FormItem
+                        wrapper div (the FormControl child here is a div, not
+                        a control), which left this label programmatically
+                        dead. A plain <label htmlFor> targeting the input is
+                        the correct association. Also: non-digit keystrokes
+                        are stripped on input (Postel's law) + autofill. */}
+                    <label
+                      htmlFor={`${field.name}-postal-input`}
+                      className="block text-sm font-medium text-white"
+                    >
+                      Kode Pos
+                    </label>
                     <FormControl>
                       <div className="relative">
                         <Input
+                          id={`${field.name}-postal-input`}
                           placeholder="12190"
                           maxLength={5}
                           inputMode="numeric"
+                          autoComplete="postal-code"
                           {...field}
+                          value={field.value ?? ""}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                            field.onChange(e.target.value.replace(/\D/g, ""))
+                          }
                         />
                         {isLoadingShipping && (
                           <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -331,7 +363,7 @@ export default function CheckoutForm({
             <FormItem>
               <FormLabel>Nama Lengkap</FormLabel>
               <FormControl>
-                <Input placeholder="Nama lengkap penerima" {...field} />
+                <Input placeholder="Nama lengkap penerima" autoComplete="name" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -345,7 +377,7 @@ export default function CheckoutForm({
             <FormItem>
               <FormLabel>Nomor HP</FormLabel>
               <FormControl>
-                <Input placeholder="08xxxxxxxxxx" inputMode="tel" {...field} />
+                <Input placeholder="08xxxxxxxxxx" inputMode="tel" autoComplete="tel" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -360,7 +392,7 @@ export default function CheckoutForm({
               <FormItem>
                 <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input placeholder="budi@gmail.com" type="email" {...field} value={field.value ?? ""} />
+                  <Input placeholder="budi@gmail.com" type="email" autoComplete="email" {...field} value={field.value ?? ""} />
                 </FormControl>
                 <p className="text-xs text-secondary mt-1">
                   Konfirmasi pesanan akan dikirim ke email ini

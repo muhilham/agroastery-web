@@ -83,7 +83,7 @@ describe("checkout page — no-rates recovery panel (#143/#142)", () => {
 
     // dead-end is explained instead of silently hiding the selector
     expect(await screen.findByText(/kurir/i)).toBeInTheDocument();
-    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+    expect(screen.queryByRole("radiogroup", { name: /opsi pengiriman/i })).not.toBeInTheDocument();
     // pay button remains disabled, and the panel explains why
     expect(screen.getByRole("button", { name: /bayar sekarang/i })).toBeDisabled();
 
@@ -110,7 +110,7 @@ describe("checkout page — no-rates recovery panel (#143/#142)", () => {
 
     await typePostal("40115");
 
-    await waitFor(() => expect(screen.getByRole("combobox")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole("radiogroup", { name: /opsi pengiriman/i })).toBeInTheDocument());
     expect(screen.queryByText(/kurir/i)).not.toBeInTheDocument();
   });
 

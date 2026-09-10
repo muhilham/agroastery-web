@@ -91,9 +91,9 @@ describe("CheckoutForm", () => {
   it("renders fulfillment method selection (pickup vs delivery)", () => {
     render(<Wrapper />);
 
-    expect(screen.getByRole("button", { name: "Kirim" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /^kirim$/i })).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Ambil Sendiri" })
+      screen.getByRole("radio", { name: /ambil sendiri/i })
     ).toBeInTheDocument();
   });
 
