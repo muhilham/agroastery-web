@@ -9,8 +9,14 @@ import { render, screen, fireEvent, waitFor, act } from "@testing-library/react"
 import type { CartItem } from "@/lib/stores/cart";
 
 vi.mock("@/components/map/MapPicker", () => ({
-  default: ({ readOnly }: { readOnly?: boolean }) => (
-    <div data-testid={readOnly ? "map-readonly" : "map-picker"} />
+  default: ({ readOnly, onChange }: { readOnly?: boolean; onChange?: (c: { lat: number; lng: number }) => void }) => (
+    <div data-testid={readOnly ? "map-readonly" : "map-picker"}>
+      {!readOnly && onChange && (
+        <button type="button" data-testid="map-pin" onClick={() => onChange({ lat: -6.2, lng: 106.8 })}>
+          pin
+        </button>
+      )}
+    </div>
   ),
 }));
 vi.mock("@/components/location-display", () => ({
@@ -107,6 +113,17 @@ async function settle(ms = 1200) {
   });
 }
 
+// guest mode: postal + map fields are open by default; set a pin via the
+// mocked picker's fire-onChange button
+async function openMapAndDropPin() {
+  fireEvent.click(await screen.findByRole("button", { name: /pilih lokasi di peta/i }));
+  const pin = await screen.findByTestId("map-pin");
+  await act(async () => {
+    fireEvent.click(pin);
+    await new Promise((r) => setTimeout(r, 1100)); // geo quote fires un-debounced on watch change
+  });
+}
+
 beforeEach(() => {
   mockFetch.mockReset();
   mockFetch.mockResolvedValue(rateBody());
@@ -169,6 +186,19 @@ describe("#148 S2 — saved address with no usable destination is recoverable", 
     await settle();
     expect(await screen.findByRole("combobox")).toBeInTheDocument();
     expect(screen.queryByText(/belum punya kode pos/i)).not.toBeInTheDocument();
+  });
+});
+
+describe("#148 S4 — pin override is visible next to the postal field", () => {
+  it("shows the 'computed from map pin' note while a pin drives the quote", async () => {
+    mockUseAuth.mockReturnValue({ user: null, loading: false }); // guest: fields open
+    mockUseAddresses.mockReturnValue({ addresses: [], isLoading: false });
+    render(<CheckoutPageContent />);
+
+    await openMapAndDropPin();
+    expect(
+      await screen.findByText(/ongkir dihitung dari titik peta/i)
+    ).toBeInTheDocument();
   });
 });
 

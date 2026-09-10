@@ -391,7 +391,7 @@ export default function CheckoutPageContent() {
               <div className="bg-[#1a1a1a] rounded-xl border border-amber-500/30 p-4">
                 <h2 className="text-amber-400 font-semibold tracking-widest uppercase text-xs mb-2">Opsi Pengiriman</h2>
                 <p className="text-sm text-secondary">
-                  {shippingError ?? "Alamat terpilih belum punya kode pos atau titik peta, jadi ongkir belum bisa dihitung."}
+                  {shippingError ?? "Tujuan pengiriman belum punya kode pos atau titik peta, jadi ongkir belum bisa dihitung."}
                 </p>
                 {!showMap && (
                   <button
