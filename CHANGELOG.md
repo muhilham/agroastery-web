@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.28.1](https://github.com/muhilham/agroastery-web/compare/v0.28.0...v0.28.1) (2026-09-10)
+
+
+### Bug Fixes
+
+* **checkout:** shipping-address dead-ends and state loss ([#149](https://github.com/muhilham/agroastery-web/issues/149)) ([aaa7be1](https://github.com/muhilham/agroastery-web/commit/aaa7be145b9316c6378e4028bc1bec62db3655bb))
+
 ## [0.28.0](https://github.com/muhilham/agroastery-web/compare/v0.27.3...v0.28.0) (2026-09-10)
 
 
