@@ -18,6 +18,20 @@ export const DEFAULT_ORIGIN_LAT = -6.263450138760574;
 export const DEFAULT_ORIGIN_LNG = 106.81945752406575;
 
 /**
+ * Single source for the roastery origin postal (issue #154 D). Server paths
+ * may set ORIGIN_POSTAL_CODE; the browser only has NEXT_PUBLIC_* (inlined at
+ * build), and the public rates proxy whitelists against this same value.
+ * Blank-safe (#139 trap); falls back to the Jakarta roastery postal.
+ */
+export function checkoutOriginPostal(): number {
+  const raw =
+    process.env.ORIGIN_POSTAL_CODE ?? process.env.NEXT_PUBLIC_ORIGIN_POSTAL_CODE;
+  const t = (raw ?? "").trim();
+  const n = Number(t === "" ? 12440 : t);
+  return Number.isFinite(n) ? n : 12440;
+}
+
+/**
  * Origin lat/lng for checkout quotes. Biteship only returns geo-dispatch
  * couriers (gojek/grab/lalamove instant & sameday) when the rates request
  * carries origin coordinates — postal alone hides them (verified live,
