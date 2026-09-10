@@ -18,9 +18,11 @@ import { useCart } from "@/lib/hooks/useCart";
 
 type Props = {
   product: SupabaseProduct;
+  /** Pre-selected variant from ?variant= deep link (Instagram product tags). */
+  initialSelection?: Record<string, string> | null;
 };
 
-const SupabaseProductDetail = ({ product }: Props) => {
+const SupabaseProductDetail = ({ product, initialSelection }: Props) => {
   const router = useRouter();
   const OPTIONS: EmblaOptionsType = {};
   const { addToCart } = useCart();
@@ -33,6 +35,7 @@ const SupabaseProductDetail = ({ product }: Props) => {
 
   // State: selected option value per option axis { [optionId]: optionValueId }
   const [selectedValues, setSelectedValues] = useState<Record<string, string>>(() => {
+    if (initialSelection) return initialSelection;
     const initial: Record<string, string> = {};
     for (const opt of sortedOptions) {
       const sortedValues = [...opt.product_option_values].sort(
@@ -60,6 +63,11 @@ const SupabaseProductDetail = ({ product }: Props) => {
   // Reset on product change
   useEffect(() => {
     window.scrollTo(0, 0);
+    if (initialSelection) {
+      setSelectedValues(initialSelection);
+      setQty(1);
+      return;
+    }
     const initial: Record<string, string> = {};
     for (const opt of sortedOptions) {
       const sortedValues = [...opt.product_option_values].sort(

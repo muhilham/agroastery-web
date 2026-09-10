@@ -7,11 +7,13 @@ import { numberToIdr } from "@/lib/numberToIdr";
 import type { SupabaseProduct } from "@/types/product";
 import SupabaseProductDetail from "@/components/section/product-detail/SupabaseProductDetail";
 import { BreadcrumbJsonLd } from "@/components/BreadcrumbJsonLd";
+import { buildMetaProductTags, resolveInitialSelection, resolveShownVariant } from "@/lib/shopping/metaProduct";
 
 const getCachedProductBySlug = cache(getProductBySlug);
 
 type PageProps = {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ variant?: string }>;
 };
 
 const DEFAULT_OG_IMAGE = "https://github.com/user-attachments/assets/79b22a6a-f341-40f6-ac74-27c6af123b7e";
@@ -149,14 +151,18 @@ function productJsonLd(product: SupabaseProduct, siteUrl: string): Record<string
   const highPrice = activeVariants.length > 0
     ? Math.max(...activeVariants.map((v) => v.price))
     : minPrice;
+  // Meta catalog matching uses gtin/mpn/sku; our SKUs are the merchant item ids.
+  const skus = activeVariants.map((v) => v.sku).filter((s): s is string => Boolean(s));
 
   return {
     "@context": "https://schema.org",
     "@type": "Product",
     name: product.name,
     description: description || product.short_description || product.name,
-    image: fullImageUrl,
+    image: [fullImageUrl],
     url: `${siteUrl}/product/${product.slug}`,
+    sku: skus.length === 1 ? skus[0] : (product.id ?? undefined),
+    mpn: skus[0] ?? product.id,
     offers: {
       "@type": "AggregateOffer",
       priceCurrency: "IDR",
@@ -164,6 +170,7 @@ function productJsonLd(product: SupabaseProduct, siteUrl: string): Record<string
       highPrice,
       offerCount: activeVariants.length,
       availability: inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      url: `${siteUrl}/product/${product.slug}`,
     },
     brand: {
       "@type": "Brand",
@@ -176,8 +183,9 @@ function escapeJsonLd(str: string): string {
   return str.replace(/<\/script>/gi, "<\\/script>").replace(/<!--/g, "<\\!--");
 }
 
-export default async function Page({ params }: PageProps) {
+export default async function Page({ params, searchParams }: PageProps) {
   const { slug } = await params;
+  const { variant } = await searchParams;
   const product = await getCachedProductBySlug(slug);
 
   if (!product) {
@@ -190,8 +198,27 @@ export default async function Page({ params }: PageProps) {
   const faqLd = faqJsonLd(product, siteUrl);
   const faqStr = escapeJsonLd(JSON.stringify(faqLd));
 
+  // Open Graph product namespace: what MetaExternalAgent scrapes to match a
+  // catalog item against this page. Tag the variant the shopper actually
+  // lands on (?variant= deep link, else the form's default selection) so
+  // price/SKU/stock the crawler sees matches the rendered page.
+  const tagVariant = resolveShownVariant(product, variant);
+  const activeVariants = product.product_variants.filter((v) => v.is_active);
+  const metaTags = buildMetaProductTags({
+    productId: product.id,
+    sku: tagVariant?.sku ?? null,
+    price: tagVariant
+      ? (tagVariant.discounted_price ?? tagVariant.price)
+      : getMinPrice(activeVariants),
+    inStock: Boolean(tagVariant && tagVariant.stock_quantity > 0),
+  });
+
   return (
     <>
+      {/* React hoists these into <head> alongside the resolved metadata. */}
+      {metaTags.map((t) => (
+        <meta key={t.property} property={t.property} content={t.content} />
+      ))}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonStr }}
@@ -208,7 +235,10 @@ export default async function Page({ params }: PageProps) {
         ]}
         siteUrl={siteUrl}
       />
-      <SupabaseProductDetail product={product} />
+      <SupabaseProductDetail
+        product={product}
+        initialSelection={resolveInitialSelection(product, variant)}
+      />
     </>
   );
 }
