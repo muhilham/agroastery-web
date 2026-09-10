@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.28.0](https://github.com/muhilham/agroastery-web/compare/v0.27.3...v0.28.0) (2026-09-10)
+
+
+### Features
+
+* **product:** fulfill Instagram shopping/product-tag flow ([#147](https://github.com/muhilham/agroastery-web/issues/147)) ([8fd04f7](https://github.com/muhilham/agroastery-web/commit/8fd04f765ce55aaf0f26a33921a8331877da8f6a))
+
+
+### Tests
+
+* **checkout:** extract quote lifecycle into useCheckoutShipping with full coverage ([#145](https://github.com/muhilham/agroastery-web/issues/145)) ([4a3a282](https://github.com/muhilham/agroastery-web/commit/4a3a28260c31a2ec13b314a456e8121f138278ff))
+
 ## [0.27.3](https://github.com/muhilham/agroastery-web/compare/v0.27.2...v0.27.3) (2026-09-09)
 
 
