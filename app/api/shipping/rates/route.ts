@@ -1,11 +1,19 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { checkoutOriginGeo } from "@/lib/checkout/shippingQuote";
+import { checkoutOriginGeo, checkoutOriginPostal } from "@/lib/checkout/shippingQuote";
+import { consumeRate, retryAfterSeconds, MAX_BODY_BYTES } from "@/lib/api/proxyGuard";
 
 export const dynamic = 'force-dynamic';
 
 // We proxy Biteship as-is and do not transform the response shape.
 // Client code must validate/normalize with BiteshipRatesResponseSchema.
+//
+// #154: this proxy is public by necessity (guest checkout quotes before
+// login), but #139 made checkout fail-closed on Biteship errors — unbounded
+// abuse here burns the rate API quota and 503s every delivery checkout.
+// Guards: per-IP sliding-window limit, body size cap, and the origin is
+// pinned to our roastery postal (callers can't turn this into a free quote
+// API for an arbitrary warehouse).
 
 const ItemSchema = z.object({
   name: z.string().min(1),
@@ -24,24 +32,54 @@ const BodySchema = z.object({
   destination_latitude: z.number().optional(),
   destination_longitude: z.number().optional(),
   couriers: z.string().min(1), // comma separated
-  items: z.array(ItemSchema).min(1),
+  items: z.array(ItemSchema).min(1).max(50),
 });
+
+function clientIp(req: Request): string {
+  const fwd = req.headers.get("x-forwarded-for");
+  return fwd?.split(",")[0]?.trim() || "unknown";
+}
 
 export async function POST(req: Request) {
   try {
-    const parsed = BodySchema.safeParse(await req.json());
+    if (!consumeRate(clientIp(req))) {
+      return NextResponse.json(
+        { error: "Terlalu banyak permintaan, coba lagi sebentar" },
+        { status: 429, headers: { "Retry-After": String(retryAfterSeconds(clientIp(req))) } }
+      );
+    }
+
+    // Read as text first so an oversized body is rejected before parsing/proxying.
+    const raw = await req.text();
+    if (raw.length > MAX_BODY_BYTES) {
+      return NextResponse.json({ error: "Payload terlalu besar" }, { status: 413 });
+    }
+    const parsed = BodySchema.safeParse(JSON.parse(raw));
     if (!parsed.success) {
       return NextResponse.json({ error: "Invalid payload", issues: parsed.error.flatten() }, { status: 400 });
     }
     const body = parsed.data;
 
-    // Validate location: allow either lat/lng pair OR destination_postal_code
+    // Origin pin: quotes only ever leave from the Agroastery roastery. Accept
+    // the value the browser actually sends (NEXT_PUBLIC_*, inlined at build)
+    // as well as the server resolution — they can differ if ops sets only one.
+    const clientOrigin = Number(
+      (process.env.NEXT_PUBLIC_ORIGIN_POSTAL_CODE ?? "").trim() || 12440
+    );
+    const origin = Number(body.origin_postal_code);
+    if (origin !== checkoutOriginPostal() && origin !== clientOrigin) {
+      return NextResponse.json({ error: "Origin tidak dikenal" }, { status: 403 });
+    }
+
+    // Destination must be either finite lat/lng OR a finite 5-digit postal
+    // (#139 lesson: Number("") === 0 must not pass as a destination).
     const hasGeo =
       typeof body.destination_latitude === 'number' && Number.isFinite(body.destination_latitude) &&
       typeof body.destination_longitude === 'number' && Number.isFinite(body.destination_longitude);
 
     const hasPostal = body.destination_postal_code !== undefined &&
-      Number.isFinite(Number(body.destination_postal_code));
+      Number.isFinite(Number(body.destination_postal_code)) &&
+      /^\d{5}$/.test(String(body.destination_postal_code).trim());
 
     if (!hasGeo && !hasPostal) {
       return NextResponse.json({

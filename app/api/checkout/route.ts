@@ -5,7 +5,7 @@ import { sendOrderNotification } from "@/lib/telegram/notify";
 import { getActiveGlobalDiscounts, getActiveProductDiscounts } from "@/lib/supabase/queries/discounts";
 import { calculateDiscountedPrice } from "@/lib/utils/discount";
 import { isShippingCostInvalid } from "@/lib/checkout/validateShippingCost";
-import { buildQuoteItems, CHECKOUT_COURIERS_POSTAL, CHECKOUT_COURIERS_GEO, checkoutOriginGeo } from "@/lib/checkout/shippingQuote";
+import { buildQuoteItems, CHECKOUT_COURIERS_POSTAL, CHECKOUT_COURIERS_GEO, checkoutOriginGeo, checkoutOriginPostal } from "@/lib/checkout/shippingQuote";
 import { fetchBiteshipRates, findRateMatch } from "@/lib/biteship/rates";
 import { validateStockAvailability, decrementStock } from "@/lib/checkout/stockValidation";
 import { CheckoutSchema } from "./checkoutSchema";
@@ -208,9 +208,7 @@ export async function POST(request: NextRequest) {
           quantity: item.quantity,
         }))
       );
-      const originPostal = Number(
-        process.env.ORIGIN_POSTAL_CODE ?? process.env.NEXT_PUBLIC_ORIGIN_POSTAL_CODE ?? "12440"
-      );
+      const originPostal = checkoutOriginPostal();
 
       let pricing;
       try {

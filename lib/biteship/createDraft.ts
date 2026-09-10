@@ -1,5 +1,5 @@
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
-import { checkoutOriginGeo } from '@/lib/checkout/shippingQuote';
+import { checkoutOriginGeo, checkoutOriginPostal } from '@/lib/checkout/shippingQuote';
 
 type BiteshipDraftResponse = {
   success: boolean;
@@ -61,14 +61,13 @@ export async function createBiteshipDraft(
   // "not set" (falls back to the roastery), non-numeric disables geo —
   // previously an empty ORIGIN_LATITUDE produced a Number("") === 0 origin.
   const originGeo = checkoutOriginGeo();
-  const originPostal =
-    process.env.ORIGIN_POSTAL_CODE ?? process.env.NEXT_PUBLIC_ORIGIN_POSTAL_CODE;
+  const originPostal = checkoutOriginPostal(); // #154 D: same source as quotes
 
   const payload: Record<string, unknown> = {
     origin_contact_name: process.env.ORIGIN_CONTACT_NAME,
     origin_contact_phone: process.env.ORIGIN_CONTACT_PHONE,
     origin_address: process.env.ORIGIN_ADDRESS,
-    ...(originPostal ? { origin_postal_code: Number(originPostal) } : {}),
+    origin_postal_code: originPostal,
     ...(originGeo
       ? { origin_coordinate: { latitude: originGeo.originLatitude, longitude: originGeo.originLongitude } }
       : {}),
