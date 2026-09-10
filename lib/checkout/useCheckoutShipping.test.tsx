@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { useForm } from "react-hook-form";
 import { useCheckoutShipping } from "./useCheckoutShipping";
+
 import { CHECKOUT_COURIERS_POSTAL, CHECKOUT_COURIERS_GEO } from "./shippingQuote";
 import type { TForm } from "@/app/(root)/checkout/checkoutSchemas";
 import type { CartItem } from "@/lib/stores/cart";
@@ -10,8 +11,9 @@ const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-// debounce is 800ms; outlast it with margin
-const settleDebounce = () => sleep(950);
+// debounce is 800ms; outlast it with margin, inside act() so the settle's
+// setState (loading flags, rates) is flushed before assertions
+const settleDebounce = () => act(async () => { await sleep(950); });
 
 const cartItem = (over: Partial<CartItem> = {}): CartItem => ({
   variantId: "v1",

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import type { CartItem } from "@/lib/stores/cart";
 
 vi.mock("@/components/map/MapPicker", () => ({
@@ -67,9 +67,11 @@ beforeEach(() => {
 async function typePostal(code: string) {
   // labelledby points at a Radix div (non-labellable) so use the placeholder
   const input = await screen.findByPlaceholderText("12190");
-  fireEvent.change(input, { target: { value: code } });
-  // debounce is 800ms
-  await new Promise((r) => setTimeout(r, 1000));
+  // debounce (800ms) + fetch resolution inside act => no late-setState warnings
+  await act(async () => {
+    fireEvent.change(input, { target: { value: code } });
+    await new Promise((r) => setTimeout(r, 1100));
+  });
 }
 
 describe("checkout page — no-rates recovery panel (#143/#142)", () => {
@@ -116,7 +118,9 @@ describe("checkout page — no-rates recovery panel (#143/#142)", () => {
     mockFetch.mockResolvedValue(ratesResponse([]));
     render(<CheckoutPageContent />);
 
-    await new Promise((r) => setTimeout(r, 300));
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 300));
+    });
     expect(screen.queryByText(/kurir/i)).not.toBeInTheDocument();
     expect(mockFetch).not.toHaveBeenCalled();
   });

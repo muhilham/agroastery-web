@@ -91,8 +91,6 @@ export default function CheckoutPageContent() {
     resetShipping,
     watchedLat,
     watchedLng,
-    handleCalculateShippingByPostal,
-    handleCalculateShippingByGeo,
     quoteForAddress,
     refreshAfterDrift,
   } = useCheckoutShipping({ control: form.control, cartItems, quoteGateOpen, getValues: getQuoteFields });
