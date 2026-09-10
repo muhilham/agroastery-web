@@ -12,6 +12,8 @@
  *  - price/availability = the selected (or cheapest) variant, matching what
  *    the shopper sees on landing
  */
+import { findMatchingVariant } from "@/lib/supabase/queries/productUtils";
+import type { SupabaseProduct, SupabaseProductVariant } from "@/types/product";
 
 export type MetaProductTags = {
   property: string;
@@ -69,6 +71,43 @@ export function resolveInitialSelection(
     const hit = option.product_option_values.find((val) => valueIds.has(val.id));
     if (!hit) return null; // variant spans an option this product doesn't have
     selection[option.id] = hit.id;
+  }
+  return Object.keys(selection).length > 0 ? selection : null;
+}
+
+/**
+ * The variant the detail form displays on load: the ?variant= deep link when
+ * valid, else the selection of each option's first value by display_order —
+ * mirroring SupabaseProductDetail's default-state + findMatchingVariant
+ * lookup exactly. The OG product tags must describe THIS variant, or Meta's
+ * crawler and the shopper see different price/SKU/stock.
+ * Returns null when no variant matches (the form then shows no add-to-cart,
+ * and tags report out of stock).
+ */
+export function resolveShownVariant(
+  product: SupabaseProduct,
+  variantId: string | undefined | null
+): SupabaseProductVariant | null {
+  const activeVariants = product.product_variants.filter((v) => v.is_active);
+  if (activeVariants.length === 0) return null;
+  const selection =
+    resolveInitialSelection(product, variantId) ?? defaultSelection(product);
+  if (!selection) {
+    // option-less product: the form shows the first active variant
+    return activeVariants[0] ?? null;
+  }
+  return findMatchingVariant(activeVariants, Object.values(selection));
+}
+
+function defaultSelection(
+  product: SupabaseProduct
+): Record<string, string> | null {
+  const selection: Record<string, string> = {};
+  for (const option of product.product_options) {
+    const first = [...option.product_option_values].sort(
+      (a, b) => a.display_order - b.display_order
+    )[0];
+    if (first) selection[option.id] = first.id;
   }
   return Object.keys(selection).length > 0 ? selection : null;
 }

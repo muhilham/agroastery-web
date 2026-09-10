@@ -7,7 +7,7 @@ import { numberToIdr } from "@/lib/numberToIdr";
 import type { SupabaseProduct } from "@/types/product";
 import SupabaseProductDetail from "@/components/section/product-detail/SupabaseProductDetail";
 import { BreadcrumbJsonLd } from "@/components/BreadcrumbJsonLd";
-import { buildMetaProductTags, resolveInitialSelection } from "@/lib/shopping/metaProduct";
+import { buildMetaProductTags, resolveInitialSelection, resolveShownVariant } from "@/lib/shopping/metaProduct";
 
 const getCachedProductBySlug = cache(getProductBySlug);
 
@@ -199,16 +199,17 @@ export default async function Page({ params, searchParams }: PageProps) {
   const faqStr = escapeJsonLd(JSON.stringify(faqLd));
 
   // Open Graph product namespace: what MetaExternalAgent scrapes to match a
-  // catalog item against this page. Tag the variant deep-linked via
-  // ?variant=<id> (Instagram tags use these links) so price/availability the
-  // crawler sees matches what the shopper lands on.
+  // catalog item against this page. Tag the variant the shopper actually
+  // lands on (?variant= deep link, else the form's default selection) so
+  // price/SKU/stock the crawler sees matches the rendered page.
+  const tagVariant = resolveShownVariant(product, variant);
   const activeVariants = product.product_variants.filter((v) => v.is_active);
-  const linked = variant ? activeVariants.find((v) => v.id === variant) : undefined;
-  const tagVariant = linked ?? activeVariants[0] ?? null;
   const metaTags = buildMetaProductTags({
     productId: product.id,
     sku: tagVariant?.sku ?? null,
-    price: tagVariant ? (tagVariant.discounted_price ?? tagVariant.price) : getMinPrice(activeVariants),
+    price: tagVariant
+      ? (tagVariant.discounted_price ?? tagVariant.price)
+      : getMinPrice(activeVariants),
     inStock: Boolean(tagVariant && tagVariant.stock_quantity > 0),
   });
 
