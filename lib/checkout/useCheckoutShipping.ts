@@ -11,6 +11,24 @@ import type { Address } from "@/lib/hooks/useAddresses";
 import type { TForm } from "@/app/(root)/checkout/checkoutSchemas";
 
 /**
+ * Usable shipping destination from a saved address: geo wins, then the saved
+ * postal_code, then a 5-digit code embedded in the address line — the SAME
+ * fallbacks `applyAddressToForm` uses to fill the form. Returns null when the
+ * address yields no destination (buyer must supply one).
+ */
+export function destinationFromAddress(
+  addr: Pick<Address, "latitude" | "longitude" | "postal_code" | "address_line">
+): { lat: number; lng: number } | { postalCode: string } | null {
+  if (typeof addr.latitude === "number" && typeof addr.longitude === "number") {
+    return { lat: addr.latitude, lng: addr.longitude };
+  }
+  if (addr.postal_code) return { postalCode: addr.postal_code };
+  const embedded = addr.address_line?.match(/\b(\d{5})\b/);
+  if (embedded) return { postalCode: embedded[1] };
+  return null;
+}
+
+/**
  * Checkout shipping-quote lifecycle (extracted from checkout-page-content.tsx
  * for issue #143 — zero behavior changes intended).
  *
@@ -119,29 +137,54 @@ export function useCheckoutShipping(options: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [watchedLat, watchedLng, quoteGateOpen, quoteItems]);
 
-  /** Quote for a saved address: geo preferred, then postal (default + select paths). */
-  const quoteForAddress = useCallback((addr: Address) => {
-    if (addr.latitude != null && addr.longitude != null) {
-      void handleCalculateShippingByGeo(addr.latitude, addr.longitude);
-    } else if (addr.postal_code) {
-      void handleCalculateShippingByPostal(addr.postal_code);
+  /**
+   * Re-quote the live form destination (pin first, then a valid 5-digit
+   * postal). Returns false when no destination is resolvable — callers use
+   * that to tell the buyer why nothing can be quoted.
+   */
+  const requoteDestination = useCallback(() => {
+    const { postalCode, lat, lng } = getValues();
+    if (typeof lat === "number" && typeof lng === "number") {
+      void handleCalculateShippingByGeo(lat, lng);
+      return true;
     }
-  }, [handleCalculateShippingByGeo, handleCalculateShippingByPostal]);
+    if (typeof postalCode === "string" && /^\d{5}$/.test(postalCode)) {
+      void handleCalculateShippingByPostal(postalCode);
+      return true;
+    }
+    return false;
+  }, [getValues, handleCalculateShippingByGeo, handleCalculateShippingByPostal]);
 
   /**
-   * After a server 409 SHIPPING_RATE_STALE / unavailable: clear the stale
+   * Quote for a saved address: geo preferred, then saved postal, then a
+   * 5-digit code embedded in the address line (same fallback the form uses).
+   * Returns false when the address yields no destination at all.
+   */
+  const quoteForAddress = useCallback(
+    (addr: Address) => {
+      const dest = destinationFromAddress(addr);
+      if (!dest) return false;
+      if ("lat" in dest) {
+        void handleCalculateShippingByGeo(dest.lat, dest.lng);
+      } else {
+        void handleCalculateShippingByPostal(dest.postalCode);
+      }
+      return true;
+    },
+    [handleCalculateShippingByGeo, handleCalculateShippingByPostal]
+  );
+
+  /**
+   * After a server 409 SHIPPING_RATE_STALE / unavailable — and when returning
+   * to "delivery" after a pickup toggle (the watch effects don't re-fire on
+   * toggles because their inputs never changed) — clear the stale
    * selection and re-quote the current destination so the buyer confirms
    * fresh prices instead of retrying the old one.
    */
   const refreshAfterDrift = useCallback(() => {
     setSelectedShipping(null);
-    const { postalCode: postal, lat, lng } = getValues();
-    if (typeof lat === "number" && typeof lng === "number") {
-      void handleCalculateShippingByGeo(lat, lng);
-    } else if (postal) {
-      void handleCalculateShippingByPostal(postal);
-    }
-  }, [getValues, setSelectedShipping, handleCalculateShippingByGeo, handleCalculateShippingByPostal]);
+    return requoteDestination();
+  }, [setSelectedShipping, requoteDestination]);
 
   return {
     shippingRates,
@@ -158,5 +201,6 @@ export function useCheckoutShipping(options: {
     handleCalculateShippingByGeo,
     quoteForAddress,
     refreshAfterDrift,
+    requoteDestination,
   };
 }
