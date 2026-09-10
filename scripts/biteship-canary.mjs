@@ -46,7 +46,7 @@ const ITEM = {
   height: 10,
 };
 
-async function quote(label, body) {
+async function quoteOnce(label, body) {
   const res = await fetch("https://api.biteship.com/v1/rates/couriers", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${KEY}` },
@@ -65,11 +65,32 @@ async function quote(label, body) {
   return map;
 }
 
+// One blip must not page ops (review #155): retry once after 5s before
+// declaring failure. Two strikes still alert — the #151 class is persistent.
+async function quote(label, body) {
+  for (const attempt of [1, 2]) {
+    try {
+      return await quoteOnce(label, body);
+    } catch (err) {
+      if (attempt === 2) throw err;
+      console.error(`canary: attempt 1 failed (${err.message}); retrying in 5s`);
+      await new Promise((r) => setTimeout(r, 5_000));
+    }
+  }
+}
+
+// Geo-dispatch couriers (gojek/grab/lalamove) surge-price per quote call —
+// live canary run showed grab/instant_car 76000 vs 68000 seconds apart.
+// Checkout already handles price drift via the 409 + refresh path (#139), so
+// exact equality there would alert every cycle: coverage is the real signal.
+const DYNAMIC_PRICED = /^(gojek|grab|lalamove)\//;
+
 function compare(client, server) {
   const problems = [];
   for (const [k, v] of client) {
     if (!server.has(k)) problems.push(`client offers ${k} @${v}, server re-quote CANNOT match it (invisible)`);
-    else if (server.get(k) !== v) problems.push(`price drift on ${k}: client ${v} vs server ${server.get(k)}`);
+    else if (server.get(k) !== v && !DYNAMIC_PRICED.test(k))
+      problems.push(`price drift on fixed-rate ${k}: client ${v} vs server ${server.get(k)}`);
   }
   for (const k of server.keys()) {
     if (!client.has(k)) problems.push(`server sees ${k} the client never shows (harmless but asymmetric)`);

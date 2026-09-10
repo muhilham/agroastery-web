@@ -35,9 +35,16 @@ const BodySchema = z.object({
   items: z.array(ItemSchema).min(1).max(50),
 });
 
+// Trust ordering (issue #154 review): cf-connecting-ip is authoritative when
+// Cloudflare fronts the domain; otherwise the LAST x-forwarded-for hop is the
+// one our trusted edge appended — the FIRST hop is client-supplied and
+// spoofable, which would let a bot rotate the header to reset its budget.
 function clientIp(req: Request): string {
+  const cf = req.headers.get("cf-connecting-ip");
+  if (cf?.trim()) return cf.trim();
   const fwd = req.headers.get("x-forwarded-for");
-  return fwd?.split(",")[0]?.trim() || "unknown";
+  const hops = fwd?.split(",").map((s) => s.trim()).filter(Boolean);
+  return hops?.length ? hops[hops.length - 1] : "unknown";
 }
 
 export async function POST(req: Request) {
@@ -49,7 +56,12 @@ export async function POST(req: Request) {
       );
     }
 
-    // Read as text first so an oversized body is rejected before parsing/proxying.
+    // Reject oversized claims BEFORE reading (req.text() would buffer it all),
+    // then the hard cap on what actually arrived (chunked bodies hide length).
+    const claimed = Number(req.headers.get("content-length") ?? "0");
+    if (Number.isFinite(claimed) && claimed > MAX_BODY_BYTES) {
+      return NextResponse.json({ error: "Payload terlalu besar" }, { status: 413 });
+    }
     const raw = await req.text();
     if (raw.length > MAX_BODY_BYTES) {
       return NextResponse.json({ error: "Payload terlalu besar" }, { status: 413 });

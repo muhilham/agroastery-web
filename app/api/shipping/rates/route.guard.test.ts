@@ -65,6 +65,36 @@ describe("POST /api/shipping/rates guards", () => {
     expect(res.status).toBe(200);
   });
 
+  it("client cannot reset its budget by rotating a spoofed first hop", async () => {
+    // Attacker forges the leftmost XFF entry; the edge-appended LAST hop is
+    // what identifies them. First hop must be ignored for bucketing.
+    let last;
+    for (let i = 0; i <= RATE_LIMIT_PER_MIN; i++) {
+      last = await POST(req(okPayload(), `1.2.3.${i}, 51.51.51.51`));
+    }
+    expect(last!.status).toBe(429);
+  });
+
+  it("same real IP behind different chains shares one budget", async () => {
+    await POST(req(okPayload(), "9.9.9.1, 60.60.60.60"));
+    for (let i = 0; i < RATE_LIMIT_PER_MIN - 1; i++) {
+      await POST(req(okPayload(), `8.8.8.${i}, 60.60.60.60`));
+    }
+    const res = await POST(req(okPayload(), "7.7.7.7, 60.60.60.60"));
+    expect(res.status).toBe(429);
+  });
+
+  it("413 when content-length claims an oversized body (before buffering)", async () => {
+    const r = new Request("http://localhost/api/shipping/rates", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-forwarded-for": "61.61.61.61", "content-length": "999999" },
+      body: JSON.stringify(okPayload()),
+    });
+    const res = await POST(r);
+    expect(res.status).toBe(413);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("403 for a foreign origin postal", async () => {
     const res = await POST(req(okPayload(99999), "8.8.8.1"));
     expect(res.status).toBe(403);
