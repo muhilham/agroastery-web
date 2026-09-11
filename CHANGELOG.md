@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.29.0](https://github.com/muhilham/agroastery-web/compare/v0.28.3...v0.29.0) (2026-09-11)
+
+
+### Features
+
+* **checkout:** group geo courier options into Instan and Reguler sections ([#160](https://github.com/muhilham/agroastery-web/issues/160)) ([#161](https://github.com/muhilham/agroastery-web/issues/161)) ([26951e3](https://github.com/muhilham/agroastery-web/commit/26951e3494ca562f955d6616b040e42dbab36960))
+
+
+### Bug Fixes
+
+* **checkout:** shipping selector radio cards, submit focus, autofill, rate labels ([#157](https://github.com/muhilham/agroastery-web/issues/157)) ([#158](https://github.com/muhilham/agroastery-web/issues/158)) ([056b6be](https://github.com/muhilham/agroastery-web/commit/056b6be177d628aa93d5db488e181cbebc78a347))
+
 ## [0.28.3](https://github.com/muhilham/agroastery-web/compare/v0.28.2...v0.28.3) (2026-09-10)
 
 
