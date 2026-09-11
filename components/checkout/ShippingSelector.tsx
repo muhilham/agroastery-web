@@ -38,17 +38,23 @@ export default function ShippingSelector({
     setShowAll(false);
   }
 
-  // Pre-select the cheapest rate whenever nothing valid is selected
-  // (#157): no selection at all, or a selection whose courier disappeared
-  // from a re-quote. An explicitly chosen rate that still exists is
-  // preserved across re-quotes; refreshAfterDrift nulls it on purpose and
-  // this re-seeds from the fresh list.
+  // Selection sync (#157): nothing valid selected → pre-select the cheapest.
+  // A selection whose code still exists in a re-quote but whose PRICE or ETA
+  // changed (cart weight shift) is re-seeded with the fresh object —
+  // preserve-by-code alone would keep the stale NormalizedRate, and the page
+  // totals/pay payload read selectedShipping.price directly.
   useEffect(() => {
     if (sortedRates.length === 0) return;
-    const selectionValid =
-      selectedShipping && sortedRates.some((r) => r.code === selectedShipping.code);
-    if (!selectionValid) {
+    const match = selectedShipping
+      ? sortedRates.find((r) => r.code === selectedShipping.code)
+      : undefined;
+    if (!match) {
       onSelect(sortedRates[0]);
+    } else if (
+      match.price !== selectedShipping!.price ||
+      match.eta !== selectedShipping!.eta
+    ) {
+      onSelect(match);
     }
   }, [sortedRates, selectedShipping, onSelect]);
 
@@ -82,7 +88,7 @@ export default function ShippingSelector({
               <label
                 key={rate.code}
                 htmlFor={inputId}
-                className={`flex items-center gap-3 rounded-lg border p-3 min-h-[48px] cursor-pointer transition-colors ${
+                className={`flex items-center gap-3 rounded-lg border p-3 min-h-[48px] cursor-pointer transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary/60 ${
                   selected
                     ? "border-primary/40 bg-primary/10"
                     : "border-white/10 bg-[#1e1e1e] hover:border-white/25"

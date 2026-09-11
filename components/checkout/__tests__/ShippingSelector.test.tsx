@@ -91,6 +91,25 @@ describe("ShippingSelector", () => {
     expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({ code: "sicepat-reg" }));
   });
 
+  // Review finding on PR #158: preserve-by-code alone kept a STALE
+  // NormalizedRate when a cart change re-quoted the same courier at a new
+  // price — totals and the pay payload read selectedShipping.price directly.
+  it("syncs a same-code selection to the fresh price after a re-quote", () => {
+    const stale: NormalizedRate = { ...mockRates[0], price: 15000 }; // jne-ctc
+    const fresh: NormalizedRate = { ...mockRates[0], price: 18000 };
+    const onSelect = vi.fn();
+    render(
+      <Wrapper
+        shippingRates={[fresh]}
+        selectedShipping={stale}
+        onSelect={onSelect}
+      />
+    );
+    expect(onSelect).toHaveBeenCalledWith(
+      expect.objectContaining({ code: "jne-ctc", price: 18000 })
+    );
+  });
+
   it("preserves a manual selection that still exists in the new quote", () => {
     const onSelect = vi.fn();
     render(

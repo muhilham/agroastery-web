@@ -87,7 +87,7 @@ export default function CheckoutForm({
               state) replacing two aria-less buttons; 48px min-height. */}
           <div role="radiogroup" aria-label="Metode pengiriman" className="grid grid-cols-2 gap-2">
             <label
-              className={`flex items-center justify-center gap-2 rounded-lg border p-3 min-h-[48px] text-sm font-medium transition-colors cursor-pointer ${
+              className={`flex items-center justify-center gap-2 rounded-lg border p-3 min-h-[48px] text-sm font-medium transition-colors cursor-pointer has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary/60 ${
                 fulfillmentMethod === "delivery"
                   ? "border-primary/40 bg-primary/10 text-primary"
                   : "border-white/10 text-secondary"
@@ -104,7 +104,7 @@ export default function CheckoutForm({
               Kirim
             </label>
             <label
-              className={`flex items-center justify-center gap-2 rounded-lg border p-3 min-h-[48px] text-sm font-medium transition-colors cursor-pointer ${
+              className={`flex items-center justify-center gap-2 rounded-lg border p-3 min-h-[48px] text-sm font-medium transition-colors cursor-pointer has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary/60 ${
                 fulfillmentMethod === "pickup"
                   ? "border-primary/40 bg-primary/10 text-primary"
                   : "border-white/10 text-secondary"
