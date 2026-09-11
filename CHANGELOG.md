@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.29.1](https://github.com/muhilham/agroastery-web/compare/v0.29.0...v0.29.1) (2026-09-11)
+
+
+### Bug Fixes
+
+* **checkout:** clear selection on settled-zero-rates; strengthen force-expand test ([#161](https://github.com/muhilham/agroastery-web/issues/161) review) ([#162](https://github.com/muhilham/agroastery-web/issues/162)) ([40fcdfe](https://github.com/muhilham/agroastery-web/commit/40fcdfebbef0366cf8f73bc740a5520d6c574aee))
+
 ## [0.29.0](https://github.com/muhilham/agroastery-web/compare/v0.28.3...v0.29.0) (2026-09-11)
 
 
