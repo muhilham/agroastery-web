@@ -45,7 +45,7 @@ function Wrapper(props: React.ComponentProps<typeof ShippingSelector>) {
 }
 
 describe("ShippingSelector", () => {
-  it("renders shipping options in a dropdown sorted by price", () => {
+  it("renders rates as radio cards sorted by price", () => {
     render(
       <Wrapper
         shippingRates={mockRates}
@@ -54,54 +54,169 @@ describe("ShippingSelector", () => {
       />
     );
 
-    const select = screen.getByRole("combobox");
-    expect(select).toBeInTheDocument();
+    const group = screen.getByRole("radiogroup", { name: /opsi pengiriman/i });
+    expect(group).toBeInTheDocument();
+    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
 
-    const options = screen.getAllByRole("option");
-    // Placeholder + 2 rates
-    expect(options).toHaveLength(3);
-
-    // Verify sorted by price ascending: SiCepat (12000) first, then JNE (15000)
-    expect(options[1].textContent).toContain("SiCepat");
-    expect(options[1].textContent).toContain("REG");
-    expect(options[2].textContent).toContain("JNE");
-    expect(options[2].textContent).toContain("City to City (CTC)");
-
-    expect(options[1].textContent).toContain("Rp\u00a012.000");
-    expect(options[2].textContent).toContain("Rp\u00a015.000");
+    const radios = screen.getAllByRole("radio");
+    expect(radios).toHaveLength(2);
+    // Sorted by price ascending: SiCepat (12000) first, then JNE (15000)
+    expect(radios[0].closest("label")).toHaveTextContent("SiCepat REG");
+    expect(radios[1].closest("label")).toHaveTextContent(
+      "JNE City to City (CTC)"
+    );
+    expect(radios[0].closest("label")!.textContent).toMatch(/12[\.\s\u00a0\u202f]000/);
+    expect(radios[1].closest("label")!.textContent).toMatch(/15[\.\s\u00a0\u202f]000/);
   });
 
-  it("calls onSelect when an option is selected", () => {
+  it("pre-selects the cheapest rate when nothing is selected", () => {
+    const onSelect = vi.fn();
+    render(
+      <Wrapper shippingRates={mockRates} selectedShipping={null} onSelect={onSelect} />
+    );
+    expect(onSelect).toHaveBeenCalledWith(
+      expect.objectContaining({ code: "sicepat-reg" })
+    );
+  });
+
+  it("re-seeds the cheapest rate when the selection vanished from a re-quote", () => {
+    const onSelect = vi.fn();
+    const stale: NormalizedRate = {
+      ...mockRates[0],
+      code: "wes-not-offered",
+    };
+    render(
+      <Wrapper shippingRates={mockRates} selectedShipping={stale} onSelect={onSelect} />
+    );
+    expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({ code: "sicepat-reg" }));
+  });
+
+  // Review finding on PR #158: preserve-by-code alone kept a STALE
+  // NormalizedRate when a cart change re-quoted the same courier at a new
+  // price — totals and the pay payload read selectedShipping.price directly.
+  it("syncs a same-code selection to the fresh price after a re-quote", () => {
+    const stale: NormalizedRate = { ...mockRates[0], price: 15000 }; // jne-ctc
+    const fresh: NormalizedRate = { ...mockRates[0], price: 18000 };
+    const onSelect = vi.fn();
+    render(
+      <Wrapper
+        shippingRates={[fresh]}
+        selectedShipping={stale}
+        onSelect={onSelect}
+      />
+    );
+    expect(onSelect).toHaveBeenCalledWith(
+      expect.objectContaining({ code: "jne-ctc", price: 18000 })
+    );
+  });
+
+  it("preserves a manual selection that still exists in the new quote", () => {
     const onSelect = vi.fn();
     render(
       <Wrapper
         shippingRates={mockRates}
-        selectedShipping={null}
+        selectedShipping={mockRates[0]}
+        onSelect={onSelect}
+      />
+    );
+    expect(onSelect).not.toHaveBeenCalled();
+    expect(screen.getAllByRole("radio")[1]).toBeChecked();
+  });
+
+  it("calls onSelect when a card is chosen", () => {
+    const onSelect = vi.fn();
+    render(
+      <Wrapper
+        shippingRates={mockRates}
+        selectedShipping={mockRates[1]}
         onSelect={onSelect}
       />
     );
 
-    const select = screen.getByRole("combobox");
-    fireEvent.change(select, { target: { value: "jne-ctc" } });
-
+    fireEvent.click(screen.getAllByRole("radio")[1]);
     expect(onSelect).toHaveBeenCalledWith(
-      expect.objectContaining({
-        code: "jne-ctc",
-        carrier: "JNE",
-      })
+      expect.objectContaining({ code: "jne-ctc", carrier: "JNE" })
     );
+  });
+
+  it("collapses more than 4 rates behind a reveal button", () => {
+    const many = Array.from({ length: 6 }, (_, i) => ({
+      ...mockRates[0],
+      code: `c-${i}`,
+      service: `SVC-${i}`,
+      price: 10000 + i * 1000,
+    }));
+    render(
+      <Wrapper shippingRates={many} selectedShipping={null} onSelect={vi.fn()} />
+    );
+    expect(screen.getAllByRole("radio")).toHaveLength(4);
+    fireEvent.click(screen.getByRole("button", { name: /lihat 2 opsi lainnya/i }));
+    expect(screen.getAllByRole("radio")).toHaveLength(6);
+  });
+
+  // Adversarial review on #158: a manual pick ranked outside the collapse
+  // window must never be hidden by a re-quote reset — an all-unchecked
+  // radiogroup whose price still flows to totals is worse than no collapse.
+  it("keeps a below-the-fold selection visible after a re-quote", () => {
+    const many = Array.from({ length: 6 }, (_, i) => ({
+      ...mockRates[0],
+      code: `c-${i}`,
+      service: `SVC-${i}`,
+      price: 10000 + i * 1000,
+    }));
+    const picked = many[5]; // most expensive — outside the 4-card window
+    render(
+      <Wrapper shippingRates={many} selectedShipping={picked} onSelect={vi.fn()} />
+    );
+    expect(screen.getAllByRole("radio")).toHaveLength(6);
+    const checked = screen.getByRole("radio", { checked: true }) as HTMLInputElement;
+    // Must be the USER's pick — force-expand that flips selection to the
+    // cheapest would still render 6 cards.
+    expect(checked.value).toBe("c-5");
+  });
+
+  it("normalizes duration and doubled carrier in labels", () => {
+    const rates: NormalizedRate[] = [
+      {
+        ...mockRates[0],
+        carrier: "JNE",
+        service: "JNE Trucking",
+        eta: "3 - 4 days",
+      },
+      { ...mockRates[1], carrier: "SiCepat", service: "BST", eta: "1 - 1 days" },
+    ];
+    render(
+      <Wrapper shippingRates={rates} selectedShipping={rates[1]} onSelect={vi.fn()} />
+    );
+    const labels = screen.getAllByRole("radio").map((r) => r.closest("label"));
+    // Sorted by price: BST (12000) first, JNE Trucking (15000) second
+    expect(labels[0]).toHaveTextContent("Tiba 1 hari");
+    expect(labels[1]).toHaveTextContent("Tiba 3\u20134 hari");
+    expect(labels[1]).toHaveTextContent("JNE Trucking");
+    expect(labels[1]!.textContent).not.toMatch(/JNE JNE/);
+  });
+
+  it("announces loading and result counts via aria-live", () => {
+    const { rerender } = render(
+      <Wrapper shippingRates={mockRates} selectedShipping={mockRates[0]} onSelect={vi.fn()} isLoading />
+    );
+    expect(screen.getByText(/menghitung ongkir/i)).toBeInTheDocument();
+    rerender(
+      <Wrapper
+        shippingRates={mockRates}
+        selectedShipping={mockRates[0]}
+        onSelect={vi.fn()}
+        isLoading={false}
+      />
+    );
+    expect(screen.getByText(/2 opsi pengiriman tersedia/i)).toBeInTheDocument();
   });
 
   it("shows empty state when no shipping rates", () => {
     render(
-      <Wrapper
-        shippingRates={[]}
-        selectedShipping={null}
-        onSelect={vi.fn()}
-      />
+      <Wrapper shippingRates={[]} selectedShipping={null} onSelect={vi.fn()} />
     );
-
     expect(screen.getByText("Opsi Pengiriman")).toBeInTheDocument();
-    expect(screen.queryByText("JNE")).not.toBeInTheDocument();
+    expect(screen.queryAllByRole("radio")).toHaveLength(0);
   });
 });

@@ -17,7 +17,7 @@ const phoneSchema = z
   .pipe(z.string().regex(/^\+62\d{8,14}$/, "Nomor HP tidak valid. Contoh: 081234567890"));
 
 const baseSchema = z.object({
-  fullName: z.string().min(2, "Minimal 2 karakter").max(50),
+  fullName: z.string().min(2, "Nama terlalu pendek (min. 2 karakter)").max(50),
   phone: phoneSchema,
   address: z.string().max(300).optional(),
   postalCode: z.string().max(5).optional(),
@@ -31,10 +31,10 @@ const baseSchema = z.object({
 function refineFulfillment(data: z.infer<typeof baseSchema>, ctx: z.RefinementCtx) {
   if (data.fulfillmentMethod !== "delivery") return;
   if (!data.address || data.address.trim().length < 10) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["address"], message: "Alamat terlalu singkat" });
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["address"], message: "Alamat terlalu singkat (min. 10 karakter)" });
   }
   if (!data.postalCode || data.postalCode.length < 5) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["postalCode"], message: "Kode pos tidak valid" });
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["postalCode"], message: "Kode pos harus 5 digit" });
   }
 }
 
