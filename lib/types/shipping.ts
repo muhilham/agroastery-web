@@ -105,6 +105,10 @@ export type NormalizedRate = {
   code: string;                 // 'jne-ctc'
   service: string;              // 'City to City (CTC)'
   eta?: string;                 // '2 - 3 days'
+  /** Biteship taxonomy: instant | same_day | standard | overnight (live-
+   * probed #160; may be absent — classifyRateGroup treats unknown as
+   * reguler). */
+  serviceType?: string;
   price: number;                // IDR
   raw: BiteshipPricing;         // keep raw for debugging
 };
