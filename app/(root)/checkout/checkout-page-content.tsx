@@ -401,7 +401,13 @@ export default function CheckoutPageContent() {
               }}
             />
 
-            {shippingRates.length > 0 && !shippingError && (
+            {/* Mount while rates exist OR a quote is in flight (#160): the
+                selector's skeleton rows need to render during the FIRST
+                geo/postal quote — with rates>0 as the only gate they were
+                dead code, since an in-flight first quote has an empty list.
+                The settled-no-rates case unmounts the shell and the amber
+                recovery panel below takes over. */}
+            {(shippingRates.length > 0 || isLoadingShipping) && !shippingError && (
               <ShippingSelector
                 shippingRates={shippingRates}
                 selectedShipping={selectedShipping}
