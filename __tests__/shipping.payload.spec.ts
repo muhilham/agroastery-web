@@ -107,6 +107,45 @@ describe('Shipping Payload Tests', () => {
     expect(result.current.location).toBeNull();
   });
 
+  it('clears a carried-over selection when a settled quote has no rates (#161 review)', async () => {
+    const rates = {
+      ok: true,
+      json: async () => ({
+        success: true,
+        pricing: [
+          {
+            courier_name: 'JNE', courier_code: 'jne',
+            courier_service_name: 'REG', courier_service_code: 'reg',
+            currency: 'IDR', duration: '2-3 hari', service_type: 'standard',
+            type: 'parcel', price: 15000,
+          },
+        ],
+      }),
+    };
+    const empty = { ok: true, json: async () => ({ success: true, pricing: [] }) };
+
+    mockFetch.mockResolvedValueOnce(rates);
+    const { result } = renderHook(() => useShippingCalculator());
+
+    await act(async () => {
+      await result.current.calculateShipping({ originPostalCode: '12440', destinationPostalCode: '12240', couriers: 'jne', name: 'P', price: 1, quantity: 1, weightGrams: 1 });
+    });
+    const picked = result.current.shippingRates[0];
+    act(() => result.current.setSelectedShipping(picked));
+    expect(result.current.selectedShipping).not.toBeNull();
+
+    // A re-quote that settles with zero couriers (geo pin in a dead zone)
+    // must void the stale selection — otherwise totals keep its price and
+    // the amber recovery panel stays suppressed.
+    mockFetch.mockResolvedValueOnce(empty);
+    await act(async () => {
+      await result.current.calculateShipping({ originPostalCode: '12440', destinationPostalCode: '99999', couriers: 'jne,lalamove', name: 'P', price: 1, quantity: 1, weightGrams: 1 });
+    });
+    expect(result.current.shippingRates).toHaveLength(0);
+    expect(result.current.shippingError).toMatch(/Tidak ada kurir/);
+    expect(result.current.selectedShipping).toBeNull();
+  });
+
   it('accepts string postal codes and converts them to numbers', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,

@@ -106,6 +106,13 @@ export const useShippingCalculator = () => {
 
       if (normalizedRates.length === 0) {
         setShippingError('Tidak ada kurir yang tersedia untuk tujuan ini.');
+        // A settled quote with no couriers voids any carried-over selection:
+        // leaving it keeps a phantom shippingCost in totals and suppresses the
+        // amber recovery panel (gated on !selectedShipping), stranding the
+        // buyer with no listed courier but an enabled-looking pay button.
+        // Server re-quote + 409 is the last line, but the UI should not
+        // silently depend on it (#161 review).
+        setSelectedShipping(null);
       }
 
       // Note: Location data is not available in current Biteship response

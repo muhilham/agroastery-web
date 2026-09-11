@@ -240,15 +240,19 @@ describe("ShippingSelector", () => {
       rate({ carrier: "Lalamove", code: "lama-motor", service: "Motorcycle", price: 12000, eta: "1 - 3 Hours", serviceType: "same_day" }),
       rate({ carrier: "Grab", code: "grab-inst", service: "Instant", price: 19000, eta: "1 - 3 Hours", serviceType: "instant" }),
       rate({ carrier: "Gojek", code: "gojek-sd", service: "Same Day", price: 20000, eta: "6 - 8 Hours", serviceType: "same_day" }),
+      // 4th instan rate: Instan now also exceeds its 3-window, so a
+      // hypothetical GLOBAL force-expand bug is observable (it would render
+      // 4 instan cards and hide the instan reveal).
+      rate({ carrier: "Grab", code: "grab-inst2", service: "Instant XL", price: 21000, eta: "1 - 3 Hours", serviceType: "instant" }),
     ];
-    // Reguler has 4 rates, selection c-... outside its 3-window: only that
-    // section force-expands; Instan (3 rates) stays as-is.
+    // Reguler has 4 rates, selection is its 4th (outside the 3-window):
+    // only Reguler force-expands; Instan stays collapsed at 3 + reveal.
     const picked = geo[3]; // jne-x2, 4th reguler rate
     render(<Wrapper shippingRates={geo} selectedShipping={picked} onSelect={vi.fn()} />);
     const radios = screen.getAllByRole("radio");
     expect((radios.find((r) => (r as HTMLInputElement).checked) as HTMLInputElement | undefined)?.value).toBe("jne-x2");
-    expect(radios).toHaveLength(7); // 4 reguler expanded + 3 instan
-    expect(screen.queryByText(/opsi instan lainnya/i)).not.toBeInTheDocument();
+    expect(radios).toHaveLength(7); // 4 reguler expanded + 3 instan collapsed
+    expect(screen.getByText(/opsi instan lainnya/i)).toBeInTheDocument();
   });
 
   it("normalizes duration and doubled carrier in labels, incl. hours -> jam", () => {
