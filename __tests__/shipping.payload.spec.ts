@@ -95,6 +95,7 @@ describe('Shipping Payload Tests', () => {
       code: 'jne-reg',
       service: 'REG',
       eta: '2-3 hari',
+      serviceType: 'standard',
       price: 15000,
       raw: expect.objectContaining({
         courier_name: 'JNE',

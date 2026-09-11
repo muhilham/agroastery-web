@@ -73,6 +73,7 @@ async function getShippingRates(p: ShippingCalcParams) {
     code: `${p.courier_code}-${p.courier_service_code}`,
     service: p.courier_service_name,
     eta: p.duration ?? (p.shipment_duration_range ? `${p.shipment_duration_range} ${p.shipment_duration_unit ?? ''}`.trim() : undefined),
+    serviceType: p.service_type,
     price: p.price,
     raw: p,
   }));
