@@ -154,6 +154,24 @@ describe("ShippingSelector", () => {
     expect(screen.getAllByRole("radio")).toHaveLength(6);
   });
 
+  // Adversarial review on #158: a manual pick ranked outside the collapse
+  // window must never be hidden by a re-quote reset — an all-unchecked
+  // radiogroup whose price still flows to totals is worse than no collapse.
+  it("keeps a below-the-fold selection visible after a re-quote", () => {
+    const many = Array.from({ length: 6 }, (_, i) => ({
+      ...mockRates[0],
+      code: `c-${i}`,
+      service: `SVC-${i}`,
+      price: 10000 + i * 1000,
+    }));
+    const picked = many[5]; // most expensive — outside the 4-card window
+    render(
+      <Wrapper shippingRates={many} selectedShipping={picked} onSelect={vi.fn()} />
+    );
+    expect(screen.getAllByRole("radio")).toHaveLength(6);
+    expect(screen.getByRole("radio", { checked: true })).toBeInTheDocument();
+  });
+
   it("normalizes duration and doubled carrier in labels", () => {
     const rates: NormalizedRate[] = [
       {

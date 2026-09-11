@@ -342,11 +342,18 @@ export default function CheckoutPageContent() {
   // focus the first invalid field so the failure is impossible to miss.
   // Plain function: this sits after the component's conditional returns, so
   // a hook here would break rules-of-hooks.
+  // aria-invalid can land on a FormItem wrapper div (fields whose
+  // FormControl child is not the control itself, e.g. Kode Pos), and a div
+  // swallows focus() — drill into the real control when that happens.
   const focusFirstInvalid = () => {
-    const el = document.querySelector<HTMLElement>(
+    const node = document.querySelector<HTMLElement>(
       '#checkout-form [aria-invalid="true"]'
     );
-    if (!el) return;
+    if (!node) return;
+    const el =
+      node.matches("input,textarea,select") || node.isContentEditable
+        ? node
+        : node.querySelector<HTMLElement>("input,textarea,select") ?? node;
     el.scrollIntoView({ behavior: "smooth", block: "center" });
     el.focus({ preventScroll: true });
   };

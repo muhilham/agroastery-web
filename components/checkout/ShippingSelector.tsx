@@ -58,7 +58,14 @@ export default function ShippingSelector({
     }
   }, [sortedRates, selectedShipping, onSelect]);
 
-  const visible = showAll ? sortedRates : sortedRates.slice(0, VISIBLE_COUNT);
+  // A selection ranked below VISIBLE_COUNT must never be hidden: an
+  // unchecked-looking radiogroup whose price still flows to totals/payload
+  // is worse than no collapse. Adversarial review on #158.
+  const selectionInWindow =
+    !!selectedShipping &&
+    sortedRates.slice(0, VISIBLE_COUNT).some((r) => r.code === selectedShipping.code);
+  const expanded = showAll || (!!selectedShipping && !selectionInWindow);
+  const visible = expanded ? sortedRates : sortedRates.slice(0, VISIBLE_COUNT);
   const hiddenCount = sortedRates.length - visible.length;
 
   return (
