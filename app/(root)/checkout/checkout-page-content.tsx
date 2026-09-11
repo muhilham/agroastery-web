@@ -345,17 +345,22 @@ export default function CheckoutPageContent() {
   // aria-invalid can land on a FormItem wrapper div (fields whose
   // FormControl child is not the control itself, e.g. Kode Pos), and a div
   // swallows focus() — drill into the real control when that happens.
+  // Deferred a tick: on a rejected submit of never-touched fields,
+  // aria-invalid is not in the DOM yet when onInvalid fires synchronously
+  // (round-2 review probe: sync MISS, next-tick FOUND).
   const focusFirstInvalid = () => {
-    const node = document.querySelector<HTMLElement>(
-      '#checkout-form [aria-invalid="true"]'
-    );
-    if (!node) return;
-    const el =
-      node.matches("input,textarea,select") || node.isContentEditable
-        ? node
-        : node.querySelector<HTMLElement>("input,textarea,select") ?? node;
-    el.scrollIntoView({ behavior: "smooth", block: "center" });
-    el.focus({ preventScroll: true });
+    setTimeout(() => {
+      const node = document.querySelector<HTMLElement>(
+        '#checkout-form [aria-invalid="true"]'
+      );
+      if (!node) return;
+      const el =
+        node.matches("input,textarea,select") || node.isContentEditable
+          ? node
+          : node.querySelector<HTMLElement>("input,textarea,select") ?? node;
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.focus({ preventScroll: true });
+    }, 0);
   };
 
   return (

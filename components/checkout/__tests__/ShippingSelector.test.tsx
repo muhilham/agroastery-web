@@ -169,7 +169,10 @@ describe("ShippingSelector", () => {
       <Wrapper shippingRates={many} selectedShipping={picked} onSelect={vi.fn()} />
     );
     expect(screen.getAllByRole("radio")).toHaveLength(6);
-    expect(screen.getByRole("radio", { checked: true })).toBeInTheDocument();
+    const checked = screen.getByRole("radio", { checked: true }) as HTMLInputElement;
+    // Must be the USER's pick — force-expand that flips selection to the
+    // cheapest would still render 6 cards.
+    expect(checked.value).toBe("c-5");
   });
 
   it("normalizes duration and doubled carrier in labels", () => {
