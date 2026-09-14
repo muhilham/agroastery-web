@@ -39,7 +39,8 @@ export type SupabaseProduct = {
   image_url: string | null;
   is_active: boolean;
   is_global: boolean;
-  is_global_discountable: boolean;
+  is_global_discountable: boolean | null;
+  total_sold_count: number;
   product_options: SupabaseProductOption[];
   product_variants: SupabaseProductVariant[];
 };

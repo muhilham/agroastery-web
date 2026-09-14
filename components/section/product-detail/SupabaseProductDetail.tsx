@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import type { SupabaseProduct, SupabaseProductVariant } from "@/types/product";
 import { findMatchingVariant, getMinPrice, getMinOriginalPrice, getProductImageUrl, getVariantImageUrl } from "@/lib/supabase/queries/productUtils";
 import { useCart } from "@/lib/hooks/useCart";
+import { formatSoldCount } from "@/lib/utils/formatSoldCount";
 
 type Props = {
   product: SupabaseProduct;
@@ -182,6 +183,11 @@ const SupabaseProductDetail = ({ product, initialSelection }: Props) => {
                 </span>
               )}
             </div>
+            {product.total_sold_count > 0 && (
+              <span className="text-xs text-primary/50 tracking-wide">
+                {formatSoldCount(product.total_sold_count)}
+              </span>
+            )}
             <h1 className="text-primary text-sm tablet:text-base desktop:text-2xl tracking-widest font-normal uppercase leading-snug">
               {product.name}
               {variantDescription ? ` | ${variantDescription}` : ""}

@@ -15,6 +15,7 @@ function makeProduct(category_ids: string[]): SupabaseProduct {
     is_active: true,
     is_global: false,
     is_global_discountable: true,
+    total_sold_count: 0,
     product_options: [],
     product_variants: [],
   };
