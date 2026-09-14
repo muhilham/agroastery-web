@@ -19,6 +19,7 @@ const PRODUCT_SELECT = `
   is_active,
   is_global,
   is_global_discountable,
+  total_sold_count,
   product_options (
     id, name, display_order,
     product_option_values (id, value, display_order)
