@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.30.0](https://github.com/muhilham/agroastery-web/compare/v0.29.1...v0.30.0) (2026-09-14)
+
+
+### Features
+
+* **products:** display total sold count on product detail page ([#165](https://github.com/muhilham/agroastery-web/issues/165)) ([3203bcc](https://github.com/muhilham/agroastery-web/commit/3203bcc4ee746312f9131fc6c628e5dbc9e6a512))
+
 ## [0.29.1](https://github.com/muhilham/agroastery-web/compare/v0.29.0...v0.29.1) (2026-09-11)
 
 
