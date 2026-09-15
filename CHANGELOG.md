@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.30.1](https://github.com/muhilham/agroastery-web/compare/v0.30.0...v0.30.1) (2026-09-15)
+
+
+### Bug Fixes
+
+* **ui:** improve sold count visibility with pill badge, responsive sizing, cleaner rounding ([#167](https://github.com/muhilham/agroastery-web/issues/167)) ([e3a2b95](https://github.com/muhilham/agroastery-web/commit/e3a2b9506a105881db6d6d1cbdfe35b169e923d3))
+
 ## [0.30.0](https://github.com/muhilham/agroastery-web/compare/v0.29.1...v0.30.0) (2026-09-14)
 
 
