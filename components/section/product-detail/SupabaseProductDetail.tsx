@@ -184,8 +184,10 @@ const SupabaseProductDetail = ({ product, initialSelection }: Props) => {
               )}
             </div>
             {product.total_sold_count > 0 && (
-              <span className="text-xs text-primary/50 tracking-wide">
-                {formatSoldCount(product.total_sold_count)}
+              <span className="inline-block px-2 py-0.5 bg-primary/10 rounded-full mb-4">
+                <span className="text-[11px] tablet:text-xs text-primary font-medium tracking-wide">
+                  {formatSoldCount(product.total_sold_count)}
+                </span>
               </span>
             )}
             <h1 className="text-primary text-sm tablet:text-base desktop:text-2xl tracking-widest font-normal uppercase leading-snug">
