@@ -4,7 +4,8 @@ import CartPageContent from "./cart-page-content";
 export const metadata: Metadata = {
   title: "Keranjang Belanja | Agroastery",
   description: "Keranjang belanja kopi spesialti Anda",
-  robots: { index: false },
+  // Issue #177: make follow explicit — "noindex, follow".
+  robots: { index: false, follow: true },
   alternates: { canonical: "/cart" },
 };
 

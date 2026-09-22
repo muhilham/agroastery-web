@@ -10,6 +10,9 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Lacak Pesanan | Agroastery",
   description: "Lacak status pengiriman pesanan kopi Anda",
+  // Issue #177: private order URLs must not be indexed (GA4 saw organic
+  // sessions landing on /track/{uuid}/).
+  robots: { index: false, follow: true },
 };
 
 const STATUS_LABELS: Record<string, string> = {

@@ -6,6 +6,8 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Pembayaran | Agroastery",
   description: "Selesaikan pembayaran pesanan kopi Anda",
+  // Issue #177: payment pages are per-order private URLs — noindex.
+  robots: { index: false, follow: true },
 };
 
 export default async function PaymentPage({
