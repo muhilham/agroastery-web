@@ -16,11 +16,11 @@ import {
 } from "./blend-50-50";
 
 describe("blend-50-50 content", () => {
-  it("has exactly 3 recipes with unique ids", () => {
-    expect(recipes).toHaveLength(3);
-    expect(new Set(recipes.map((r) => r.id)).size).toBe(3);
+  it("has exactly 4 recipes with unique ids", () => {
+    expect(recipes).toHaveLength(4);
+    expect(new Set(recipes.map((r) => r.id)).size).toBe(4);
     expect(recipes.map((r) => r.id).sort()).toEqual(
-      ["es_kopi_susu", "espresso", "iced_americano"].sort()
+      ["es_kopi_susu", "espresso", "iced_americano", "mokapot"].sort()
     );
   });
 

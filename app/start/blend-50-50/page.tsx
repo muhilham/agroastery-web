@@ -12,7 +12,7 @@ import { recipes } from "@/lib/data/blend-50-50";
 export const metadata: Metadata = {
   title: "Panduan Seduh Blend 50:50 | AGRoastery",
   description:
-    "Resep dan panduan menyeduh Blend 50:50 langsung dari AGRoastery — espresso, iced americano, dan es kopi susu.",
+    "Resep dan panduan menyeduh Blend 50:50 langsung dari AGRoastery — espresso, iced americano, es kopi susu, dan mokapot.",
   openGraph: {
     title: "Panduan Seduh Blend 50:50 | AGRoastery",
     description: "Resep dan panduan menyeduh Blend 50:50 langsung dari AGRoastery.",

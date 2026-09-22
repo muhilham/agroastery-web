@@ -31,12 +31,13 @@ beforeEach(() => {
 });
 
 describe("Blend5050OnboardingPage", () => {
-  it("renders the hero, all three recipe sections, ingredients, troubleshooting, help, and reorder CTAs", () => {
+  it("renders the hero, all four recipe sections, ingredients, troubleshooting, help, and reorder CTAs", () => {
     render(<Blend5050OnboardingPage />);
     expect(screen.getByRole("heading", { name: "Blend 50:50" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Espresso" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Iced Americano" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Es Kopi Susu" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Mokapot" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Bahan yang Digunakan" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Troubleshooting" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Pesan Ulang Blend 50:50" })).toBeInTheDocument();
