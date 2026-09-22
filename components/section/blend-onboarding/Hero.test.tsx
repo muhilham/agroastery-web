@@ -14,6 +14,10 @@ describe("Hero", () => {
       "href",
       "#es-kopi-susu"
     );
+    expect(screen.getByRole("link", { name: "Mokapot" })).toHaveAttribute(
+      "href",
+      "#mokapot"
+    );
   });
 
   it("renders the title and subhead", () => {

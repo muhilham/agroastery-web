@@ -2,9 +2,9 @@
 import { trackEvent } from "@/lib/analytics/gtag";
 
 export const PRODUCT_SLUG = "blend-50-50";
-export const CONTENT_VERSION = "2026-08"; // bump whenever recipe dose/yield/time copy changes
+export const CONTENT_VERSION = "2026-09"; // bump whenever recipe dose/yield/time copy changes
 
-export type BrewMethod = "espresso" | "iced_americano" | "es_kopi_susu";
+export type BrewMethod = "espresso" | "iced_americano" | "es_kopi_susu" | "mokapot";
 
 export type Recipe = {
   id: BrewMethod;
@@ -61,6 +61,16 @@ export const recipes: Recipe[] = [
       { label: "Es", value: "150g" },
     ],
     tasteProfile: ["Chocolate Cookie", "Creamy", "Sweet Aren", "Starch-like oat"],
+  },
+  {
+    id: "mokapot",
+    title: "Mokapot",
+    steps: [
+      { label: "Kopi", value: "18g" },
+      { label: "Air Panas", value: "100–150ml" },
+    ],
+    tasteProfile: [],
+    note: "Gilingan fine dibuat sedikit kasar dan gunakan air yang sudah panas. Masukkan bubuk ke basket, ratakan saja tanpa ditamping. Nyalakan api kecil, lalu matikan saat ekstrak kopi keluar dari lubang atas, sekitar 4–5 menit.",
   },
 ];
 
