@@ -30,7 +30,9 @@ function internalHref(href: string): string | null {
 }
 
 function homepageInternalHrefs(): string[] {
-  const source = readFileSync(join(APP_DIRECTORY, "page.tsx"), "utf8");
+  // Issue #177: the homepage UI moved to app/home.tsx (app/page.tsx is now a
+  // server wrapper exporting metadata).
+  const source = readFileSync(join(APP_DIRECTORY, "home.tsx"), "utf8");
   return [...source.matchAll(/href="(\/[^"]*)"/g)].map((match) => match[1]);
 }
 

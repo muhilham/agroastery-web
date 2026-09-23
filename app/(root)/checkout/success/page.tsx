@@ -10,6 +10,8 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Pesanan Berhasil | Agroastery",
   description: "Pesanan kopi spesialti Anda telah diterima",
+  // Issue #177: /checkout/success?order=... leaked into organic landings.
+  robots: { index: false, follow: true },
 };
 
 type PageProps = {
