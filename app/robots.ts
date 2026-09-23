@@ -14,22 +14,22 @@ export default function robots(): MetadataRoute.Robots {
         // Allow AI/LLM crawlers for AI search visibility
         userAgent: "GPTBot",
         allow: "/",
-        disallow: ["/api/", "/checkout/", "/account/", "/orders/", "/login/"],
+        disallow: ["/api/", "/checkout/", "/track/", "/account/", "/orders/", "/login/"],
       },
       {
         userAgent: "CCBot",
         allow: "/",
-        disallow: ["/api/", "/checkout/", "/account/", "/orders/", "/login/"],
+        disallow: ["/api/", "/checkout/", "/track/", "/account/", "/orders/", "/login/"],
       },
       {
         userAgent: "Google-Extended",
         allow: "/",
-        disallow: ["/api/", "/checkout/", "/account/", "/orders/", "/login/"],
+        disallow: ["/api/", "/checkout/", "/track/", "/account/", "/orders/", "/login/"],
       },
       {
         userAgent: "PerplexityBot",
         allow: "/",
-        disallow: ["/api/", "/checkout/", "/account/", "/orders/", "/login/"],
+        disallow: ["/api/", "/checkout/", "/track/", "/account/", "/orders/", "/login/"],
       },
       {
         // Default: all other bots (incl. Googlebot — no explicit rule means it
