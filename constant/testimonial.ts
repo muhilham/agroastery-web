@@ -11,5 +11,25 @@ export const testimonialContent: I_TestimonialInterface[] = [
         name: 'Iqbal',
         message: 'Sepanjang sy beli kopi, ini adalah produk paling worth it. Dari sisi harga murah dan dari sisi kualitas juga terbaik. Pelayanan toko sangat ramah dan profesional. Tidak menyesal beli disini dan tidak akan berhenti beli di toko ini',
         product: 'HOUSE BLEND ESPRESSO',
-    }
+    },
+    //* Real buyer reviews from our Tokopedia store (tokopedia.com/agroastery), harvested Sep 2026.
+    //* Keep wording verbatim — do not paraphrase customer voice.
+    {
+        name: 'Haikal',
+        message: 'Kopi roastingan fresh..pengiriman cepat..wangi nya oke 👍🏻',
+        product: 'BLEND KOPI SUSU EKONOMIS',
+        source: 'Tokopedia',
+    },
+    {
+        name: 'Andy',
+        message: 'order jam 10 pagi, jam 5 sore sdh sampai, di hari yg sama, ini rekor Anteraja tercepat',
+        product: 'BLEND KOPI SUSU EKONOMIS',
+        source: 'Tokopedia',
+    },
+    {
+        name: 'Ahmad',
+        message: 'Bold banget rasa strawberrynya, buru beli.',
+        product: 'STRAWBERRIJEN — ROASTED FOR FILTER',
+        source: 'Tokopedia',
+    },
 ]
