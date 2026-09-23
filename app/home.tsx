@@ -160,11 +160,19 @@ export default function Home() {
                       <p className="max-w-[400px] font-extralight leading-relaxed text-[#ccc4a9]">
                         {product.subtitle}
                       </p>
-                      {product.price && (
-                        <p className="text-sm font-medium text-[#f5ebc9] mt-2">
-                          Mulai {numberToIdr({ nominal: product.price })}
-                        </p>
-                      )}
+                      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+                        {product.price && (
+                          <p className="text-sm font-medium text-[#f5ebc9]">
+                            Mulai {numberToIdr({ nominal: product.price })}
+                          </p>
+                        )}
+                        {product.roastLevel && (
+                          <span className="inline-flex items-center gap-1.5 rounded-full border border-[#f5ebc9]/30 px-2.5 py-0.5 text-[11px] tracking-wide text-[#ccc4a9]">
+                            <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[#f5ebc9]" />
+                            Roast: {product.roastLevel}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <Image
                       src={product.image}
@@ -227,7 +235,7 @@ export default function Home() {
                     </svg>
                   ))}
                 </div>
-                <span className="text-sm text-[#f5ebc9]">5.0 — dari 25.000+ pembeli</span>
+                <span className="text-sm text-[#f5ebc9]">5.0 — dari 25.000+ ulasan pembeli di Tokopedia</span>
               </div>
 
               <div className="w-full flex gap-6 no-scrollbar sm:flex-nowrap sm:overflow-x-scroll sm:px-6 scroll-fade-mobile">
@@ -242,7 +250,14 @@ export default function Home() {
                     <p className="font-extralight leading-relaxed text-[#ccc4a9]">
                       {opinion.message}
                     </p>
-                    <h4 className="text-lg font-light">- {opinion.name}</h4>
+                    <div className="flex items-baseline justify-between gap-2">
+                      <h4 className="text-lg font-light">- {opinion.name}</h4>
+                      {opinion.source && (
+                        <span className="text-[11px] text-[#ccc4a9]/70 whitespace-nowrap">
+                          ulasan {opinion.source}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>

@@ -8,6 +8,8 @@ export const coffeList: I_ContentInterface[] = [
     image: "/assets/coffe/blend-gayo.png",
     href: "/product/biji-kopi-standard-gayo-full-arabica",
     price: 59000,
+    // Prod: "Roast Level: Medium"
+    roastLevel: "Medium",
   },
   {
     title: "BLEND KOPI SUSU EKONOMIS",
@@ -16,6 +18,8 @@ export const coffeList: I_ContentInterface[] = [
     image: "/assets/coffe/blend-kopi-susu.png",
     href: "/product/biji-kopi-blend-5050-kopi-susu-ekonomis",
     price: 32000,
+    // Prod: "Roast Level: FullCity+ (very early second crack / early stage dark roast)"
+    roastLevel: "Dark",
   },
   {
     title: "HOUSE BLEND ARABICA & ROBUSTA",
@@ -24,6 +28,8 @@ export const coffeList: I_ContentInterface[] = [
     image: "/assets/coffe/blend-house.png",
     href: "/product/house-blend-espresso-arabica-fine-robusta-es46",
     price: 43000,
+    // Prod: Arabica Fullcity+ (dark) / Robusta Fullcity (medium-dark)
+    roastLevel: "Medium-Dark",
   },
   {
     title: "SOLOK SELATAN FULL ARABICA",
@@ -32,5 +38,7 @@ export const coffeList: I_ContentInterface[] = [
     image: "/assets/coffe/blend-solok.png",
     href: "/product/biji-kopi-standard-solok-selatan-full-arabica",
     price: 61000,
+    // Prod: "Fullcityplus / Very Early Second Crack / Dark Roast"
+    roastLevel: "Dark",
   },
 ];
