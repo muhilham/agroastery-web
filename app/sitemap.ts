@@ -10,8 +10,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${siteUrl}/katalog`, changeFrequency: "daily", priority: 0.9 },
     { url: `${siteUrl}/konsultasi`, changeFrequency: "weekly", priority: 0.7 },
     { url: `${siteUrl}/roast-age`, changeFrequency: "weekly", priority: 0.6 },
-    { url: `${siteUrl}/track`, changeFrequency: "monthly", priority: 0.3 },
-    { url: `${siteUrl}/cart`, changeFrequency: "monthly", priority: 0.3 },
+    // Issue #177 follow-up: /track and /cart are noindex — listing them here
+    // contradicts the meta tag and keeps them in Google's index.
   ];
 
   // Dynamic product pages
