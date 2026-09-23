@@ -36,7 +36,9 @@ export default function Home() {
               aggregateRating: {
                 "@type": "AggregateRating",
                 ratingValue: "5.0",
-                reviewCount: "25000",
+                // 25k+ is Tokopedia shop ratingCount (star ratings), not written
+                // reviews — ratingCount is the accurate schema.org property.
+                ratingCount: "25000",
               },
             }),
           }}
@@ -235,7 +237,7 @@ export default function Home() {
                     </svg>
                   ))}
                 </div>
-                <span className="text-sm text-[#f5ebc9]">5.0 — dari 25.000+ ulasan pembeli di Tokopedia</span>
+                <span className="text-sm text-[#f5ebc9]">5.0 — dari 25.000+ penilaian pembeli di Tokopedia</span>
               </div>
 
               <div className="w-full flex gap-6 no-scrollbar sm:flex-nowrap sm:overflow-x-scroll sm:px-6 scroll-fade-mobile">
