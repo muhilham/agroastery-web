@@ -134,12 +134,36 @@ export const ARABICA_GAYO = product(
   ]
 );
 
+/**
+ * An arabica+robusta espresso blend — the page's FAQ promises "semua produk
+ * di tabel adalah biji kopi arabica", so blends must be excluded from the
+ * arabica pricing table (name still matches /arabica/i).
+ */
+export const ARABICA_ROBUSTA_BLEND = product(
+  "house-blend-espresso-arabica-fine-robusta-es46",
+  "House Blend Espresso Arabica & Fine Robusta ES46",
+  ["Espresso Series"],
+  [["1Kg", 285000]]
+);
+
 /** A product with no size-parseable variants — must be skipped by pricing. */
 export const ARABICA_NO_SIZE = product(
   "espresso-arabica-kintamani-1000ml",
   "Espresso Arabica Kintamani 1000ml (ready to drink)",
   [],
   [["1000ml", 25000]]
+);
+
+/**
+ * Pure arabica sold only in a 150gr pack — exercises the JSON-LD anchor: the
+ * extrapolated bestPerKg (150.000*1000/150=1.000.000) must NOT become the
+ * structured-data offer; the real 150.000 purchasable price should.
+ */
+export const ARABICA_FILTER_150 = product(
+  "biji-kopi-arabica-filter-oromia-150gr",
+  "Biji Kopi Arabica Oromia Roasted for Filter 150gr",
+  ["Roasted for Filter"],
+  [["150gram", 150000]]
 );
 
 export const UNRELATED = product(

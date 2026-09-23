@@ -10,7 +10,7 @@ import {
   arabicaFaqs,
 } from "./arabica-pricing";
 import { collectionPageJsonLd, faqJsonLd, arabicaPriceListJsonLd } from "./content-jsonld";
-import { SUSU_5050, ARABICA_GAYO, ARABICA_NO_SIZE, FILTER_ETHIOPIA } from "./testing/fixtures";
+import { SUSU_5050, ARABICA_GAYO, ARABICA_ROBUSTA_BLEND, ARABICA_NO_SIZE, FILTER_ETHIOPIA, ARABICA_FILTER_150 } from "./testing/fixtures";
 
 describe("parseSizeGrams", () => {
   it("parses gram and kg variants", () => {
@@ -26,14 +26,23 @@ describe("parseSizeGrams", () => {
 });
 
 describe("buildArabicaPriceRows", () => {
-  it("keeps only arabica products with parseable sizes", () => {
-    const rows = buildArabicaPriceRows([ARABICA_GAYO, SUSU_5050, ARABICA_NO_SIZE, FILTER_ETHIOPIA]);
+  it("keeps only pure arabica products with parseable sizes", () => {
+    const rows = buildArabicaPriceRows([
+      ARABICA_GAYO,
+      SUSU_5050,
+      ARABICA_ROBUSTA_BLEND,
+      ARABICA_NO_SIZE,
+      FILTER_ETHIOPIA,
+    ]);
     expect(rows.map((r) => r.slug)).toEqual([
       "biji-kopi-standard-gayo-full-arabica",
     ]);
+    expect(
+      rows.some((r) => r.slug === "house-blend-espresso-arabica-fine-robusta-es46")
+    ).toBe(false);
   });
 
-  it("derives bestPerKg from the cheapest per-gram pack", () => {
+  it("derives bestPerKg and bestPack from the cheapest per-gram pack", () => {
     const [row] = buildArabicaPriceRows([ARABICA_GAYO]);
     expect(row.packs).toEqual([
       { grams: 100, price: 59000 },
@@ -43,6 +52,18 @@ describe("buildArabicaPriceRows", () => {
     ]);
     // 388.000/1kg beats 214.000*2=428.000 and 59.000*10=590.000
     expect(row.bestPerKg).toBe(388000);
+    // the anchor offered in JSON-LD is a real purchasable pack (1kg), not an
+    // extrapolated per-kg figure
+    expect(row.bestPack).toEqual({ grams: 1000, price: 388000 });
+  });
+
+  it("anchors a no-1kg product on its single real pack price, not an extrapolated rate", () => {
+    // ARABICA_FILTER_150 has only a 150gr pack; bestPerKg extrapolates to
+    // 150.000*1000/150 = 1.000.000, but the purchasable price is 150.000.
+    const rows = buildArabicaPriceRows([ARABICA_FILTER_150]);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].bestPerKg).toBe(1000000);
+    expect(rows[0].bestPack).toEqual({ grams: 150, price: 150000 });
   });
 
   it("sorts rows by price ascending", () => {
@@ -91,10 +112,17 @@ describe("JSON-LD builders", () => {
     expect(__html).toContain("<\\/script>");
   });
 
-  it("arabicaPriceListJsonLd anchors each offer at bestPerKg", () => {
+  it("arabicaPriceListJsonLd anchors each offer at a real purchasable pack price", () => {
     const rows = buildArabicaPriceRows([ARABICA_GAYO]);
     const json = JSON.parse(arabicaPriceListJsonLd(rows, "/harga-biji-kopi-arabica").__html);
     expect(json["@type"]).toBe("ItemList");
     expect(json.itemListElement[0].item.offers.price).toBe(388000);
+  });
+
+  it("arabicaPriceListJsonLd never emits an extrapolated per-kg rate as the offer", () => {
+    const rows = buildArabicaPriceRows([ARABICA_FILTER_150]);
+    const json = JSON.parse(arabicaPriceListJsonLd(rows, "/harga-biji-kopi-arabica").__html);
+    // purchasable 150gr price, NOT the extrapolated 1.000.000 per kg
+    expect(json.itemListElement[0].item.offers.price).toBe(150000);
   });
 });

@@ -16,6 +16,8 @@ export type ArabicaPriceRow = {
   name: string;
   slug: string;
   packs: PackPrice[];
+  /** The real pack that achieves the lowest per-kg rate (a purchasable pack). */
+  bestPack: PackPrice;
   /** Lowest effective price per kilogram across available packs. */
   bestPerKg: number;
 };
@@ -31,7 +33,10 @@ export function parseSizeGrams(value: string): number | null {
 }
 
 export function isArabicaProduct(product: SupabaseProduct): boolean {
-  return /arabica/i.test(product.name);
+  // The /harga-biji-kopi-arabica page advertises ARABICA specifically —
+  // exclude arabica+robusta blends (e.g. "Arabica & Fine Robusta") so the
+  // FAQ claim "semua produk di tabel adalah biji kopi arabica" holds true.
+  return /arabica/i.test(product.name) && !/robusta/i.test(product.name);
 }
 
 /**
@@ -94,10 +99,13 @@ export function buildArabicaPriceRows(
     if (packs.length === 0) continue;
 
     const perKg = packs.map((pack) => (pack.price * 1000) / pack.grams);
+    const bestIndex = perKg.indexOf(Math.min(...perKg));
+    const bestPack = packs[bestIndex];
     rows.push({
       name: product.name,
       slug: product.slug,
       packs,
+      bestPack,
       bestPerKg: Math.round(Math.min(...perKg)),
     });
   }

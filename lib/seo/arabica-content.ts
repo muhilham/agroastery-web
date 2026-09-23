@@ -16,29 +16,8 @@ export const STATIC_ARABICA_ROWS: ArabicaPriceRow[] = [
       { grams: 500, price: 131000 },
       { grams: 1000, price: 237000 },
     ],
+    bestPack: { grams: 1000, price: 237000 },
     bestPerKg: 237000,
-  },
-  {
-    name: "House Blend Espresso Arabica & Fine Robusta ES46",
-    slug: "house-blend-espresso-arabica-fine-robusta-es46",
-    packs: [
-      { grams: 100, price: 43000 },
-      { grams: 200, price: 72000 },
-      { grams: 500, price: 157000 },
-      { grams: 1000, price: 285000 },
-    ],
-    bestPerKg: 285000,
-  },
-  {
-    name: "House Blend Espresso Arabica & Fine Robusta Prime73",
-    slug: "house-blend-espresso-arabica-fine-robusta-prime73",
-    packs: [
-      { grams: 100, price: 51000 },
-      { grams: 200, price: 84000 },
-      { grams: 500, price: 184000 },
-      { grams: 1000, price: 334000 },
-    ],
-    bestPerKg: 334000,
   },
   {
     name: "Biji Kopi Standard Gayo Full Arabica",
@@ -49,6 +28,7 @@ export const STATIC_ARABICA_ROWS: ArabicaPriceRow[] = [
       { grams: 500, price: 214000 },
       { grams: 1000, price: 388000 },
     ],
+    bestPack: { grams: 1000, price: 388000 },
     bestPerKg: 388000,
   },
   {
@@ -60,6 +40,7 @@ export const STATIC_ARABICA_ROWS: ArabicaPriceRow[] = [
       { grams: 500, price: 214000 },
       { grams: 1000, price: 389000 },
     ],
+    bestPack: { grams: 1000, price: 389000 },
     bestPerKg: 389000,
   },
   {
@@ -71,6 +52,7 @@ export const STATIC_ARABICA_ROWS: ArabicaPriceRow[] = [
       { grams: 500, price: 227000 },
       { grams: 1000, price: 412000 },
     ],
+    bestPack: { grams: 1000, price: 412000 },
     bestPerKg: 412000,
   },
   {
@@ -82,6 +64,7 @@ export const STATIC_ARABICA_ROWS: ArabicaPriceRow[] = [
       { grams: 500, price: 232000 },
       { grams: 1000, price: 421000 },
     ],
+    bestPack: { grams: 1000, price: 421000 },
     bestPerKg: 421000,
   },
 ];

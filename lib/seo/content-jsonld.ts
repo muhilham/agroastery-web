@@ -60,8 +60,10 @@ export function collectionPageJsonLd(opts: {
 
 /**
  * ItemList of Products for the Arabica price table. Each row contributes one
- * Product per available pack via the cheapest pack (bestPerKg is the anchor
- * price Google shows for price-intent queries).
+ * Product with its single cheapest purchasable pack as the Offer price —
+ * the extrapolated per-kg rate (bestPerKg) is an *effective* figure and must
+ * NOT be used as a structured-data price (Google silences mismatched-price
+ * offers when the landing page shows a different purchasable price).
  */
 export function arabicaPriceListJsonLd(
   rows: ArabicaPriceRow[],
@@ -82,7 +84,7 @@ export function arabicaPriceListJsonLd(
         url: `${SITE_URL}/product/${row.slug}`,
         offers: {
           "@type": "Offer",
-          price: row.bestPerKg,
+          price: row.bestPack.price,
           priceCurrency: "IDR",
           url: `${SITE_URL}/product/${row.slug}`,
         },
