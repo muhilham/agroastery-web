@@ -9,6 +9,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: siteUrl, changeFrequency: "weekly", priority: 1.0 },
     { url: `${siteUrl}/katalog`, changeFrequency: "daily", priority: 0.9 },
     { url: `${siteUrl}/konsultasi`, changeFrequency: "weekly", priority: 0.7 },
+    { url: `${siteUrl}/supplier-biji-kopi-cafe`, changeFrequency: "weekly", priority: 0.8 },
+    { url: `${siteUrl}/kopi-susu-ekonomis`, changeFrequency: "weekly", priority: 0.8 },
+    { url: `${siteUrl}/roasted-for-filter`, changeFrequency: "weekly", priority: 0.8 },
+    { url: `${siteUrl}/harga-biji-kopi-arabica`, changeFrequency: "daily", priority: 0.8 },
     { url: `${siteUrl}/roast-age`, changeFrequency: "weekly", priority: 0.6 },
     // Issue #177 follow-up: /track and /cart are noindex — listing them here
     // contradicts the meta tag and keeps them in Google's index.
