@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.31.0](https://github.com/muhilham/agroastery-web/compare/v0.30.1...v0.31.0) (2026-09-23)
+
+
+### Features
+
+* **blend-50-50:** add mokapot brewing recipe to onboarding guide ([#175](https://github.com/muhilham/agroastery-web/issues/175)) ([a8e596b](https://github.com/muhilham/agroastery-web/commit/a8e596bf03da27183587862059127bc897bbe96b))
+* **seo:** non-brand content pages — supplier cafe, category URLs, harga arabica ([#180](https://github.com/muhilham/agroastery-web/issues/180)) ([6115bd9](https://github.com/muhilham/agroastery-web/commit/6115bd990ebe5bd15eeba88d9742c66811bb4be5))
+
+
+### Bug Fixes
+
+* **seo:** noindex order pages, homepage canonical, keyword H1 ([#179](https://github.com/muhilham/agroastery-web/issues/179)) ([3740c5a](https://github.com/muhilham/agroastery-web/commit/3740c5a42b95bdd6a35a8239cad61c66feb9dce4))
+
 ## [0.30.1](https://github.com/muhilham/agroastery-web/compare/v0.30.0...v0.30.1) (2026-09-15)
 
 
