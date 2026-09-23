@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.32.0](https://github.com/muhilham/agroastery-web/compare/v0.31.0...v0.32.0) (2026-09-23)
+
+
+### Features
+
+* **homepage:** roast level badge + real Tokopedia reviews ([#181](https://github.com/muhilham/agroastery-web/issues/181)) ([#182](https://github.com/muhilham/agroastery-web/issues/182)) ([33ab103](https://github.com/muhilham/agroastery-web/commit/33ab1037ed33fdbbfdcefea7a64ea909acf1ff5f))
+
+
+### Bug Fixes
+
+* **start/blend-50-50:** name Max Creamer as the creamer powder brand in liquid creamer recipe ([#184](https://github.com/muhilham/agroastery-web/issues/184)) ([c341e46](https://github.com/muhilham/agroastery-web/commit/c341e466dda7e08e66b49d5310906c3f0b2214cc))
+
 ## [0.31.0](https://github.com/muhilham/agroastery-web/compare/v0.30.1...v0.31.0) (2026-09-23)
 
 
