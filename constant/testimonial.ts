@@ -22,7 +22,7 @@ export const testimonialContent: I_TestimonialInterface[] = [
     },
     {
         name: 'Andy',
-        message: 'Order jam 10 pagi, jam 5 sore sudah sampai, di hari yang sama. Ini rekor pengiriman tercepat. Selalu langganan beli di sini.',
+        message: 'order jam 10 pagi, jam 5 sore sdh sampai, di hari yg sama, ini rekor Anteraja tercepat',
         product: 'BLEND KOPI SUSU EKONOMIS',
         source: 'Tokopedia',
     },
