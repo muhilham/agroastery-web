@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.32.3](https://github.com/muhilham/agroastery-web/compare/v0.32.2...v0.32.3) (2026-09-27)
+
+
+### Documentation
+
+* remove stale xendit-node entry from Dependencies to Know ([#170](https://github.com/muhilham/agroastery-web/issues/170) tail) ([#191](https://github.com/muhilham/agroastery-web/issues/191)) ([320acdd](https://github.com/muhilham/agroastery-web/commit/320acdd4533b41a114c78f849914009850c66b63))
+
 ## [0.32.2](https://github.com/muhilham/agroastery-web/compare/v0.32.1...v0.32.2) (2026-09-27)
 
 
