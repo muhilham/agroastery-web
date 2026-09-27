@@ -122,7 +122,6 @@ The client-component homepage is intentionally outside this metadata layer; its 
 - `@supabase/ssr` — Server-side auth with cookies
 - `nanostores` — State management
 - `@next/third-parties` — Google Analytics 4 script injection (`app/layout.tsx`)
-- `xendit-node` — Payment API
 - `zod` — Validation everywhere
 - `resend` — Transactional email
 
