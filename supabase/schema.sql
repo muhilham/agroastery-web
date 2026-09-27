@@ -930,8 +930,7 @@ CREATE TABLE IF NOT EXISTS "public"."ecom_orders" (
     "shipping_etd" "text",
     "tracking_number" "text",
     "biteship_order_id" "text",
-    "xendit_invoice_id" "text",
-    "xendit_payment_method" "text",
+    "payment_method" "text",
     "payment_status" "text" DEFAULT 'unpaid'::"text",
     "paid_at" timestamp with time zone,
     "subtotal" bigint NOT NULL,
@@ -1466,7 +1465,7 @@ CREATE INDEX "idx_ecom_orders_user" ON "public"."ecom_orders" USING "btree" ("us
 
 
 
-CREATE INDEX "idx_ecom_orders_xendit" ON "public"."ecom_orders" USING "btree" ("xendit_invoice_id");
+CREATE INDEX "idx_ecom_orders_payment_method" ON "public"."ecom_orders" USING "btree" ("payment_method");
 
 
 

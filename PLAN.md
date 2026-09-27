@@ -1,5 +1,10 @@
 # E-Commerce Service Implementation Plan
 
+> **ARCHIVED — historical build plan (pre-Pivot).** This Phase 1–4 plan was written when the
+> project used Xendit for payments. It is kept for historical reference only; do **not**
+> implement from it. Payments are now **Pivot QRIS** — the only B2C payment method.
+> Every Xendit reference below is superseded (see `docs/THIRD_PARTY_INTEGRATIONS.md`, issue #170).
+
 ## CRITICAL RULES (Read Before Implementing)
 
 ### DO:
