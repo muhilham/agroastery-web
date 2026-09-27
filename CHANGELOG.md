@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.32.1](https://github.com/muhilham/agroastery-web/compare/v0.32.0...v0.32.1) (2026-09-27)
+
+
+### Bug Fixes
+
+* purge Xendit remnants — B2C is Pivot QRIS only ([#170](https://github.com/muhilham/agroastery-web/issues/170)) ([#185](https://github.com/muhilham/agroastery-web/issues/185)) ([f7dc864](https://github.com/muhilham/agroastery-web/commit/f7dc864b8b802ebec29fc9e0d1f3e988d898e4dd))
+
 ## [0.32.0](https://github.com/muhilham/agroastery-web/compare/v0.31.0...v0.32.0) (2026-09-23)
 
 
