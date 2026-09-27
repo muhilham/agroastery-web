@@ -18,7 +18,7 @@ Shares a **Supabase (PostgreSQL)** database with the ops admin panel (separate r
 | Forms | React Hook Form + Zod |
 | Auth | Supabase Auth (Google OAuth only) |
 | Database | Supabase (PostgreSQL) — shared with ops admin |
-| Payment | Xendit (popup/embedded checkout widget) |
+| Payment | Pivot Payment (QRIS — static EMVCO QR, the only B2C method) |
 | Shipping | Biteship API |
 | Maps | Google Maps JS API |
 | Deployment | Railway |
@@ -52,12 +52,12 @@ Products use a Shopify-style option/variant model:
 - Cart stored in Supabase for logged-in users, localStorage for guests
 - Merge guest cart into user cart on login
 
-### Payment — Xendit
-- **Xendit popup/embedded checkout widget** (not redirect)
+### Payment — Pivot (QRIS)
+- **Pivot Payment gateway** — QRIS only (scan a static EMVCO QR with any Indonesian banking app)
 - Replace WhatsApp order flow entirely
-- Flow: Create Xendit invoice via API → display popup widget → handle callback
-- Webhook endpoint receives payment confirmation → update order status
-- Support all Xendit payment methods: VA, e-wallets, QRIS, cards
+- Flow: Create order server-side → create Pivot payment session → render QR (client-side from `qr_string`, server-generated PNG fallback) → webhook confirms
+- Webhook endpoint `/api/webhooks/pivot` receives `PAYMENT.PAID`/`PAYMENT.EXPIRED` → update order status
+- Xendit was the original planned gateway but never went live; fully purged (see agroastery-web#170)
 
 ### Shipping — Biteship
 - Already integrated — improve with:
@@ -70,8 +70,8 @@ Products use a Shopify-style option/variant model:
 2. Adds items to cart (multi-item)
 3. Proceeds to checkout → fills shipping info
 4. Shipping rates calculated via Biteship
-5. Xendit popup widget for payment
-6. Webhook confirms payment → order status updated
+5. Pivot QRIS payment (static QR shown at checkout)
+6. Webhook `/api/webhooks/pivot` confirms payment → order status updated
 7. Order visible in user's purchase history (if logged in)
 
 ## Database Schema
@@ -216,8 +216,11 @@ ecom_orders (
   biteship_order_id TEXT,              -- Biteship draft/order ID
 
   -- Payment info
-  xendit_invoice_id TEXT,
-  xendit_payment_method TEXT,
+  payment_method TEXT,                 -- 'QRIS' (Pivot; renamed from xendit_payment_method, #170)
+  pivot_payment_session_id TEXT,       -- Pivot session id (webhook lookup key)
+  pivot_qr_url TEXT,                   -- hosted QR image URL
+  pivot_qr_string TEXT,                -- raw EMVCO string for client-side rendering
+  pivot_qr_expires_at TIMESTAMPTZ,
   payment_status TEXT DEFAULT 'unpaid',
     -- unpaid, paid, expired, refunded
   paid_at TIMESTAMPTZ,
@@ -296,7 +299,7 @@ CREATE INDEX idx_product_variants_sku ON product_variants(sku);
 CREATE INDEX idx_cart_items_user ON cart_items(user_id);
 CREATE INDEX idx_ecom_orders_user ON ecom_orders(user_id);
 CREATE INDEX idx_ecom_orders_number ON ecom_orders(order_number);
-CREATE INDEX idx_ecom_orders_xendit ON ecom_orders(xendit_invoice_id);
+CREATE INDEX idx_ecom_orders_pivot ON ecom_orders(pivot_payment_session_id);
 CREATE INDEX idx_ecom_order_items_order ON ecom_order_items(order_id);
 ```
 
@@ -308,10 +311,11 @@ NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
 SUPABASE_SERVICE_ROLE_KEY=eyJ...      # server-side only, for order creation
 
-# Xendit
-XENDIT_SECRET_KEY=xnd_production_...  # server-side only
-XENDIT_WEBHOOK_TOKEN=...              # verify webhook signatures
-NEXT_PUBLIC_XENDIT_PUBLIC_KEY=xnd_public_production_...  # for popup widget
+# Pivot Payment (QRIS — the only B2C payment method)
+PIVOT_API_URL=https://api.pivot-payment.com     # https://api-stg.pivot-payment.com for sandbox
+PIVOT_MERCHANT_ID=...                   # server-side only
+PIVOT_MERCHANT_SECRET=...               # server-side only
+PIVOT_CALLBACK_API_KEY=...              # shared secret verified on inbound webhook calls
 
 # Biteship (existing)
 BITESHIP_API_KEY=...
@@ -325,7 +329,7 @@ NEXT_PUBLIC_ORIGIN_NAME=Agroastery
 # ... etc
 
 # App
-NEXT_PUBLIC_APP_URL=https://agroastery.com  # for Xendit callback URLs
+NEXT_PUBLIC_APP_URL=https://agroastery.com  # for Pivot redirect/callback URLs
 ```
 
 ## File Structure (New/Modified)
@@ -338,9 +342,9 @@ app/
 │   ├── cart/
 │   │   └── route.ts                 # Cart sync API (GET, POST, DELETE)
 │   ├── checkout/
-│   │   └── route.ts                 # Create order + Xendit invoice
+│   │   └── route.ts                 # Create order + Pivot QRIS payment session
 │   ├── webhooks/
-│   │   └── xendit/route.ts          # Xendit payment webhook
+│   │   └── pivot/route.ts           # Pivot QRIS payment webhook
 │   ├── shipping/
 │   │   └── rates/route.ts           # (existing, enhance for multi-item)
 │   └── products/
@@ -366,9 +370,8 @@ lib/
 │   ├── server.ts                    # Server Supabase client (cookies)
 │   ├── middleware.ts                # Auth middleware helper
 │   └── types.ts                     # Generated database types
-├── xendit/
-│   ├── client.ts                    # Xendit API wrapper
-│   └── webhook.ts                   # Webhook signature verification
+├── pivot/
+│   └── client.ts                    # Pivot Payment API wrapper
 ├── stores/
 │   ├── cart.ts                      # NEW: multi-item cart store
 │   ├── auth.ts                      # NEW: auth state store
@@ -408,12 +411,12 @@ middleware.ts                        # NEW: Supabase auth session refresh
 - Unified checkout page (from cart)
 - Shipping address form (reuse existing + save address for logged-in)
 - Multi-item Biteship rate calculation
-- Xendit invoice creation API
-- Xendit popup widget integration
-- Payment success/failure handling
+- Pivot payment session creation API
+- QRIS QR rendering (client-side from qr_string + server PNG fallback)
+- Payment success/expiry handling
 
 ### Phase 5: Order Management
-- Xendit webhook handler (payment confirmation)
+- Pivot webhook handler (`/api/webhooks/pivot` — payment confirmation/expiry)
 - Order creation flow (checkout → order record)
 - Order status updates
 - Purchase history page (for logged-in users)
@@ -448,12 +451,11 @@ middleware.ts                        # NEW: Supabase auth session refresh
 - Use PKCE flow (default for `@supabase/ssr`)
 - Create profile row via database trigger on `auth.users` insert
 
-### Xendit Popup Widget
-- Load Xendit.js script in checkout page
-- Create invoice via server API → get invoice URL
-- Open popup with `Xendit.popup.open(invoiceUrl)`
-- Handle `onSuccess`, `onPending`, `onFailure`, `onClose` callbacks
-- Webhook at `/api/webhooks/xendit` verifies signature and updates order
+### Pivot QRIS Payment
+- Checkout POSTs to `/api/checkout` → order row + Pivot payment session created
+- Session returns `qrUrl` (hosted image) + `qrString` (raw EMVCO) + expiry
+- Client renders the QR; customer scans with any Indonesian banking/e-wallet app
+- Webhook at `/api/webhooks/pivot` verifies the shared-secret callback key (`PIVOT_CALLBACK_API_KEY`), then updates order, notifies Telegram, creates Biteship draft + Jubelio sync
 
 ### Biteship Multi-Item
 - Aggregate weights from all cart items

@@ -94,7 +94,7 @@ app/api/consultations/  # Consultation booking API
 Copy `.env.example` to `.env.local`. Required for local dev:
 - Supabase credentials (URL, anon key, service role)
 - Biteship API key
-- Xendit keys (or set `XENDIT_MOCK=true` for testing without real payments)
+- Pivot payment gateway (QRIS) credentials — the only B2C payment method
 - Google Maps API key
 - GA4 Measurement ID (`NEXT_PUBLIC_GA_MEASUREMENT_ID`, optional — leave blank to disable analytics locally)
 - Telegram bot token (optional, for order notifications)
