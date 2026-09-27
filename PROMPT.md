@@ -1,5 +1,10 @@
 # Implementation Prompt for AI Agent
 
+> **ARCHIVED — historical build prompt (pre-Pivot).** This one-shot bootstrap prompt predates the
+> Pivot migration and still describes Xendit (invoice creation, `lib/xendit/*`, `/api/webhooks/xendit`).
+> Those sections are **stale and must not be implemented**. Payments are now **Pivot QRIS** — the only
+> B2C payment method (see `docs/THIRD_PARTY_INTEGRATIONS.md`, issue #170).
+
 > This prompt guides an AI model to implement the e-commerce service for Agroastery.
 > Read CLAUDE.md and PLAN.md FIRST — they are the source of truth for architecture decisions.
 > This file tells you WHERE to look and HOW to implement each phase.

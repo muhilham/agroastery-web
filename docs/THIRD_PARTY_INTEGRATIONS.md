@@ -16,7 +16,7 @@ This document outlines all third-party services integrated into the Agroastery e
    - [Resend](#5-resend---transactional-emails)
    - [Telegram](#6-telegram---order-notifications)
    - [Jubelio](#7-jubelio---erp--inventory-sync)
-   - [Xendit (Deprecated)](#8-xendit---legacy-payment-gateway-not-actively-used)
+   - [Xendit (Legacy/Migrated)](#8-xendit-legacy-payment-gateway-migrated-to-pivot)
 4. [Data Flow](#data-flow)
 5. [Environment Variables](#environment-variables)
 6. [Security Considerations](#security-considerations)
@@ -37,7 +37,7 @@ Agroastery is an Indonesian specialty coffee e-commerce platform built on Next.j
 | **Notifications** | Telegram | Real-time order and payment alerts |
 | **ERP/Inventory** | Jubelio | Product and inventory synchronization |
 
-> **Note:** Xendit was previously used as a payment gateway but has been replaced by Pivot Payment. The `xendit-node` package remains in dependencies but is no longer used in the application code.
+> **Note:** Xendit was previously used as a payment gateway but has been replaced by **Pivot QRIS** — the only B2C payment method. The `xendit-node` package has been removed from dependencies and no Xendit code remains. See §8 for details.
 
 ---
 
@@ -411,36 +411,26 @@ JUBELIO_PASSWORD=your-jubelio-password
 
 ---
 
-### 8. Xendit - Legacy Payment Gateway (Not Actively Used)
+### 8. Xendit - Legacy Payment Gateway (Migrated to Pivot)
 
-**Status:** ❌ **DEPRECATED / NOT ACTIVELY USED**
+**Status:** ⚠️ **LEGACY — Migrated to Pivot Payment**
 
-Xendit has been replaced by **Pivot Payment** as the primary payment gateway. The project no longer uses Xendit's API for payment processing.
+Xendit was previously used as a payment gateway but has been fully replaced by **Pivot QRIS** — the only B2C payment method. All Xendit-related code and naming have been purged per issue #170.
 
-**What remains:**
-- `xendit-node` package in `package.json` (unused dependency)
-- Database columns `xendit_invoice_id` and `xendit_payment_method` in `ecom_orders` table
-- Environment variables (optional, can be removed)
-
-**Migration notes:**
-- The `xendit_payment_method` column is **reused** by Pivot to store the payment method (e.g., "QRIS")
-- Historical orders may still have `xendit_invoice_id` populated for legacy orders
-- No Xendit API calls exist in the current codebase
+**Current state (verified live against prod, 2026-09-27):**
+- `xendit-node` package: removed from `package.json` (integration code deleted 2026-04-11, commit `d150fff`)
+- Code references updated: pivot webhook writes `payment_method`, not `xendit_payment_method`
+- Environment variables: Xendit block removed from `.env.example`, Pivot vars documented instead
 - No Xendit webhook handlers (`/api/webhooks/xendit` does not exist)
+- Database columns: rename **pending** in `agr-ops` (issue #158) — `xendit_payment_method` → `payment_method`, drop `xendit_invoice_id`
 
-**To fully remove Xendit:**
-1. Remove `xendit-node` from `package.json`
-2. Optionally rename database columns to generic names (e.g., `payment_method`, `external_payment_id`)
-3. Remove Xendit-related environment variables from `.env.example`
+**Column population at cleanup time (236 `ecom_orders` rows):**
+- `xendit_invoice_id`: **0 / 236** — never populated, safe to drop
+- `xendit_payment_method`: 168 / 236 (`QRIS` 165, `QRIS_DEV_SIMULATE` 3, `NULL` 68) — **live**, Pivot writes into it until the rename lands
 
-**Legacy Environment Variables (optional):**
-```env
-# These are no longer used in the application
-XENDIT_SECRET_KEY=xnd_production_...
-XENDIT_WEBHOOK_TOKEN=...
-NEXT_PUBLIC_XENDIT_PUBLIC_KEY=xnd_public_production_...
-XENDIT_MOCK=false
-```
+**Historical notes:**
+- Xendit was briefly the intended gateway at initial build (2026-03-20); it was never live for production payments and was removed 2026-04-11
+- No Xendit API calls exist in the current codebase
 
 ---
 
@@ -578,14 +568,6 @@ ADMIN_SECRET=change-me-to-a-random-secret
 # ─── Jubelio (ERP) ───────────────────────────────────────────────────────────
 JUBELIO_EMAIL=your-jubelio-email@example.com
 JUBELIO_PASSWORD=your-jubelio-password
-
-# ─── Legacy Xendit (Deprecated - Not Used) ───────────────────────────────────
-# These variables are no longer used. Xendit has been replaced by Pivot Payment.
-# Kept here only for reference for historical orders.
-# XENDIT_SECRET_KEY=xnd_production_...
-# XENDIT_WEBHOOK_TOKEN=...
-# NEXT_PUBLIC_XENDIT_PUBLIC_KEY=xnd_public_production_...
-# XENDIT_MOCK=false
 ```
 
 ---
