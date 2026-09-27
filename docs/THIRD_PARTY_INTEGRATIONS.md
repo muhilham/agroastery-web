@@ -16,7 +16,7 @@ This document outlines all third-party services integrated into the Agroastery e
    - [Resend](#5-resend---transactional-emails)
    - [Telegram](#6-telegram---order-notifications)
    - [Jubelio](#7-jubelio---erp--inventory-sync)
-   - [Xendit (Deprecated)](#8-xendit---legacy-payment-gateway-not-actively-used)
+   - [Xendit (Legacy/Migrated)](#8-xendit-legacy-payment-gateway-migrated-to-pivot)
 4. [Data Flow](#data-flow)
 5. [Environment Variables](#environment-variables)
 6. [Security Considerations](#security-considerations)
@@ -411,36 +411,23 @@ JUBELIO_PASSWORD=your-jubelio-password
 
 ---
 
-### 8. Xendit - Legacy Payment Gateway (Not Actively Used)
+### 8. Xendit - Legacy Payment Gateway (Migrated to Pivot)
 
-**Status:** ❌ **DEPRECATED / NOT ACTIVELY USED**
+**Status:** ⚠️ **LEGACY — Migrated to Pivot Payment**
 
-Xendit has been replaced by **Pivot Payment** as the primary payment gateway. The project no longer uses Xendit's API for payment processing.
+Xendit was previously used as a payment gateway but has been fully replaced by **Pivot Payment**. All Xendit-related code and naming have been purged per issue #170.
 
-**What remains:**
-- `xendit-node` package in `package.json` (unused dependency)
-- Database columns `xendit_invoice_id` and `xendit_payment_method` in `ecom_orders` table
-- Environment variables (optional, can be removed)
+**Current state post-cleanup:**
+- `xendit-node` package: already removed from dependencies
+- Database columns `xendit_invoice_id` and `xendit_payment_method` → renamed to generic names via Supabase migration (see `agr-ops/supabase/migrations/`)
+- Environment variables replaced with Pivot equivalents in `.env.example`
+- No Xendit webhook handlers (`/api/webhooks/xendit` does not exist)
+- Code references updated: pivot webhook writes to `payment_method`, not `xendit_payment_method`
 
-**Migration notes:**
-- The `xendit_payment_method` column is **reused** by Pivot to store the payment method (e.g., "QRIS")
+**Historical notes:**
 - Historical orders may still have `xendit_invoice_id` populated for legacy orders
 - No Xendit API calls exist in the current codebase
-- No Xendit webhook handlers (`/api/webhooks/xendit` does not exist)
-
-**To fully remove Xendit:**
-1. Remove `xendit-node` from `package.json`
-2. Optionally rename database columns to generic names (e.g., `payment_method`, `external_payment_id`)
-3. Remove Xendit-related environment variables from `.env.example`
-
-**Legacy Environment Variables (optional):**
-```env
-# These are no longer used in the application
-XENDIT_SECRET_KEY=xnd_production_...
-XENDIT_WEBHOOK_TOKEN=...
-NEXT_PUBLIC_XENDIT_PUBLIC_KEY=xnd_public_production_...
-XENDIT_MOCK=false
-```
+- The `lib/xendit/` module and `app/api/webhooks/xendit/route.ts` were deleted during the Pivot migration (2026-04)
 
 ---
 

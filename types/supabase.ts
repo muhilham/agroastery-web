@@ -539,8 +539,7 @@ export type Database = {
           tracking_number: string | null
           updated_at: string | null
           user_id: string | null
-          xendit_invoice_id: string | null
-          xendit_payment_method: string | null
+          payment_method: string | null // Pivot QRIS (renamed from xendit_payment_method per #170)
         }
         Insert: {
           biteship_draft_id?: string | null
@@ -574,8 +573,7 @@ export type Database = {
           tracking_number?: string | null
           updated_at?: string | null
           user_id?: string | null
-          xendit_invoice_id?: string | null
-          xendit_payment_method?: string | null
+          payment_method?: string | null // Pivot QRIS (renamed from xendit_payment_method per #170)
         }
         Update: {
           biteship_draft_id?: string | null
@@ -609,8 +607,7 @@ export type Database = {
           tracking_number?: string | null
           updated_at?: string | null
           user_id?: string | null
-          xendit_invoice_id?: string | null
-          xendit_payment_method?: string | null
+          payment_method?: string | null // Pivot QRIS (renamed from xendit_payment_method per #170)
         }
         Relationships: [
           {

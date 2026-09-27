@@ -110,7 +110,7 @@ function buildJubelioPayload(
     shipping_post_code: (shippingAddress.postal_code as string) ?? undefined,
     shipping_country: "Indonesia",
     is_paid: true,
-    payment_method: (order.xendit_payment_method as string) ?? "QRIS",
+    payment_method: (order.payment_method as string) ?? "QRIS", // Pivot QRIS B2C primary
     store_id: JUBELIO_STORE_ID,
   };
 }

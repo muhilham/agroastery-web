@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
         payment_status: "paid",
         status: "processing",
         paid_at: paidAt,
-        xendit_payment_method: "QRIS", // reuse existing column for payment method label
+        payment_method: "QRIS", // Pivot QRIS is B2C primary (issue #170)
       })
       .eq("pivot_payment_session_id", paymentSessionId)
       .select("id, order_number, customer_name, customer_phone, total, shipping_address")

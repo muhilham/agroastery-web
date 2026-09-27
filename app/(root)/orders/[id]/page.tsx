@@ -203,10 +203,10 @@ export default async function OrderDetailPage({ params }: PageProps) {
         </div>
 
         {/* Payment info */}
-        {order.xendit_payment_method && (
+        {order.payment_method && (
           <div className="mt-4 text-center">
             <p className="text-secondary text-xs">
-              Dibayar via {order.xendit_payment_method as string}
+              Dibayar via {order.payment_method as string}
               {order.paid_at ? ` pada ${new Date(order.paid_at as string).toLocaleDateString("id-ID")}` : ""}
             </p>
           </div>

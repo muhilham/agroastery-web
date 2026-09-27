@@ -44,7 +44,7 @@ const ORDER_ROW = {
   subtotal: 240000,
   shipping_cost: 15000,
   total: 255000,
-  xendit_payment_method: 'QRIS',
+  payment_method: 'QRIS', // Pivot QRIS B2C primary (renamed from xendit_payment_method)
   notes: 'Handle with care',
   shipping_address: {
     recipient_name: 'Budi Santoso',
