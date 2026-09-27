@@ -55,8 +55,8 @@ Products use a Shopify-style option/variant model:
 ### Payment — Pivot (QRIS)
 - **Pivot Payment gateway** — QRIS only (scan a static EMVCO QR with any Indonesian banking app)
 - Replace WhatsApp order flow entirely
-- Flow: Create order server-side → create Pivot payment session → render QR (client-side from `qr_string`, server-generated PNG fallback) → webhook confirms
-- Webhook endpoint `/api/webhooks/pivot` receives `PAYMENT.PAID`/`PAYMENT.EXPIRED` → update order status
+- Flow: Create order server-side → create Pivot payment session → render QR on-page from the raw EMVCO `pivot_qr_string` (`react-qr-code`) → webhook confirms. The payment page also offers a server-generated PNG download via `/api/orders/[orderId]/qr.png` (built from `pivot_qr_string` with the `qrcode` package)
+- Webhook endpoint `/api/webhooks/pivot` receives `PAYMENT.PAID` (→ paid/processing), `PAYMENT.EXPIRED`/`PAYMENT.CANCELLED` (→ cancelled, stock restored), and acks `PAYMENT.TEST`
 - Xendit was the original planned gateway but never went live; fully purged (see agroastery-web#170)
 
 ### Shipping — Biteship
@@ -412,7 +412,7 @@ middleware.ts                        # NEW: Supabase auth session refresh
 - Shipping address form (reuse existing + save address for logged-in)
 - Multi-item Biteship rate calculation
 - Pivot payment session creation API
-- QRIS QR rendering (client-side from qr_string + server PNG fallback)
+- QRIS QR rendering: on-page SVG from `pivot_qr_string` (`react-qr-code`) + server PNG download route (`/api/orders/[orderId]/qr.png`)
 - Payment success/expiry handling
 
 ### Phase 5: Order Management
@@ -453,7 +453,7 @@ middleware.ts                        # NEW: Supabase auth session refresh
 
 ### Pivot QRIS Payment
 - Checkout POSTs to `/api/checkout` → order row + Pivot payment session created
-- Session returns `qrUrl` (hosted image) + `qrString` (raw EMVCO) + expiry
+- Session returns `qrUrl` (Pivot-hosted image, stored in `pivot_qr_url` for reference) + `qrString` (raw EMVCO — this is what the UI renders and what the PNG download encodes) + expiry
 - Client renders the QR; customer scans with any Indonesian banking/e-wallet app
 - Webhook at `/api/webhooks/pivot` verifies the shared-secret callback key (`PIVOT_CALLBACK_API_KEY`), then updates order, notifies Telegram, creates Biteship draft + Jubelio sync
 
