@@ -1465,10 +1465,6 @@ CREATE INDEX "idx_ecom_orders_user" ON "public"."ecom_orders" USING "btree" ("us
 
 
 
-CREATE INDEX "idx_ecom_orders_payment_method" ON "public"."ecom_orders" USING "btree" ("payment_method");
-
-
-
 CREATE INDEX "idx_employees_email" ON "public"."employees" USING "btree" ("email");
 
 
