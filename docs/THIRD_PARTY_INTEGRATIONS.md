@@ -37,7 +37,7 @@ Agroastery is an Indonesian specialty coffee e-commerce platform built on Next.j
 | **Notifications** | Telegram | Real-time order and payment alerts |
 | **ERP/Inventory** | Jubelio | Product and inventory synchronization |
 
-> **Note:** Xendit was previously used as a payment gateway but has been replaced by Pivot Payment. The `xendit-node` package remains in dependencies but is no longer used in the application code.
+> **Note:** Xendit was previously used as a payment gateway but has been replaced by **Pivot QRIS** — the only B2C payment method. The `xendit-node` package has been removed from dependencies and no Xendit code remains. See §8 for details.
 
 ---
 
@@ -568,14 +568,6 @@ ADMIN_SECRET=change-me-to-a-random-secret
 # ─── Jubelio (ERP) ───────────────────────────────────────────────────────────
 JUBELIO_EMAIL=your-jubelio-email@example.com
 JUBELIO_PASSWORD=your-jubelio-password
-
-# ─── Legacy Xendit (Deprecated - Not Used) ───────────────────────────────────
-# These variables are no longer used. Xendit has been replaced by Pivot Payment.
-# Kept here only for reference for historical orders.
-# XENDIT_SECRET_KEY=xnd_production_...
-# XENDIT_WEBHOOK_TOKEN=...
-# NEXT_PUBLIC_XENDIT_PUBLIC_KEY=xnd_public_production_...
-# XENDIT_MOCK=false
 ```
 
 ---
