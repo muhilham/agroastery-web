@@ -415,7 +415,7 @@ JUBELIO_PASSWORD=your-jubelio-password
 
 **Status:** ⚠️ **LEGACY — Migrated to Pivot Payment**
 
-Xendit was previously used as a payment gateway but has been fully replaced by **Pivot Payment**. All Xendit-related code and naming have been purged per issue #170.
+Xendit was previously used as a payment gateway but has been fully replaced by **Pivot QRIS** — the only B2C payment method. All Xendit-related code and naming have been purged per issue #170.
 
 **Current state (verified live against prod, 2026-09-27):**
 - `xendit-node` package: removed from `package.json` (integration code deleted 2026-04-11, commit `d150fff`)
