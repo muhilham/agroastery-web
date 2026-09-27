@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.32.2](https://github.com/muhilham/agroastery-web/compare/v0.32.1...v0.32.2) (2026-09-27)
+
+
+### Documentation
+
+* purge Xendit from CLAUDE.md + AGENTS.md ([#170](https://github.com/muhilham/agroastery-web/issues/170) follow-up) ([#189](https://github.com/muhilham/agroastery-web/issues/189)) ([8a3d099](https://github.com/muhilham/agroastery-web/commit/8a3d099b4f59cc9f0f3136dede545b4a127d489c))
+
 ## [0.32.1](https://github.com/muhilham/agroastery-web/compare/v0.32.0...v0.32.1) (2026-09-27)
 
 
