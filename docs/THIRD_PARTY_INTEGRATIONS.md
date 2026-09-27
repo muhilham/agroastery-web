@@ -417,17 +417,20 @@ JUBELIO_PASSWORD=your-jubelio-password
 
 Xendit was previously used as a payment gateway but has been fully replaced by **Pivot Payment**. All Xendit-related code and naming have been purged per issue #170.
 
-**Current state post-cleanup:**
-- `xendit-node` package: already removed from dependencies
-- Database columns `xendit_invoice_id` and `xendit_payment_method` → renamed to generic names via Supabase migration (see `agr-ops/supabase/migrations/`)
-- Environment variables replaced with Pivot equivalents in `.env.example`
+**Current state (verified live against prod, 2026-09-27):**
+- `xendit-node` package: removed from `package.json` (integration code deleted 2026-04-11, commit `d150fff`)
+- Code references updated: pivot webhook writes `payment_method`, not `xendit_payment_method`
+- Environment variables: Xendit block removed from `.env.example`, Pivot vars documented instead
 - No Xendit webhook handlers (`/api/webhooks/xendit` does not exist)
-- Code references updated: pivot webhook writes to `payment_method`, not `xendit_payment_method`
+- Database columns: rename **pending** in `agr-ops` (issue #158) — `xendit_payment_method` → `payment_method`, drop `xendit_invoice_id`
+
+**Column population at cleanup time (236 `ecom_orders` rows):**
+- `xendit_invoice_id`: **0 / 236** — never populated, safe to drop
+- `xendit_payment_method`: 168 / 236 (`QRIS` 165, `QRIS_DEV_SIMULATE` 3, `NULL` 68) — **live**, Pivot writes into it until the rename lands
 
 **Historical notes:**
-- Historical orders may still have `xendit_invoice_id` populated for legacy orders
+- Xendit was briefly the intended gateway at initial build (2026-03-20); it was never live for production payments and was removed 2026-04-11
 - No Xendit API calls exist in the current codebase
-- The `lib/xendit/` module and `app/api/webhooks/xendit/route.ts` were deleted during the Pivot migration (2026-04)
 
 ---
 
