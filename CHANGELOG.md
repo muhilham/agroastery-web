@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.33.0](https://github.com/muhilham/agroastery-web/compare/v0.32.4...v0.33.0) (2026-09-28)
+
+
+### Features
+
+* **qr:** /r/[code] short-link redirect for printed QR cards ([#197](https://github.com/muhilham/agroastery-web/issues/197)) ([f0b0686](https://github.com/muhilham/agroastery-web/commit/f0b0686fb706a1ee77aeed3dca8aa0f77dcd6bff))
+
+
+### Bug Fixes
+
+* **analytics:** correct gtag command shape + hard-redirect so GA4 purchase events fire ([#186](https://github.com/muhilham/agroastery-web/issues/186)) ([#193](https://github.com/muhilham/agroastery-web/issues/193)) ([8c9987c](https://github.com/muhilham/agroastery-web/commit/8c9987c18c7c5c4ea2737fcb05b9f4bc17e722a7))
+
 ## [0.32.4](https://github.com/muhilham/agroastery-web/compare/v0.32.3...v0.32.4) (2026-09-28)
 
 
