@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useRef, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import QRCode from "react-qr-code";
 import Link from "next/link";
 import Navigation from "@/components/navigation";
@@ -74,7 +73,6 @@ export default function QrPaymentClient({
   qrString: initialQrString,
   qrExpiresAt: initialQrExpiresAt,
 }: Props) {
-  const router = useRouter();
   const { clearCart } = useCart();
   const [qrString, setQrString] = useState(initialQrString);
   const [qrExpiresAt, setQrExpiresAt] = useState(initialQrExpiresAt);
@@ -121,7 +119,10 @@ export default function QrPaymentClient({
         if (payment_status === "paid") {
           clearInterval(pollingRef.current!);
           clearCart();
-          router.push(`/checkout/success?order=${orderId}`);
+          // Hard navigation: SPA router.push renders /checkout/success
+          // without order params, so PurchaseTracking never mounts with data
+          // and the GA4 purchase event never fires (issue #186).
+          window.location.href = `/checkout/success?order=${orderId}`;
         } else if (payment_status === "expired" || payment_status === "cancelled") {
           clearInterval(pollingRef.current!);
         }
@@ -133,7 +134,7 @@ export default function QrPaymentClient({
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current);
     };
-  }, [orderId, clearCart, router]);
+  }, [orderId, clearCart]);
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);

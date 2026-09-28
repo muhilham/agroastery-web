@@ -41,9 +41,14 @@ describe("gtag wrapper", () => {
       globalThis.window = originalWindow;
     });
 
-    it("calls sendGAEvent with event name and params", () => {
+    it("calls sendGAEvent with the gtag 'event' command, name, and params", () => {
       trackEvent("test_event", { foo: "bar" });
-      expect(sendGAEvent).toHaveBeenCalledWith("test_event", { foo: "bar" });
+      expect(sendGAEvent).toHaveBeenCalledWith("event", "test_event", { foo: "bar" });
+    });
+
+    it("calls sendGAEvent with 'event' command and name when params omitted", () => {
+      trackEvent("test_event");
+      expect(sendGAEvent).toHaveBeenCalledWith("event", "test_event");
     });
   });
 
@@ -61,7 +66,7 @@ describe("gtag wrapper", () => {
   describe("trackViewItem", () => {
     it("fires view_item with a single-item payload", () => {
       trackViewItem({ itemId: "variant-1", itemName: "Kopi Arabika", price: 50000 });
-      expect(sendGAEvent).toHaveBeenCalledWith("view_item", {
+      expect(sendGAEvent).toHaveBeenCalledWith("event", "view_item", {
         currency: "IDR",
         value: 50000,
         items: [{ item_id: "variant-1", item_name: "Kopi Arabika", price: 50000, quantity: 1 }],
@@ -72,7 +77,7 @@ describe("gtag wrapper", () => {
   describe("trackAddToCart", () => {
     it("fires add_to_cart with value = unitPrice * quantity", () => {
       trackAddToCart(sampleItem);
-      expect(sendGAEvent).toHaveBeenCalledWith("add_to_cart", {
+      expect(sendGAEvent).toHaveBeenCalledWith("event", "add_to_cart", {
         currency: "IDR",
         value: 100000,
         items: [{ item_id: "variant-1", item_name: "Kopi Arabika", price: 50000, quantity: 2 }],
@@ -87,7 +92,7 @@ describe("gtag wrapper", () => {
         { ...sampleItem, variantId: "variant-2", productName: "Kopi Robusta", unitPrice: 30000, quantity: 1 },
       ];
       trackBeginCheckout(items);
-      expect(sendGAEvent).toHaveBeenCalledWith("begin_checkout", {
+      expect(sendGAEvent).toHaveBeenCalledWith("event", "begin_checkout", {
         currency: "IDR",
         value: 130000,
         items: [
@@ -106,7 +111,7 @@ describe("gtag wrapper", () => {
         shipping: 15000,
         items: [{ itemId: "variant-1", itemName: "Kopi Arabika", price: 50000, quantity: 2 }],
       });
-      expect(sendGAEvent).toHaveBeenCalledWith("purchase", {
+      expect(sendGAEvent).toHaveBeenCalledWith("event", "purchase", {
         transaction_id: "AGR-20260730-0001",
         currency: "IDR",
         value: 115000,
@@ -119,7 +124,7 @@ describe("gtag wrapper", () => {
   describe("trackBookConsultation", () => {
     it("fires book_consultation with currency and value", () => {
       trackBookConsultation({ value: 500000 });
-      expect(sendGAEvent).toHaveBeenCalledWith("book_consultation", {
+      expect(sendGAEvent).toHaveBeenCalledWith("event", "book_consultation", {
         currency: "IDR",
         value: 500000,
       });

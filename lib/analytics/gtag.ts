@@ -19,10 +19,14 @@ export type PurchaseItem = {
 
 export function trackEvent(eventName: string, params?: Record<string, unknown>): void {
   if (typeof window === "undefined") return;
+  // sendGAEvent(... ) maps to gtag(...arguments): the FIRST argument must be
+  // the command "event", then the event name. Passing (eventName, params)
+  // produced gtag('purchase', {...}) — an unknown command, silently dropped
+  // with zero /g/collect hits (proven on prod, issue #186).
   if (params) {
-    sendGAEvent(eventName, params);
+    sendGAEvent("event", eventName, params);
   } else {
-    sendGAEvent(eventName);
+    sendGAEvent("event", eventName);
   }
 }
 
