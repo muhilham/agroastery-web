@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.32.4](https://github.com/muhilham/agroastery-web/compare/v0.32.3...v0.32.4) (2026-09-28)
+
+
+### Bug Fixes
+
+* **pivot:** raise QRIS session expiry from 5 to 15 minutes ([#187](https://github.com/muhilham/agroastery-web/issues/187)) ([#194](https://github.com/muhilham/agroastery-web/issues/194)) ([02edc87](https://github.com/muhilham/agroastery-web/commit/02edc8709f6bfe2055eb47c8b965ae2fc041c730))
+* **pivot:** re-reserve stock on late PAID + 10-min grace polling ([#187](https://github.com/muhilham/agroastery-web/issues/187) PR B) ([#196](https://github.com/muhilham/agroastery-web/issues/196)) ([61502cd](https://github.com/muhilham/agroastery-web/commit/61502cd983224ce980161593479af5f9770a4a4e))
+
 ## [0.32.3](https://github.com/muhilham/agroastery-web/compare/v0.32.2...v0.32.3) (2026-09-27)
 
 
