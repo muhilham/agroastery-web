@@ -17,6 +17,12 @@ interface Props {
   qrExpiresAt: string; // ISO 8601
 }
 
+/**
+ * Issue #187: a QRIS payment can settle after the Pivot session reports the
+ * order expired. Keep polling for this window before showing the dead state.
+ */
+const POLL_GRACE_MS = 10 * 60 * 1000;
+
 function useCountdown(expiresAtIso: string) {
   const getSecondsLeft = () =>
     Math.max(0, Math.floor((new Date(expiresAtIso).getTime() - Date.now()) / 1000));
@@ -107,6 +113,9 @@ export default function QrPaymentClient({
     Math.max(1, Math.floor((new Date(initialQrExpiresAt).getTime() - Date.now()) / 1000))
   );
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const graceDeadlineRef = useRef<number | null>(null);
+  const [inGracePeriod, setInGracePeriod] = useState(false);
+  const [graceEnded, setGraceEnded] = useState(false);
 
   const secondsLeft = useCountdown(qrExpiresAt);
   const isExpired = secondsLeft === 0;
@@ -123,7 +132,19 @@ export default function QrPaymentClient({
           clearCart();
           router.push(`/checkout/success?order=${orderId}`);
         } else if (payment_status === "expired" || payment_status === "cancelled") {
-          clearInterval(pollingRef.current!);
+          if (graceDeadlineRef.current === null) {
+            graceDeadlineRef.current = Date.now() + POLL_GRACE_MS;
+            setInGracePeriod(true);
+          }
+          if (Date.now() >= graceDeadlineRef.current) {
+            clearInterval(pollingRef.current!);
+            setInGracePeriod(false);
+            setGraceEnded(true);
+          }
+        } else if (graceDeadlineRef.current !== null) {
+          // Status came back alive again (e.g. QR refreshed) — leave the grace window.
+          graceDeadlineRef.current = null;
+          setInGracePeriod(false);
         }
       } catch {
         // Network error — keep polling
@@ -224,13 +245,35 @@ export default function QrPaymentClient({
               </>
             )}
 
-            {!isExpired && (
+            {(!isExpired || inGracePeriod) && (
               <div className="flex items-center justify-center gap-2 py-2">
                 <div className="relative w-3 h-3">
                   <div className="absolute inset-0 rounded-full bg-primary/30 animate-ping" />
                   <div className="absolute inset-0 rounded-full bg-primary" />
                 </div>
                 <span className="text-xs text-gray-500 font-medium">Memantau pembayaran...</span>
+              </div>
+            )}
+
+            {inGracePeriod && (
+              <div
+                data-testid="payment-grace-notice"
+                className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-center"
+              >
+                <p className="text-sm font-medium text-amber-800 leading-snug">
+                  Menunggu pembayaran — payment masih bisa masuk
+                </p>
+              </div>
+            )}
+
+            {graceEnded && (
+              <div
+                data-testid="payment-cancelled-notice"
+                className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-center"
+              >
+                <p className="text-sm font-medium text-red-700 leading-snug">
+                  Pembayaran kedaluwarsa. Silakan pesan ulang.
+                </p>
               </div>
             )}
 

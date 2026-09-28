@@ -67,6 +67,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ received: true });
     }
 
+    // Issue #187: a QRIS payment can settle AFTER the Pivot session expired —
+    // the PAYMENT.EXPIRED handler already released this order's stock via
+    // ecom_restore_stock. Remember the prior status so the stock can be
+    // re-reserved below before the order ships against released inventory.
+    const wasExpired = existing.payment_status === "expired";
+
     const { data: updatedOrder, error } = await supabase
       .from("ecom_orders")
       .update({
@@ -82,6 +88,21 @@ export async function POST(request: NextRequest) {
     if (error) {
       console.error("Pivot webhook: DB update error on PAID:", error);
       return NextResponse.json({ error: "DB error" }, { status: 500 });
+    }
+
+    if (updatedOrder && wasExpired) {
+      // The customer paid AFTER the session expired and the EXPIRED handler
+      // already released this order's stock. Re-reserve it now — before the
+      // Biteship draft below — or the order ships against free stock (#187).
+      const reserve = await reReserveStockForLatePayment(supabase, updatedOrder.id as string);
+      sendOpsAlert({
+        orderId: updatedOrder.id as string,
+        orderNumber: updatedOrder.order_number as string,
+        issue: reserve.ok
+          ? "LATE PAID setelah QRIS expired — stok berhasil di-reserve ulang"
+          : `LATE PAID setelah QRIS expired — RE-RESERVE GAGAL: ${reserve.error?.slice(0, 200) ?? "unknown"}`,
+        action: reserve.ok ? null : "Tahan pengiriman, cek stok manual sebelum kirim",
+      }).catch(() => {});
     }
 
     if (updatedOrder) {
@@ -270,6 +291,50 @@ async function handleConsultationPaid(
   }).catch((err: unknown) =>
     console.error(`[pivot-webhook] consultation telegram failed for ${booking.id}:`, err)
   );
+}
+
+/**
+ * Re-reserve stock for an order whose QRIS payment landed AFTER the session
+ * expired (issue #187). The PAYMENT.EXPIRED handler released the stock via
+ * ecom_restore_stock, so a late PAID would otherwise ship against inventory
+ * another buyer may already have claimed.
+ *
+ * There is no dedicated re-reserve RPC in the DB (verified live: only
+ * ecom_decrement_stock, ecom_decrement_stock_multi, ecom_restore_stock), so
+ * this reuses the same conditional-decrement primitive checkout uses at order
+ * creation (lib/checkout/stockValidation.ts). It is per-item non-atomic by
+ * necessity: partial failure is surfaced to ops via the caller's alert, never
+ * swallowed.
+ */
+async function reReserveStockForLatePayment(
+  supabase: SupabaseAdmin,
+  orderId: string
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { data: orderItems, error: itemsError } = await supabase
+    .from("ecom_order_items")
+    .select("variant_id, quantity")
+    .eq("order_id", orderId);
+
+  if (itemsError) {
+    return { ok: false, error: `fetch items: ${itemsError.message}` };
+  }
+
+  const failures: string[] = [];
+  for (const item of orderItems ?? []) {
+    if (!item.variant_id) continue;
+    const { error } = await supabase.rpc("ecom_decrement_stock", {
+      p_variant_id: item.variant_id,
+      p_quantity: item.quantity,
+    });
+    if (error) {
+      failures.push(`${item.variant_id} x${item.quantity}: ${error.message}`);
+    }
+  }
+
+  if (failures.length > 0) {
+    return { ok: false, error: failures.join("; ") };
+  }
+  return { ok: true };
 }
 
 async function handleConsultationExpired(

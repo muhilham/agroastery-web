@@ -314,4 +314,171 @@ describe("pivot webhook — ecom orders", () => {
 
     expect(mockRpc).toHaveBeenCalledWith("ecom_restore_stock", { p_variant_id: "v1", p_quantity: 2 });
   });
+
+  it("re-reserves stock and alerts ops when PAID arrives after EXPIRED (#187)", async () => {
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "ecom_orders") {
+        return {
+          select: () => ({
+            eq: () => ({
+              single: vi.fn().mockResolvedValue({ data: { id: "order-1", payment_status: "expired" }, error: null }),
+            }),
+          }),
+          update: () => ({
+            eq: () => ({
+              select: () => ({
+                single: vi.fn().mockResolvedValue({
+                  data: {
+                    id: "order-1",
+                    order_number: "AGR-001",
+                    customer_name: "Budi",
+                    customer_phone: "08123",
+                    total: 100000,
+                    shipping_address: { phone: "08123" },
+                  },
+                  error: null,
+                }),
+              }),
+            }),
+          }),
+        };
+      }
+      if (table === "ecom_order_items") {
+        return {
+          select: () => ({
+            eq: () => Promise.resolve({ data: [{ variant_id: "v1", product_name: "Kopi", quantity: 2 }], error: null }),
+          }),
+        };
+      }
+      return { select: () => resolvedChain(null) };
+    });
+
+    mockRpc.mockResolvedValue({ data: true, error: null });
+
+    const req = webhookReq("PAYMENT.PAID", { id: "ps_1", chargeDetails: [{ paidAt: "2026-07-23T10:00:00Z" }] });
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+
+    await new Promise((r) => setTimeout(r, 10));
+
+    // Stock released by the EXPIRED handler must be clawed back.
+    expect(mockRpc).toHaveBeenCalledWith("ecom_decrement_stock", { p_variant_id: "v1", p_quantity: 2 });
+    expect(mockOpsAlert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderId: "order-1",
+        orderNumber: "AGR-001",
+        issue: expect.stringContaining("LATE PAID"),
+      })
+    );
+    // Order still gets its normal paid pipeline.
+    expect(mockCreateBiteshipDraft).toHaveBeenCalledWith("order-1");
+  });
+
+  it("alerts ops with hold instruction when late-payment re-reserve fails (#187)", async () => {
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "ecom_orders") {
+        return {
+          select: () => ({
+            eq: () => ({
+              single: vi.fn().mockResolvedValue({ data: { id: "order-1", payment_status: "expired" }, error: null }),
+            }),
+          }),
+          update: () => ({
+            eq: () => ({
+              select: () => ({
+                single: vi.fn().mockResolvedValue({
+                  data: {
+                    id: "order-1",
+                    order_number: "AGR-001",
+                    customer_name: "Budi",
+                    customer_phone: "08123",
+                    total: 100000,
+                    shipping_address: { phone: "08123" },
+                  },
+                  error: null,
+                }),
+              }),
+            }),
+          }),
+        };
+      }
+      if (table === "ecom_order_items") {
+        return {
+          select: () => ({
+            eq: () => Promise.resolve({ data: [{ variant_id: "v1", product_name: "Kopi", quantity: 2 }], error: null }),
+          }),
+        };
+      }
+      return { select: () => resolvedChain(null) };
+    });
+
+    // Another buyer claimed the stock — conditional decrement fails.
+    mockRpc.mockResolvedValue({ data: null, error: { message: "insufficient_stock:v1" } });
+
+    const req = webhookReq("PAYMENT.PAID", { id: "ps_1", chargeDetails: [{ paidAt: "2026-07-23T10:00:00Z" }] });
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+
+    await new Promise((r) => setTimeout(r, 10));
+
+    expect(mockOpsAlert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderId: "order-1",
+        orderNumber: "AGR-001",
+        issue: expect.stringContaining("RE-RESERVE GAGAL"),
+        action: expect.stringContaining("Tahan pengiriman"),
+      })
+    );
+  });
+
+  it("does not re-reserve stock or alert on normal paid flow (#187)", async () => {
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "ecom_orders") {
+        return {
+          select: () => ({
+            eq: () => ({
+              single: vi.fn().mockResolvedValue({ data: { id: "order-1", payment_status: "pending_payment" }, error: null }),
+            }),
+          }),
+          update: () => ({
+            eq: () => ({
+              select: () => ({
+                single: vi.fn().mockResolvedValue({
+                  data: {
+                    id: "order-1",
+                    order_number: "AGR-001",
+                    customer_name: "Budi",
+                    customer_phone: "08123",
+                    total: 100000,
+                    shipping_address: { phone: "08123" },
+                  },
+                  error: null,
+                }),
+              }),
+            }),
+          }),
+        };
+      }
+      if (table === "ecom_order_items") {
+        return {
+          select: () => ({
+            eq: () => Promise.resolve({ data: [{ variant_id: "v1", product_name: "Kopi", quantity: 1 }], error: null }),
+          }),
+        };
+      }
+      return { select: () => resolvedChain(null) };
+    });
+
+    const req = webhookReq("PAYMENT.PAID", { id: "ps_1", chargeDetails: [{ paidAt: "2026-07-23T10:00:00Z" }] });
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+
+    await new Promise((r) => setTimeout(r, 10));
+
+    expect(mockRpc).not.toHaveBeenCalledWith("ecom_decrement_stock", expect.anything());
+    expect(mockOpsAlert).not.toHaveBeenCalledWith(
+      expect.objectContaining({ issue: expect.stringContaining("LATE PAID") })
+    );
+    expect(mockCreateBiteshipDraft).toHaveBeenCalledWith("order-1");
+  });
 });
