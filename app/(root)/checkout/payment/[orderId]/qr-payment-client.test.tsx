@@ -1,9 +1,11 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
 import QrPaymentClient from "./qr-payment-client";
 
+const mockPush = vi.fn();
+
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: vi.fn() }),
+  useRouter: () => ({ push: mockPush }),
   usePathname: () => "/checkout/payment/test",
 }));
 
@@ -136,5 +138,90 @@ describe("QrPaymentClient — QR display", () => {
     expect(
       screen.getByText(/screenshot QR ini/i)
     ).toBeDefined();
+  });
+});
+
+describe("QrPaymentClient — expiry grace window (#187)", () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["setInterval", "clearInterval", "Date"] });
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  it("keeps polling and shows grace notice after status turns expired", async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ payment_status: "expired" }),
+    });
+    global.fetch = fetchSpy;
+
+    render(<QrPaymentClient {...defaultProps} />);
+
+    // Advance past a few poll ticks so the expired status is observed.
+    await act(async () => {
+      vi.advanceTimersByTime(3000);
+    });
+
+    expect(
+      screen.getByTestId("payment-grace-notice")
+    ).toBeDefined();
+    expect(screen.getByText(/payment masih bisa masuk/i)).toBeDefined();
+    // Poll must NOT have stopped: more ticks → more status fetches.
+    const callsBefore = fetchSpy.mock.calls.length;
+    await act(async () => {
+      vi.advanceTimersByTime(6000);
+    });
+    expect(fetchSpy.mock.calls.length).toBeGreaterThan(callsBefore);
+    // No dead-state yet.
+    expect(screen.queryByTestId("payment-cancelled-notice")).toBeNull();
+  });
+
+  it("shows cancelled state only after the 10-min grace window lapses", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ payment_status: "expired" }),
+    });
+
+    render(<QrPaymentClient {...defaultProps} />);
+
+    await act(async () => {
+      vi.advanceTimersByTime(3000); // first expired observation → grace starts
+    });
+    expect(screen.getByTestId("payment-grace-notice")).toBeDefined();
+
+    await act(async () => {
+      vi.advanceTimersByTime(10 * 60 * 1000 + 3000); // grace lapses
+    });
+
+    expect(screen.queryByTestId("payment-grace-notice")).toBeNull();
+    expect(screen.getByTestId("payment-cancelled-notice")).toBeDefined();
+    expect(screen.getByText(/kedaluwarsa/i)).toBeDefined();
+  });
+
+  it("redirects to success when a late payment lands during the grace window", async () => {
+    mockPush.mockClear();
+    let expired = true;
+    global.fetch = vi.fn().mockImplementation(async () => ({
+      ok: true,
+      json: async () => ({ payment_status: expired ? "expired" : "paid" }),
+    }));
+
+    render(<QrPaymentClient {...defaultProps} />);
+
+    await act(async () => {
+      vi.advanceTimersByTime(3000); // observe expired → grace
+    });
+    expect(screen.getByTestId("payment-grace-notice")).toBeDefined();
+
+    expired = false;
+    await act(async () => {
+      vi.advanceTimersByTime(3000); // observe late paid → redirect
+    });
+
+    expect(mockPush).toHaveBeenCalledWith(`/checkout/success?order=${defaultProps.orderId}`);
   });
 });
