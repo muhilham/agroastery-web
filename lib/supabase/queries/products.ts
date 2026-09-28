@@ -30,6 +30,25 @@ const PRODUCT_SELECT = `
   )
 `;
 
+/**
+ * Sum of per-channel sold counts for a product, from `product_sold_counts`
+ * (populated by agr-ops sync: absolute lifetime values per channel, as_of).
+ *
+ * Returns `null` when the table does not exist yet (agr-ops migration not
+ * applied) or has no rows — callers fall back to `products.total_sold_count`.
+ * The web app must never fail the PDP just because the data layer lags.
+ */
+export async function getAggregateSoldCount(productId: string): Promise<number | null> {
+  const supabase = createSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from("product_sold_counts")
+    .select("sold_count")
+    .eq("product_id", productId);
+
+  if (error || !data || data.length === 0) return null;
+  return data.reduce((sum, row) => sum + (row.sold_count ?? 0), 0);
+}
+
 function enrichProductWithDiscounts(
   product: SupabaseProduct,
   productDiscounts: ProductDiscount[],

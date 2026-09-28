@@ -15,15 +15,20 @@ import { useRouter } from "next/navigation";
 import type { SupabaseProduct, SupabaseProductVariant } from "@/types/product";
 import { findMatchingVariant, getMinPrice, getMinOriginalPrice, getProductImageUrl, getVariantImageUrl } from "@/lib/supabase/queries/productUtils";
 import { useCart } from "@/lib/hooks/useCart";
-import { formatSoldCount } from "@/lib/utils/formatSoldCount";
+import { formatSoldCount, formatAllChannelSold } from "@/lib/utils/formatSoldCount";
 
 type Props = {
   product: SupabaseProduct;
   /** Pre-selected variant from ?variant= deep link (Instagram product tags). */
   initialSelection?: Record<string, string> | null;
+  /**
+   * All-channel lifetime sold count from product_sold_counts (agr-ops sync).
+   * `null` (table not migrated yet) → fall back to products.total_sold_count.
+   */
+  aggregateSoldCount?: number | null;
 };
 
-const SupabaseProductDetail = ({ product, initialSelection }: Props) => {
+const SupabaseProductDetail = ({ product, initialSelection, aggregateSoldCount = null }: Props) => {
   const router = useRouter();
   const OPTIONS: EmblaOptionsType = {};
   const { addToCart } = useCart();
@@ -183,10 +188,12 @@ const SupabaseProductDetail = ({ product, initialSelection }: Props) => {
                 </span>
               )}
             </div>
-            {product.total_sold_count > 0 && (
+            {(aggregateSoldCount ?? product.total_sold_count) > 0 && (
               <span className="inline-block px-2 py-0.5 bg-primary/10 rounded-full mb-4">
                 <span className="text-[11px] tablet:text-xs text-primary font-medium tracking-wide">
-                  {formatSoldCount(product.total_sold_count)}
+                  {aggregateSoldCount != null && aggregateSoldCount > 0
+                    ? formatAllChannelSold(aggregateSoldCount)
+                    : formatSoldCount(product.total_sold_count)}
                 </span>
               </span>
             )}

@@ -19,3 +19,12 @@ export function formatSoldCount(count: number | null): string {
   }
   return `${count} terjual`;
 }
+
+/**
+ * Format an aggregate (all-channel) sold count: "{n} terjual di semua channel".
+ * Reuses the same rounding rules as {@link formatSoldCount}.
+ */
+export function formatAllChannelSold(count: number | null): string {
+  if (!count || count <= 0) return "";
+  return `${formatSoldCount(count)} di semua channel`;
+}

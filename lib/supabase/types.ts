@@ -798,6 +798,38 @@ export type Database = {
           },
         ]
       }
+      product_sold_counts: {
+        Row: {
+          as_of: string
+          channel: string
+          id: string
+          product_id: string
+          sold_count: number
+        }
+        Insert: {
+          as_of?: string
+          channel: string
+          id?: string
+          product_id: string
+          sold_count?: number
+        }
+        Update: {
+          as_of?: string
+          channel?: string
+          id?: string
+          product_id?: string
+          sold_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_sold_counts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_variant_option_values: {
         Row: {
           option_value_id: string
