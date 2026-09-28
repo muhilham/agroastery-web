@@ -5,6 +5,15 @@ const PIVOT_MERCHANT_ID = process.env.PIVOT_MERCHANT_ID ?? "";
 const PIVOT_MERCHANT_SECRET = process.env.PIVOT_MERCHANT_SECRET ?? "";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://agroastery.com";
 
+/**
+ * QRIS payment-session expiry, merchant-set via `expiryAt`.
+ * Pivot's own default is 15 mins; QRIS acquirer ceilings are far higher
+ * (~7.8h / 28,000s for QR Dynamic per Pivot "QRIS Limitation" docs), so 15
+ * mins is well within limits. The old 5-min value — and its "upstream hard
+ * max" comment — was false (issue #187).
+ */
+export const QRIS_EXPIRY_MINUTES = 15;
+
 // ─── Token cache ─────────────────────────────────────────────────────────────
 
 let tokenCache: { token: string; expiresAt: number } | null = null;
@@ -81,7 +90,7 @@ export async function createQrisPaymentSession(
   const { orderId, orderNumber, total, customerName, customerEmail, customerPhone } = params;
   const phone = formatPhoneForPivot(customerPhone);
 
-  const expiryAt = new Date(Date.now() + 5 * 60 * 1000).toISOString(); // 5 min — upstream hard max
+  const expiryAt = new Date(Date.now() + QRIS_EXPIRY_MINUTES * 60 * 1000).toISOString();
 
   const body = {
     clientReferenceId: orderId.replace(/-/g, "").slice(0, 36),
