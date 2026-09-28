@@ -202,8 +202,29 @@ describe("QrPaymentClient — expiry grace window (#187)", () => {
     expect(screen.getByText(/kedaluwarsa/i)).toBeDefined();
   });
 
-  it("redirects to success when a late payment lands during the grace window", async () => {
+  it("hard-navigates to success when a late payment lands during the grace window", async () => {
+    // Issue #186: must be a full page load (window.location.href), NOT
+    // router.push — SPA flight renders /checkout/success without the
+    // ?order param, so PurchaseTracking never fires the GA4 purchase event.
     mockPush.mockClear();
+    const hrefSpy = vi.fn();
+    const originalLocation = window.location;
+    // @ts-expect-error test-only: swap jsdom's non-writable location for a spy target
+    delete window.location;
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: {
+        get href() {
+          return "";
+        },
+        set href(value: string) {
+          hrefSpy(value);
+        },
+        assign: hrefSpy,
+        replace: hrefSpy,
+      },
+    });
+
     let expired = true;
     global.fetch = vi.fn().mockImplementation(async () => ({
       ok: true,
@@ -219,9 +240,17 @@ describe("QrPaymentClient — expiry grace window (#187)", () => {
 
     expired = false;
     await act(async () => {
-      vi.advanceTimersByTime(3000); // observe late paid → redirect
+      vi.advanceTimersByTime(3000); // observe late paid → hard navigation
     });
 
-    expect(mockPush).toHaveBeenCalledWith(`/checkout/success?order=${defaultProps.orderId}`);
+    expect(hrefSpy).toHaveBeenCalledWith(`/checkout/success?order=${defaultProps.orderId}`);
+    expect(mockPush).not.toHaveBeenCalled();
+
+    // @ts-expect-error restore jsdom location for other tests
+    delete window.location;
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: originalLocation,
+    });
   });
 });
