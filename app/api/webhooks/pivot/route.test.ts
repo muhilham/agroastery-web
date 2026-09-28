@@ -64,6 +64,40 @@ vi.mock("@/lib/consultations/notify", () => ({
 
 import { POST } from "./route";
 
+const PAID_ORDER_ROW = {
+  id: "order-1",
+  order_number: "AGR-001",
+  customer_name: "Budi",
+  customer_phone: "08123",
+  total: 100000,
+  shipping_address: { phone: "08123" },
+};
+
+/**
+ * Build the ecom_orders mock for the PAYMENT.PAID CAS ladder:
+ * step 1 = update().eq(session).not(in expired,paid).select().maybeSingle()
+ * step 2 = update().eq(session).eq(payment_status,expired).select().maybeSingle()
+ * `step1Row`/`step2Row` choose which transition wins; null = no row matched.
+ */
+function mockPaidUpdate(step1Row: unknown | null, step2Row: unknown | null = null) {
+  return {
+    update: () => ({
+      eq: () => ({
+        not: () => ({
+          select: () => ({
+            maybeSingle: vi.fn().mockResolvedValue({ data: step1Row, error: null }),
+          }),
+        }),
+        eq: () => ({
+          select: () => ({
+            maybeSingle: vi.fn().mockResolvedValue({ data: step2Row, error: null }),
+          }),
+        }),
+      }),
+    }),
+  };
+}
+
 function webhookReq(event: string, data: Record<string, unknown>): NextRequest {
   return new NextRequest("http://localhost/api/webhooks/pivot", {
     method: "POST",
@@ -119,23 +153,7 @@ describe("pivot webhook — ecom orders", () => {
               single: vi.fn().mockResolvedValue({ data: { id: "order-1", payment_status: "unpaid" }, error: null }),
             }),
           }),
-          update: () => ({
-            eq: () => ({
-              select: () => ({
-                single: vi.fn().mockResolvedValue({
-                  data: {
-                    id: "order-1",
-                    order_number: "AGR-001",
-                    customer_name: "Budi",
-                    customer_phone: "08123",
-                    total: 100000,
-                    shipping_address: { phone: "08123" },
-                  },
-                  error: null,
-                }),
-              }),
-            }),
-          }),
+          ...mockPaidUpdate(PAID_ORDER_ROW),
         };
       }
       if (table === "ecom_order_items") {
@@ -170,23 +188,7 @@ describe("pivot webhook — ecom orders", () => {
               single: vi.fn().mockResolvedValue({ data: { id: "order-1", payment_status: "unpaid" }, error: null }),
             }),
           }),
-          update: () => ({
-            eq: () => ({
-              select: () => ({
-                single: vi.fn().mockResolvedValue({
-                  data: {
-                    id: "order-1",
-                    order_number: "AGR-001",
-                    customer_name: "Budi",
-                    customer_phone: "08123",
-                    total: 100000,
-                    shipping_address: { phone: "08123" },
-                  },
-                  error: null,
-                }),
-              }),
-            }),
-          }),
+          ...mockPaidUpdate(PAID_ORDER_ROW),
         };
       }
       if (table === "ecom_order_items") {
@@ -226,23 +228,7 @@ describe("pivot webhook — ecom orders", () => {
               single: vi.fn().mockResolvedValue({ data: { id: "order-1", payment_status: "unpaid" }, error: null }),
             }),
           }),
-          update: () => ({
-            eq: () => ({
-              select: () => ({
-                single: vi.fn().mockResolvedValue({
-                  data: {
-                    id: "order-1",
-                    order_number: "AGR-001",
-                    customer_name: "Budi",
-                    customer_phone: "08123",
-                    total: 100000,
-                    shipping_address: { phone: "08123" },
-                  },
-                  error: null,
-                }),
-              }),
-            }),
-          }),
+          ...mockPaidUpdate(PAID_ORDER_ROW),
         };
       }
       if (table === "ecom_order_items") {
@@ -324,23 +310,9 @@ describe("pivot webhook — ecom orders", () => {
               single: vi.fn().mockResolvedValue({ data: { id: "order-1", payment_status: "expired" }, error: null }),
             }),
           }),
-          update: () => ({
-            eq: () => ({
-              select: () => ({
-                single: vi.fn().mockResolvedValue({
-                  data: {
-                    id: "order-1",
-                    order_number: "AGR-001",
-                    customer_name: "Budi",
-                    customer_phone: "08123",
-                    total: 100000,
-                    shipping_address: { phone: "08123" },
-                  },
-                  error: null,
-                }),
-              }),
-            }),
-          }),
+          // step1 (not expired/paid) finds nothing — row is live 'expired';
+          // step2 (eq 'expired') wins and resurrects it.
+          ...mockPaidUpdate(null, PAID_ORDER_ROW),
         };
       }
       if (table === "ecom_order_items") {
@@ -361,8 +333,11 @@ describe("pivot webhook — ecom orders", () => {
 
     await new Promise((r) => setTimeout(r, 10));
 
-    // Stock released by the EXPIRED handler must be clawed back.
-    expect(mockRpc).toHaveBeenCalledWith("ecom_decrement_stock", { p_variant_id: "v1", p_quantity: 2 });
+    // Stock released by the EXPIRED handler must be clawed back — atomically,
+    // via the same multi-item primitive checkout uses at creation (#187).
+    expect(mockRpc).toHaveBeenCalledWith("ecom_decrement_stock_multi", {
+      p_items: [{ variant_id: "v1", quantity: 2 }],
+    });
     expect(mockOpsAlert).toHaveBeenCalledWith(
       expect.objectContaining({
         orderId: "order-1",
@@ -383,23 +358,8 @@ describe("pivot webhook — ecom orders", () => {
               single: vi.fn().mockResolvedValue({ data: { id: "order-1", payment_status: "expired" }, error: null }),
             }),
           }),
-          update: () => ({
-            eq: () => ({
-              select: () => ({
-                single: vi.fn().mockResolvedValue({
-                  data: {
-                    id: "order-1",
-                    order_number: "AGR-001",
-                    customer_name: "Budi",
-                    customer_phone: "08123",
-                    total: 100000,
-                    shipping_address: { phone: "08123" },
-                  },
-                  error: null,
-                }),
-              }),
-            }),
-          }),
+          // same late-payment path: step2 (eq 'expired') wins the resurrection
+          ...mockPaidUpdate(null, PAID_ORDER_ROW),
         };
       }
       if (table === "ecom_order_items") {
@@ -412,8 +372,10 @@ describe("pivot webhook — ecom orders", () => {
       return { select: () => resolvedChain(null) };
     });
 
-    // Another buyer claimed the stock — conditional decrement fails.
-    mockRpc.mockResolvedValue({ data: null, error: { message: "insufficient_stock:v1" } });
+    // Another buyer claimed the stock: the RPC returns false WITHOUT an error
+    // (this is precisely the ecom_decrement_stock shape that made the
+    // error-only check unsound). Re-reserve must still fail closed (#187).
+    mockRpc.mockResolvedValue({ data: false, error: null });
 
     const req = webhookReq("PAYMENT.PAID", { id: "ps_1", chargeDetails: [{ paidAt: "2026-07-23T10:00:00Z" }] });
     const res = await POST(req);
@@ -431,6 +393,79 @@ describe("pivot webhook — ecom orders", () => {
     );
   });
 
+  it("resurrects + re-reserves when EXPIRED lands between the read and the write (#187 race)", async () => {
+    // Read sees 'unpaid' (pre-expiry), but the row goes live-'expired' before
+    // the CAS update runs: step1 matches nothing, step2 (eq 'expired') wins.
+    // The old read-derived wasExpired would have skipped the re-reserve here.
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "ecom_orders") {
+        return {
+          select: () => ({
+            eq: () => ({
+              single: vi.fn().mockResolvedValue({ data: { id: "order-1", payment_status: "unpaid" }, error: null }),
+            }),
+          }),
+          ...mockPaidUpdate(null, PAID_ORDER_ROW),
+        };
+      }
+      if (table === "ecom_order_items") {
+        return {
+          select: () => ({
+            eq: () => Promise.resolve({ data: [{ variant_id: "v1", product_name: "Kopi", quantity: 1 }], error: null }),
+          }),
+        };
+      }
+      return { select: () => resolvedChain(null) };
+    });
+
+    mockRpc.mockResolvedValue({ data: true, error: null });
+
+    const req = webhookReq("PAYMENT.PAID", { id: "ps_1", chargeDetails: [{ paidAt: "2026-07-23T10:00:00Z" }] });
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+
+    await new Promise((r) => setTimeout(r, 10));
+
+    expect(mockRpc).toHaveBeenCalledWith("ecom_decrement_stock_multi", {
+      p_items: [{ variant_id: "v1", quantity: 1 }],
+    });
+    expect(mockOpsAlert).toHaveBeenCalledWith(
+      expect.objectContaining({ issue: expect.stringContaining("LATE PAID") })
+    );
+    expect(mockCreateBiteshipDraft).toHaveBeenCalledWith("order-1");
+  });
+
+  it("double PAID delivery is an idempotent no-op via the CAS ladder (#187)", async () => {
+    // Read says unpaid, but a concurrent delivery already flipped the row to
+    // 'paid': both CAS steps match nothing. Must NOT re-run notifications,
+    // drafts, or re-reserve.
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "ecom_orders") {
+        return {
+          select: () => ({
+            eq: () => ({
+              single: vi.fn().mockResolvedValue({ data: { id: "order-1", payment_status: "unpaid" }, error: null }),
+            }),
+          }),
+          ...mockPaidUpdate(null, null),
+        };
+      }
+      return { select: () => resolvedChain(null) };
+    });
+
+    const req = webhookReq("PAYMENT.PAID", { id: "ps_1", chargeDetails: [{ paidAt: "2026-07-23T10:00:00Z" }] });
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+
+    await new Promise((r) => setTimeout(r, 10));
+
+    expect(mockCreateBiteshipDraft).not.toHaveBeenCalled();
+    expect(mockPaymentNotification).not.toHaveBeenCalled();
+    expect(mockSendOrderEmail).not.toHaveBeenCalled();
+    expect(mockRpc).not.toHaveBeenCalledWith("ecom_decrement_stock_multi", expect.anything());
+    expect(mockOpsAlert).not.toHaveBeenCalled();
+  });
+
   it("does not re-reserve stock or alert on normal paid flow (#187)", async () => {
     mockFrom.mockImplementation((table: string) => {
       if (table === "ecom_orders") {
@@ -440,23 +475,7 @@ describe("pivot webhook — ecom orders", () => {
               single: vi.fn().mockResolvedValue({ data: { id: "order-1", payment_status: "pending_payment" }, error: null }),
             }),
           }),
-          update: () => ({
-            eq: () => ({
-              select: () => ({
-                single: vi.fn().mockResolvedValue({
-                  data: {
-                    id: "order-1",
-                    order_number: "AGR-001",
-                    customer_name: "Budi",
-                    customer_phone: "08123",
-                    total: 100000,
-                    shipping_address: { phone: "08123" },
-                  },
-                  error: null,
-                }),
-              }),
-            }),
-          }),
+          ...mockPaidUpdate(PAID_ORDER_ROW),
         };
       }
       if (table === "ecom_order_items") {
@@ -475,7 +494,7 @@ describe("pivot webhook — ecom orders", () => {
 
     await new Promise((r) => setTimeout(r, 10));
 
-    expect(mockRpc).not.toHaveBeenCalledWith("ecom_decrement_stock", expect.anything());
+    expect(mockRpc).not.toHaveBeenCalledWith("ecom_decrement_stock_multi", expect.anything());
     expect(mockOpsAlert).not.toHaveBeenCalledWith(
       expect.objectContaining({ issue: expect.stringContaining("LATE PAID") })
     );

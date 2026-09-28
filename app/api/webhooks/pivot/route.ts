@@ -67,30 +67,55 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ received: true });
     }
 
-    // Issue #187: a QRIS payment can settle AFTER the Pivot session expired —
-    // the PAYMENT.EXPIRED handler already released this order's stock via
-    // ecom_restore_stock. Remember the prior status so the stock can be
-    // re-reserved below before the order ships against released inventory.
-    const wasExpired = existing.payment_status === "expired";
+    const paidFields = {
+      payment_status: "paid",
+      status: "processing",
+      paid_at: paidAt,
+      payment_method: "QRIS", // Pivot QRIS is B2C primary (issue #170)
+    };
+    const selectFields =
+      "id, order_number, customer_name, customer_phone, total, shipping_address";
 
-    const { data: updatedOrder, error } = await supabase
+    // CAS ladder (issue #187): each conditional UPDATE is atomic at the row
+    // level, so `wasExpired` is derived from which transition actually won —
+    // never from the stale read above. PAYMENT.EXPIRED can land between the
+    // read and the write (stock already released); the second, expired-scoped
+    // step probes the LIVE status, so a late payment is never dropped just
+    // because the read predated the expiry.
+    let { data: updatedOrder, error } = await supabase
       .from("ecom_orders")
-      .update({
-        payment_status: "paid",
-        status: "processing",
-        paid_at: paidAt,
-        payment_method: "QRIS", // Pivot QRIS is B2C primary (issue #170)
-      })
+      .update(paidFields)
       .eq("pivot_payment_session_id", paymentSessionId)
-      .select("id, order_number, customer_name, customer_phone, total, shipping_address")
-      .single();
+      .not("payment_status", "in", '("expired","paid")')
+      .select(selectFields)
+      .maybeSingle();
+    let wasExpired = false;
+
+    if (!error && !updatedOrder) {
+      // Late payment: the session expired and EXPIRED already released this
+      // order's stock — resurrect the order and claw the stock back below.
+      ({ data: updatedOrder, error } = await supabase
+        .from("ecom_orders")
+        .update(paidFields)
+        .eq("pivot_payment_session_id", paymentSessionId)
+        .eq("payment_status", "expired")
+        .select(selectFields)
+        .maybeSingle());
+      wasExpired = true;
+    }
 
     if (error) {
       console.error("Pivot webhook: DB update error on PAID:", error);
       return NextResponse.json({ error: "DB error" }, { status: 500 });
     }
 
-    if (updatedOrder && wasExpired) {
+    if (!updatedOrder) {
+      // Lost every CAS step: a concurrent delivery already paid the order.
+      // Idempotent no-op — never double-run the paid pipeline.
+      return NextResponse.json({ received: true });
+    }
+
+    if (wasExpired) {
       // The customer paid AFTER the session expired and the EXPIRED handler
       // already released this order's stock. Re-reserve it now — before the
       // Biteship draft below — or the order ships against free stock (#187).
@@ -299,12 +324,17 @@ async function handleConsultationPaid(
  * ecom_restore_stock, so a late PAID would otherwise ship against inventory
  * another buyer may already have claimed.
  *
- * There is no dedicated re-reserve RPC in the DB (verified live: only
- * ecom_decrement_stock, ecom_decrement_stock_multi, ecom_restore_stock), so
- * this reuses the same conditional-decrement primitive checkout uses at order
- * creation (lib/checkout/stockValidation.ts). It is per-item non-atomic by
- * necessity: partial failure is surfaced to ops via the caller's alert, never
- * swallowed.
+ * Uses ecom_decrement_stock_multi — the same all-or-nothing primitive checkout
+ * uses at order creation (lib/checkout/stockValidation.ts). Two reasons this
+ * is the only correct choice:
+ * - The single-item ecom_decrement_stock returns FALSE (no error) when stock
+ *   is insufficient, so checking `error` alone silently "succeeds" on the exact
+ *   oversell case we are guarding against.
+ * - multi decrements every item in one transaction and raises on any
+ *   insufficient stock, so a partial failure can never leave half the order
+ *   re-reserved.
+ * Note PostgREST can surface rejection either as an error OR as data=false;
+ * both paths must fail closed.
  */
 async function reReserveStockForLatePayment(
   supabase: SupabaseAdmin,
@@ -319,20 +349,23 @@ async function reReserveStockForLatePayment(
     return { ok: false, error: `fetch items: ${itemsError.message}` };
   }
 
-  const failures: string[] = [];
-  for (const item of orderItems ?? []) {
-    if (!item.variant_id) continue;
-    const { error } = await supabase.rpc("ecom_decrement_stock", {
-      p_variant_id: item.variant_id,
-      p_quantity: item.quantity,
-    });
-    if (error) {
-      failures.push(`${item.variant_id} x${item.quantity}: ${error.message}`);
-    }
+  const items = (orderItems ?? [])
+    .filter((item) => item.variant_id)
+    .map((item) => ({ variant_id: item.variant_id, quantity: item.quantity }));
+
+  if (items.length === 0) {
+    return { ok: false, error: "no items with variant_id found for order" };
   }
 
-  if (failures.length > 0) {
-    return { ok: false, error: failures.join("; ") };
+  const { data, error } = await supabase.rpc("ecom_decrement_stock_multi", {
+    p_items: items,
+  });
+
+  if (error) {
+    return { ok: false, error: error.message };
+  }
+  if (!data) {
+    return { ok: false, error: "ecom_decrement_stock_multi returned false (insufficient stock)" };
   }
   return { ok: true };
 }
