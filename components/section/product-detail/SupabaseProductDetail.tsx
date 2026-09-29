@@ -192,10 +192,10 @@ const SupabaseProductDetail = ({ product, initialSelection, aggregateSoldCount =
               )}
             </div>
             {/* Sold-count badge: aggregate (all channels) when available; legacy web-only fallback */}
-            {((showAllChannelBadge && aggregateSoldCount != null) || (!showAllChannelBadge && product.total_sold_count > 0)) && (
+            {(showAllChannelBadge || product.total_sold_count > 0) && (
               <span className="inline-block px-2 py-0.5 bg-primary/10 rounded-full mb-4">
                 <span className="text-[11px] tablet:text-xs text-primary font-medium tracking-wide">
-                  {showAllChannelBadge ? formatAllChannelSold(aggregateSoldCount!) : formatSoldCount(product.total_sold_count)}
+                  {showAllChannelBadge ? formatAllChannelSold(aggregateSoldCount) : formatSoldCount(product.total_sold_count)}
                 </span>
               </span>
             )}
