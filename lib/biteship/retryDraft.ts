@@ -36,7 +36,8 @@ export function isRetryableDraftError(err: unknown): boolean {
 
 export async function retryBiteshipDraft(
   orderId: string,
-  attemptNumber?: number
+  attemptNumber?: number,
+  flaggedAtEntry?: boolean
 ): Promise<void> {
   const supabase = createSupabaseAdminClient();
   const attempt = attemptNumber ?? 0;
@@ -54,7 +55,7 @@ export async function retryBiteshipDraft(
   // the stale non-null id means a draft exists and re-drafting is riskier.
   const { data: existing, error: guardErr } = await supabase
     .from('ecom_orders')
-    .select('biteship_draft_id')
+    .select('biteship_draft_id, status')
     .eq('id', orderId)
     .maybeSingle();
 
@@ -74,6 +75,13 @@ export async function retryBiteshipDraft(
     return;
   }
 
+  // Stale-vs-concurrent discriminator for the exhaustion dedupe below,
+  // pinned ONCE at true chain entry (attempt 0) and carried through the
+  // recursion: mid-chain guard re-reads must NOT re-pin it, or a concurrent
+  // chain's fresh flag would be mislabeled 'stale' and double-alert.
+  const wasAlreadyFlagged =
+    flaggedAtEntry ?? existing?.status === 'requires_attention';
+
   if (attempt >= MAX_RETRIES) {
     const { data: order } = await supabase
       .from('ecom_orders')
@@ -81,13 +89,17 @@ export async function retryBiteshipDraft(
       .eq('id', orderId)
       .single();
 
-    // Conditional write doubles as a concurrent-chain dedupe: if a parallel
-    // chain (e.g. admin endpoint invoked mid-backoff) already flagged this
-    // order, this UPDATE matches 0 rows and we skip the second GAGAL-3x
-    // alert. When the write errors for any other reason (e.g. the live
-    // CHECK constraint still rejects 'requires_attention' until agr-ops
-    // migration 051 is applied), we still alert — the terminal failure must
-    // never go silent (issue #199 AC3).
+    // Conditional write doubles as a dedupe. Three terminal states (issue #199 AC3):
+    // - write errors (e.g. the live CHECK constraint still rejects
+    //   'requires_attention' until agr-ops migration 051 is applied):
+    //   console.error AND still alert — a terminal failure never goes silent.
+    // - write matched 0 rows AND the order was NOT flagged when this chain
+    //   entered: a parallel chain flagged it mid-backoff (genuinely
+    //   concurrent) — suppress the duplicate GAGAL-3x alert.
+    // - write matched 0 rows BUT this chain saw status='requires_attention'
+    //   at entry (stale flag from a previous failed chain; admin re-retry):
+    //   that is a NEW terminal failure event, not a duplicate — alert anyway
+    //   so ops hears about the re-exhaustion instead of silence behind a 200.
     const { error: statusErr, data: flaggedRows } = await supabase
       .from('ecom_orders')
       .update({ status: 'requires_attention' })
@@ -101,9 +113,11 @@ export async function retryBiteshipDraft(
       );
     }
 
-    if (!statusErr && (flaggedRows?.length ?? 0) === 0) {
+    const flaggedByOtherChain =
+      !statusErr && (flaggedRows?.length ?? 0) === 0 && !wasAlreadyFlagged;
+    if (flaggedByOtherChain) {
       console.warn(
-        `[retryBiteshipDraft] Order ${orderId} already flagged requires_attention by a concurrent chain — skipping duplicate alert`
+        `[retryBiteshipDraft] Order ${orderId} flagged requires_attention by a concurrent chain during this retry — skipping duplicate alert`
       );
       return;
     }
@@ -128,11 +142,11 @@ export async function retryBiteshipDraft(
     console.log(`[retryBiteshipDraft] Retry ${attempt + 1} succeeded for order ${orderId} with ref ${referenceId}`);
   } catch (err) {
     console.error(`[retryBiteshipDraft] Retry ${attempt + 1} failed for order ${orderId}:`, err);
-    await retryBiteshipDraft(orderId, attempt + 1);
+    await retryBiteshipDraft(orderId, attempt + 1, wasAlreadyFlagged);
     return;
   }
 
-  // Non-retryable: status update and notification
+  // Success path: persist processing status and send the recovery alert
   const { data: order } = await supabase
     .from('ecom_orders')
     .update({ status: 'processing' })

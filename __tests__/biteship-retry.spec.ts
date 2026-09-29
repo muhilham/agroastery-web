@@ -140,7 +140,10 @@ describe('retryBiteshipDraft', () => {
   it('skips the terminal alert when a concurrent chain already flagged requires_attention (0 rows matched)', async () => {
     mockCreateDraft.mockRejectedValue(new Error('Biteship error'));
     // Conditional update (.neq status) matches nothing -> data [] -> dedupe.
-    const updateMock = vi.fn().mockReturnValue(resolvedChain([]));
+    // Entry guard reports status NOT flagged, so the 0-rows result can only
+    // mean a concurrent chain flagged it mid-chain.
+    const updateChain = resolvedChain([]);
+    const updateMock = vi.fn().mockReturnValue(updateChain);
     mockFrom.mockReturnValue({
       select: vi.fn().mockImplementation(() => {
         const chain = resolvedChain(ORDER_ROW);
@@ -154,7 +157,36 @@ describe('retryBiteshipDraft', () => {
     await retryBiteshipDraft('order-1', 3);
 
     expect(updateMock).toHaveBeenCalledWith({ status: 'requires_attention' });
+    // Pin the dedupe filter itself: without .neq the update would match the
+    // flagged row and a refactor dropping it would go undetected.
+    expect(updateChain.neq).toHaveBeenCalledWith('status', 'requires_attention');
     expect(mockOpsAlert).not.toHaveBeenCalled();
+  });
+
+  it('alerts on re-exhaustion of an order already flagged at chain entry (stale flag, not a concurrent duplicate)', async () => {
+    mockCreateDraft.mockRejectedValue(new Error('Biteship error'));
+    // Scenario: a previous chain flagged requires_attention days ago; admin
+    // re-retry exhausts again. 0 rows matched (neq filter) but wasAlreadyFlagged
+    // is true at entry -> this is a NEW terminal failure event -> alert fires.
+    const updateMock = vi.fn().mockReturnValue(resolvedChain([]));
+    mockFrom.mockReturnValue({
+      select: vi.fn().mockImplementation((col?: string) => {
+        const chain = resolvedChain(ORDER_ROW);
+        chain.maybeSingle = vi.fn().mockResolvedValue({
+          data: { biteship_draft_id: null, status: 'requires_attention' },
+          error: null,
+        });
+        return chain;
+      }),
+      update: updateMock,
+    });
+
+    const { retryBiteshipDraft } = await import('@/lib/biteship/retryDraft');
+    await retryBiteshipDraft('order-1', 3);
+
+    expect(mockOpsAlert).toHaveBeenCalledWith(
+      expect.objectContaining({ issue: 'BITESHIP GAGAL 3x — perlu tindakan manual' })
+    );
   });
 
   it('still alerts on exhaustion when the requires_attention write errors (pre-migration-051 CHECK violation)', async () => {
