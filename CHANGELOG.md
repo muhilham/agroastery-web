@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.34.0](https://github.com/muhilham/agroastery-web/compare/v0.33.0...v0.34.0) (2026-09-29)
+
+
+### Features
+
+* **pdp:** all-channel sold aggregate badge ([#169](https://github.com/muhilham/agroastery-web/issues/169)) ([#201](https://github.com/muhilham/agroastery-web/issues/201)) ([5ae7634](https://github.com/muhilham/agroastery-web/commit/5ae763426b3691f79101923d860bd15ddb104b2d))
+
 ## [0.33.0](https://github.com/muhilham/agroastery-web/compare/v0.32.4...v0.33.0) (2026-09-28)
 
 
