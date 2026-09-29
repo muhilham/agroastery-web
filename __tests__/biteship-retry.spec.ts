@@ -34,7 +34,7 @@ function resolvedChain(data: unknown, error: unknown = null, count: unknown = un
 }
 
 // Guard read at the top of every retryBiteshipDraft call:
-// from('ecom_orders').select('biteship_draft_id').eq('id', orderId).maybeSingle()
+// from('ecom_orders').select('biteship_draft_id, status').eq('id', orderId).maybeSingle()
 // Returns no stored draft by default so existing paths proceed to create.
 function guardChain(biteshipDraftId: string | null = null) {
   return resolvedChain(biteshipDraftId ? { biteship_draft_id: biteshipDraftId } : null);
@@ -169,8 +169,9 @@ describe('retryBiteshipDraft', () => {
     // re-retry exhausts again. 0 rows matched (neq filter) but wasAlreadyFlagged
     // is true at entry -> this is a NEW terminal failure event -> alert fires.
     const updateMock = vi.fn().mockReturnValue(resolvedChain([]));
+    const guardSelect = vi.fn();
     mockFrom.mockReturnValue({
-      select: vi.fn().mockImplementation((col?: string) => {
+      select: guardSelect.mockImplementation((col?: string) => {
         const chain = resolvedChain(ORDER_ROW);
         chain.maybeSingle = vi.fn().mockResolvedValue({
           data: { biteship_draft_id: null, status: 'requires_attention' },
@@ -184,6 +185,41 @@ describe('retryBiteshipDraft', () => {
     const { retryBiteshipDraft } = await import('@/lib/biteship/retryDraft');
     await retryBiteshipDraft('order-1', 3);
 
+    // Pin the guard's column list: dropping 'status' from the select would
+    // silently regress the stale-flag alert (mock ignores columns otherwise).
+    expect(guardSelect).toHaveBeenCalledWith('biteship_draft_id, status');
+    expect(mockOpsAlert).toHaveBeenCalledWith(
+      expect.objectContaining({ issue: 'BITESHIP GAGAL 3x — perlu tindakan manual' })
+    );
+  });
+
+  it('stale flag survives the FULL recursion chain: attempt-0 entry flagged, terminal alert at attempt 3', async () => {
+    // Kills the wrong-paren mutant `(flaggedAtEntry ?? existing?.status) ===
+    // 'requires_attention'`: mid-recursion the boolean pin must beat the
+    // (re-read) status string. Entry via attempt 0 (no 3rd arg) with the DB
+    // reporting requires_attention; the pin must carry through 0->1->2->3.
+    mockCreateDraft.mockRejectedValue(new Error('Biteship error'));
+    const updateMock = vi.fn().mockReturnValue(resolvedChain([]));
+    mockFrom.mockReturnValue({
+      select: vi.fn().mockImplementation(() => {
+        const chain = resolvedChain(ORDER_ROW);
+        chain.maybeSingle = vi.fn().mockResolvedValue({
+          data: { biteship_draft_id: null, status: 'requires_attention' },
+          error: null,
+        });
+        return chain;
+      }),
+      update: updateMock,
+    });
+
+    vi.useFakeTimers();
+    const { retryBiteshipDraft } = await import('@/lib/biteship/retryDraft');
+    const p = retryBiteshipDraft('order-1');
+    await vi.advanceTimersByTimeAsync(60_000);
+    await vi.advanceTimersByTimeAsync(300_000);
+    await p;
+
+    expect(mockCreateDraft).toHaveBeenCalledTimes(3);
     expect(mockOpsAlert).toHaveBeenCalledWith(
       expect.objectContaining({ issue: 'BITESHIP GAGAL 3x — perlu tindakan manual' })
     );

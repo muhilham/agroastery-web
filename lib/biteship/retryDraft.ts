@@ -80,7 +80,7 @@ export async function retryBiteshipDraft(
   // recursion: mid-chain guard re-reads must NOT re-pin it, or a concurrent
   // chain's fresh flag would be mislabeled 'stale' and double-alert.
   const wasAlreadyFlagged =
-    flaggedAtEntry ?? existing?.status === 'requires_attention';
+    flaggedAtEntry ?? (existing?.status === 'requires_attention');
 
   if (attempt >= MAX_RETRIES) {
     const { data: order } = await supabase
