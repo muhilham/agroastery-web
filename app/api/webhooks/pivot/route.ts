@@ -4,6 +4,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/server";
 import { sendPaymentNotification } from "@/lib/telegram/notify";
 import { sendOpsAlert } from "@/lib/telegram/opsAlert";
 import { createBiteshipDraft } from '@/lib/biteship/createDraft';
+import { retryBiteshipDraft, isRetryableDraftError } from '@/lib/biteship/retryDraft';
 import { sendOrderEmail } from "@/lib/resend/sendOrderEmail";
 import { createJubelioOrderFromEcom } from "@/lib/jubelio/orders";
 import { sendConsultationConfirmationEmail } from "@/lib/resend/sendConsultationEmail";
@@ -165,19 +166,35 @@ export async function POST(request: NextRequest) {
       );
 
       // Fire-and-forget: create Biteship draft order after payment confirmed.
-      // Never awaited — Pivot expects a fast 200. Failure is logged for manual ops recovery.
+      // Never awaited — Pivot expects a fast 200. Transient failures (e.g.
+      // courier-side unavailability) route into the backed-off retry chain;
+      // only data/config bugs alert immediately (#199).
       createBiteshipDraft(updatedOrder.id as string).catch((err: unknown) => {
         console.error(
           `[pivot-webhook] Biteship draft creation failed for order ${updatedOrder.id}:`,
           err
         );
-        // Alert ops immediately — customer paid but no shipment created. Requires manual action.
-        sendOpsAlert({
-          orderId: updatedOrder.id as string,
-          orderNumber: updatedOrder.order_number as string,
-          issue: "BITESHIP GAGAL — buat order manual",
-          action: "Cek log atau gunakan endpoint retry manual",
-        }).catch(() => {});
+        if (!isRetryableDraftError(err)) {
+          // Non-retryable (order/items/API-key/reference data bugs) —
+          // retrying re-hits the same failure; alert ops immediately.
+          sendOpsAlert({
+            orderId: updatedOrder.id as string,
+            orderNumber: updatedOrder.order_number as string,
+            issue: "BITESHIP GAGAL — buat order manual",
+            action: "Cek log atau gunakan endpoint retry manual",
+          }).catch(() => {});
+          return;
+        }
+        // Retryable — the terminal alert fires only after the chain exhausts
+        // (retryDraft sends BITESHIP GAGAL 3x). .catch guard mandatory: the
+        // exhaustion branch's supabase calls are unguarded (same pattern as
+        // biteship webhook retry wiring).
+        retryBiteshipDraft(updatedOrder.id as string).catch((retryErr: unknown) =>
+          console.error(
+            `[pivot-webhook] draft retry chain failed for order ${updatedOrder.id}:`,
+            retryErr
+          )
+        );
       });
 
       sendOrderEmail(updatedOrder.id as string).catch((err: unknown) =>
