@@ -89,6 +89,23 @@ describe('retryBiteshipDraft', () => {
     expect(updateMock).not.toHaveBeenCalled();
   });
 
+  it('guard also fires on the exhaustion re-entry (attempt >= MAX_RETRIES): concurrent success suppresses the terminal alert', async () => {
+    // Scenario: this chain's attempts all failed, but a concurrent chain
+    // (admin endpoint) succeeded mid-backoff and stored a draft id. The
+    // attempt=3 re-entry must NOT overwrite status or alert BITESHIP GAGAL 3x.
+    const updateMock = vi.fn().mockReturnValue(resolvedChain(null));
+    mockFrom.mockReturnValue({
+      select: vi.fn().mockReturnValue(guardChain('draft-from-concurrent-chain')),
+      update: updateMock,
+    });
+
+    const { retryBiteshipDraft } = await import('@/lib/biteship/retryDraft');
+    await retryBiteshipDraft('order-1', 3);
+
+    expect(updateMock).not.toHaveBeenCalled();
+    expect(mockOpsAlert).not.toHaveBeenCalled();
+  });
+
   it('recursively retries up to MAX_RETRIES then alerts and sets requires_attention', async () => {
     mockCreateDraft.mockRejectedValue(new Error('Biteship error'));
     const updateMock = vi.fn().mockReturnValue(resolvedChain(null));

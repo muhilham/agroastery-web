@@ -41,6 +41,30 @@ export async function retryBiteshipDraft(
   const supabase = createSupabaseAdminClient();
   const attempt = attemptNumber ?? 0;
 
+  // Duplicate-draft guard (issue #199) — runs on EVERY entry, including the
+  // attempt >= MAX_RETRIES re-entry: if a concurrent chain (e.g. the admin
+  // endpoint) succeeded mid-backoff and stored a draft id, this chain must
+  // not fire the exhaustion alert or overwrite status below it.
+  // Retries use unique reference_ids, which bypasses createDraft's
+  // 42211015 same-reference idempotency recovery — if a draft id is already
+  // stored, re-drafting risks a second server-side draft, so short-circuit.
+  // This also makes admin-endpoint re-invocation safe. Known edge (courier_
+  // not_found): if the webhook's nulling update failed, its clearError log
+  // fired but the flow continued; we deliberately short-circuit here because
+  // the stale non-null id means a draft exists and re-drafting is riskier.
+  const { data: existing } = await supabase
+    .from('ecom_orders')
+    .select('biteship_draft_id')
+    .eq('id', orderId)
+    .maybeSingle();
+
+  if (existing?.biteship_draft_id) {
+    console.warn(
+      `[retryBiteshipDraft] Order ${orderId} already has biteship_draft_id=${existing.biteship_draft_id} — skipping retry to avoid a duplicate draft`
+    );
+    return;
+  }
+
   if (attempt >= MAX_RETRIES) {
     const { data: order } = await supabase
       .from('ecom_orders')
@@ -61,27 +85,6 @@ export async function retryBiteshipDraft(
     }).catch(() => {});
 
     console.error(`[retryBiteshipDraft] Max retries (${MAX_RETRIES}) reached for order ${orderId}`);
-    return;
-  }
-
-  // Duplicate-draft guard (issue #199): retries use unique reference_ids,
-  // which bypasses createDraft's 42211015 same-reference idempotency
-  // recovery. If a draft id is already stored, re-drafting risks a second
-  // server-side draft — short-circuit instead. This also makes admin-endpoint
-  // re-invocation safe. Known edge (courier_not_found): if the webhook's
-  // nulling update failed, its clearError log fired but the flow continued;
-  // we deliberately short-circuit here because the stale non-null id means a
-  // draft exists and re-drafting is the riskier choice.
-  const { data: existing } = await supabase
-    .from('ecom_orders')
-    .select('biteship_draft_id')
-    .eq('id', orderId)
-    .maybeSingle();
-
-  if (existing?.biteship_draft_id) {
-    console.warn(
-      `[retryBiteshipDraft] Order ${orderId} already has biteship_draft_id=${existing.biteship_draft_id} — skipping retry to avoid a duplicate draft`
-    );
     return;
   }
 

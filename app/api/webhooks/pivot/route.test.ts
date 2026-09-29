@@ -265,6 +265,7 @@ describe("pivot webhook — ecom orders", () => {
         orderId: "order-1",
         orderNumber: "AGR-001",
         issue: "BITESHIP GAGAL — buat order manual",
+        action: "Cek log atau gunakan endpoint retry manual",
       })
     );
     expect(mockRetryBiteshipDraft).not.toHaveBeenCalled();
