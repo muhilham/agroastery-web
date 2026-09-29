@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cache } from "react";
-import { getProductBySlug } from "@/lib/supabase/queries/products";
+import { getProductBySlug, getAggregateSoldCount } from "@/lib/supabase/queries/products";
 import { getMinPrice, getProductImageUrl } from "@/lib/supabase/queries/productUtils";
 import { numberToIdr } from "@/lib/numberToIdr";
 import type { SupabaseProduct } from "@/types/product";
@@ -192,6 +192,11 @@ export default async function Page({ params, searchParams }: PageProps) {
     notFound();
   }
 
+  // All-channel lifetime sold count from product_sold_counts (agr-ops sync);
+  // null when the table doesn't exist yet → component falls back to
+  // products.total_sold_count (web + recent marketplace deltas).
+  const aggregateSoldCount = await getAggregateSoldCount(product.id);
+
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://agroastery.com";
   const jsonLd = productJsonLd(product, siteUrl);
   const jsonStr = escapeJsonLd(JSON.stringify(jsonLd));
@@ -238,6 +243,7 @@ export default async function Page({ params, searchParams }: PageProps) {
       <SupabaseProductDetail
         product={product}
         initialSelection={resolveInitialSelection(product, variant)}
+        aggregateSoldCount={aggregateSoldCount}
       />
     </>
   );

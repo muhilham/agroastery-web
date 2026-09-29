@@ -37,6 +37,7 @@ const mockProduct = {
 
 vi.mock("@/lib/supabase/queries/products", () => ({
   getProductBySlug: vi.fn(async () => mockProduct),
+  getAggregateSoldCount: vi.fn(async () => null),
 }));
 // client-only bits the detail component pulls in
 vi.mock("@/lib/hooks/useCart", () => ({ useCart: () => ({ addToCart: vi.fn() }) }));
@@ -46,7 +47,7 @@ vi.mock("next/navigation", async (importOriginal) => ({
   usePathname: () => `/${mockProduct.slug}`,
 }));
 
-import { getProductBySlug } from "@/lib/supabase/queries/products";
+import { getProductBySlug, getAggregateSoldCount } from "@/lib/supabase/queries/products";
 import ProductPage from "@/app/(root)/product/[slug]/page";
 
 async function renderPage(
@@ -64,6 +65,7 @@ async function renderPage(
 describe("product page — Instagram/Meta shopping signals", () => {
   beforeEach(() => {
     vi.mocked(getProductBySlug).mockResolvedValue(mockProduct as never);
+    vi.mocked(getAggregateSoldCount).mockResolvedValue(null);
   });
 
   it("emits og:type=product + product: namespace tags in the rendered HTML", async () => {
@@ -94,6 +96,21 @@ describe("product page — Instagram/Meta shopping signals", () => {
     const html = await renderPage({}, "reordered-slug");
     expect(html).toContain('<meta property="product:price:amount" content="54000"');
     expect(html).toContain('<meta property="product:availability" content="out of stock"');
+  });
+
+  it("renders all-channel aggregate sold badge when product_sold_counts has data", async () => {
+    vi.mocked(getAggregateSoldCount).mockResolvedValue(21736);
+    const html = await renderPage();
+    expect(html).toContain("22rb+ terjual di semua channel");
+  });
+
+  it("falls back to total_sold_count badge when aggregate is null (table not migrated)", async () => {
+    vi.mocked(getAggregateSoldCount).mockResolvedValue(null);
+    const withLegacyCount = structuredClone({ ...mockProduct, total_sold_count: 84 });
+    vi.mocked(getProductBySlug).mockResolvedValue(withLegacyCount as never);
+    const html = await renderPage({}, "legacy-count-slug");
+    expect(html).toContain("84 terjual");
+    expect(html).not.toContain("di semua channel");
   });
 
   it("JSON-LD carries sku/mpn for catalog matching", async () => {
