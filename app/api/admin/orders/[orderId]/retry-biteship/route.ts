@@ -33,8 +33,16 @@ export async function POST(
 
   const { orderId } = paramsSchema.parse(await params);
 
+  // Fire-and-forget (#199): the retry chain now awaits a 0/60s/300s backoff,
+  // so a synchronous await would hold the request open up to ~6 minutes and
+  // hit gateway timeouts. The response means "initiated" — the terminal
+  // outcome (success re-alert or BITESHIP GAGAL 3x) arrives via ops alerts.
+  // The try/catch only covers synchronous entry failures (bad client setup).
   try {
-    await retryBiteshipDraft(orderId);
+    retryBiteshipDraft(orderId).catch((err: unknown) => {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(`[retry-biteship] Retry chain failed for order ${orderId}:`, message);
+    });
     return NextResponse.json({
       success: true,
       message: "Biteship draft retry initiated",

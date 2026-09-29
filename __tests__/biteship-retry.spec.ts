@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 vi.mock('next/headers', () => ({
   cookies: vi.fn(() => ({ getAll: () => [], set: vi.fn() })),
@@ -24,10 +24,18 @@ function resolvedChain(data: unknown, error: unknown = null) {
     eq: vi.fn(),
     select: vi.fn(),
     single: vi.fn().mockResolvedValue({ data, error }),
+    maybeSingle: vi.fn().mockResolvedValue({ data, error }),
   });
   result.eq.mockReturnValue(result);
   result.select.mockReturnValue(result);
   return result;
+}
+
+// Guard read at the top of every retryBiteshipDraft call:
+// from('ecom_orders').select('biteship_draft_id').eq('id', orderId).maybeSingle()
+// Returns no stored draft by default so existing paths proceed to create.
+function guardChain(biteshipDraftId: string | null = null) {
+  return resolvedChain(biteshipDraftId ? { biteship_draft_id: biteshipDraftId } : null);
 }
 
 const ORDER_ROW = {
@@ -42,10 +50,18 @@ describe('retryBiteshipDraft', () => {
     vi.clearAllMocks();
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('calls createBiteshipDraft with suffixed reference_id on success', async () => {
     mockCreateDraft.mockResolvedValue(undefined);
     const updateMock = vi.fn().mockReturnValue(resolvedChain(ORDER_ROW));
-    mockFrom.mockReturnValue({ update: updateMock });
+    const selectMock = vi.fn().mockReturnValue(guardChain());
+    mockFrom.mockImplementation((table: string) => {
+      if (table === 'ecom_orders') return { select: selectMock, update: updateMock };
+      return { select: selectMock, update: updateMock };
+    });
 
     const { retryBiteshipDraft } = await import('@/lib/biteship/retryDraft');
     await retryBiteshipDraft('order-1');
@@ -58,20 +74,40 @@ describe('retryBiteshipDraft', () => {
     );
   });
 
-  it('recursively retries up to MAX_RETRIES then alerts and sets requires_attention', async () => {
-    mockCreateDraft.mockRejectedValue(new Error('Biteship error'));
+  it('short-circuits when a biteship_draft_id already exists (no duplicate draft, no alert)', async () => {
     const updateMock = vi.fn().mockReturnValue(resolvedChain(null));
     mockFrom.mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          single: vi.fn().mockResolvedValue({ data: ORDER_ROW, error: null }),
-        }),
-      }),
+      select: vi.fn().mockReturnValue(guardChain('draft-existing')),
       update: updateMock,
     });
 
     const { retryBiteshipDraft } = await import('@/lib/biteship/retryDraft');
     await retryBiteshipDraft('order-1');
+
+    expect(mockCreateDraft).not.toHaveBeenCalled();
+    expect(mockOpsAlert).not.toHaveBeenCalled();
+    expect(updateMock).not.toHaveBeenCalled();
+  });
+
+  it('recursively retries up to MAX_RETRIES then alerts and sets requires_attention', async () => {
+    mockCreateDraft.mockRejectedValue(new Error('Biteship error'));
+    const updateMock = vi.fn().mockReturnValue(resolvedChain(null));
+    mockFrom.mockReturnValue({
+      select: vi.fn().mockImplementation(() => {
+        // Guard read resolves via maybeSingle; exhaustion read via single.
+        const chain = resolvedChain(ORDER_ROW);
+        chain.maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+        return chain;
+      }),
+      update: updateMock,
+    });
+
+    vi.useFakeTimers();
+    const { retryBiteshipDraft } = await import('@/lib/biteship/retryDraft');
+    const p = retryBiteshipDraft('order-1');
+    await vi.advanceTimersByTimeAsync(60_000);
+    await vi.advanceTimersByTimeAsync(300_000);
+    await p;
 
     expect(mockCreateDraft).toHaveBeenCalledTimes(3);
     expect(updateMock).toHaveBeenCalledWith({ status: 'requires_attention' });
@@ -80,14 +116,74 @@ describe('retryBiteshipDraft', () => {
     );
   });
 
+  it('backs off between attempts on the pinned 0/60s/300s schedule', async () => {
+    mockCreateDraft.mockRejectedValue(new Error('Biteship error'));
+    const updateMock = vi.fn().mockReturnValue(resolvedChain(null));
+    mockFrom.mockReturnValue({
+      select: vi.fn().mockImplementation(() => {
+        const chain = resolvedChain(ORDER_ROW);
+        chain.maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+        return chain;
+      }),
+      update: updateMock,
+    });
+
+    vi.useFakeTimers();
+    const { retryBiteshipDraft } = await import('@/lib/biteship/retryDraft');
+    const p = retryBiteshipDraft('order-1');
+
+    await vi.advanceTimersByTimeAsync(0);
+    expect(mockCreateDraft).toHaveBeenCalledTimes(1); // attempt 0: no delay
+
+    await vi.advanceTimersByTimeAsync(59_999);
+    expect(mockCreateDraft).toHaveBeenCalledTimes(1); // attempt 1 not yet
+
+    await vi.advanceTimersByTimeAsync(1);
+    expect(mockCreateDraft).toHaveBeenCalledTimes(2); // attempt 1 at t=60s
+
+    await vi.advanceTimersByTimeAsync(299_999);
+    expect(mockCreateDraft).toHaveBeenCalledTimes(2); // attempt 2 not yet
+
+    await vi.advanceTimersByTimeAsync(1);
+    await p;
+    expect(mockCreateDraft).toHaveBeenCalledTimes(3); // attempt 2 at t=360s
+  });
+
   it('sets status to processing on retry success', async () => {
     mockCreateDraft.mockResolvedValue(undefined);
     const updateMock = vi.fn().mockReturnValue(resolvedChain(ORDER_ROW));
-    mockFrom.mockReturnValue({ update: updateMock });
+    mockFrom.mockReturnValue({
+      select: vi.fn().mockReturnValue(guardChain()),
+      update: updateMock,
+    });
 
     const { retryBiteshipDraft } = await import('@/lib/biteship/retryDraft');
     await retryBiteshipDraft('order-1');
 
     expect(updateMock).toHaveBeenCalledWith({ status: 'processing' });
+  });
+});
+
+describe('isRetryableDraftError', () => {
+  it('classifies the four enumerated data/config throws as non-retryable', async () => {
+    const { isRetryableDraftError } = await import('@/lib/biteship/retryDraft');
+    expect(isRetryableDraftError(new Error('[createBiteshipDraft] Order not found: x'))).toBe(false);
+    expect(isRetryableDraftError(new Error('[createBiteshipDraft] No order items found for order: x'))).toBe(false);
+    expect(isRetryableDraftError(new Error('[createBiteshipDraft] Missing BITESHIP_API_KEY env var'))).toBe(false);
+    expect(isRetryableDraftError(new Error('[createBiteshipDraft] Reference ID ref-1 taken but lookup found no matching draft'))).toBe(false);
+  });
+
+  it('classifies everything else (Biteship API payload, network) as retryable', async () => {
+    const { isRetryableDraftError } = await import('@/lib/biteship/retryDraft');
+    expect(isRetryableDraftError(new Error('Biteship down'))).toBe(true);
+    expect(
+      isRetryableDraftError(
+        new Error('[createBiteshipDraft] Biteship draft API error for order x: {"code":40002021,"error":"No courier available"}')
+      )
+    ).toBe(true);
+    expect(
+      isRetryableDraftError(new Error('[createBiteshipDraft] Failed to store biteship_draft_id for order x: timeout'))
+    ).toBe(true);
+    expect(isRetryableDraftError('plain string')).toBe(true);
   });
 });

@@ -4,6 +4,36 @@ import { sendOpsAlert } from '@/lib/telegram/opsAlert';
 
 const MAX_RETRIES = 3;
 
+/**
+ * In-process backoff before each create attempt (issue #199): attempt 0
+ * fires immediately, then 60s and 300s — enough to ride out a minutes-long
+ * courier blip like the AGR-20260928-97YXK5 incident (lane serviceable ~2
+ * minutes later). Requires a long-lived process; a deploy/restart mid-chain
+ * loses the remaining attempts silently (documented, accepted — the admin
+ * retry endpoint remains the manual recovery path).
+ */
+const RETRY_DELAYS_MS = [0, 60_000, 300_000];
+
+/**
+ * Non-retryable throws from createBiteshipDraft — data/config bugs where a
+ * retry can only produce the same failure (or, for the Reference-ID case,
+ * mint a duplicate draft under a fresh reference). Everything else (Biteship
+ * API errors with the payload embedded in the message, network failures) is
+ * transient. Prefix list is the complete contract — do NOT add code-based
+ * rules (see the taxonomy note in issue #199).
+ */
+const NON_RETRYABLE_PREFIXES = [
+  '[createBiteshipDraft] Order not found',
+  '[createBiteshipDraft] No order items found',
+  '[createBiteshipDraft] Missing BITESHIP_API_KEY',
+  '[createBiteshipDraft] Reference ID',
+];
+
+export function isRetryableDraftError(err: unknown): boolean {
+  const message = err instanceof Error ? err.message : String(err);
+  return !NON_RETRYABLE_PREFIXES.some((prefix) => message.startsWith(prefix));
+}
+
 export async function retryBiteshipDraft(
   orderId: string,
   attemptNumber?: number
@@ -33,6 +63,29 @@ export async function retryBiteshipDraft(
     console.error(`[retryBiteshipDraft] Max retries (${MAX_RETRIES}) reached for order ${orderId}`);
     return;
   }
+
+  // Duplicate-draft guard (issue #199): retries use unique reference_ids,
+  // which bypasses createDraft's 42211015 same-reference idempotency
+  // recovery. If a draft id is already stored, re-drafting risks a second
+  // server-side draft — short-circuit instead. This also makes admin-endpoint
+  // re-invocation safe. Known edge (courier_not_found): if the webhook's
+  // nulling update failed, its clearError log fired but the flow continued;
+  // we deliberately short-circuit here because the stale non-null id means a
+  // draft exists and re-drafting is the riskier choice.
+  const { data: existing } = await supabase
+    .from('ecom_orders')
+    .select('biteship_draft_id')
+    .eq('id', orderId)
+    .maybeSingle();
+
+  if (existing?.biteship_draft_id) {
+    console.warn(
+      `[retryBiteshipDraft] Order ${orderId} already has biteship_draft_id=${existing.biteship_draft_id} — skipping retry to avoid a duplicate draft`
+    );
+    return;
+  }
+
+  await new Promise((resolve) => setTimeout(resolve, RETRY_DELAYS_MS[attempt]));
 
   const referenceId = `${orderId}--retry-${Date.now()}-${attempt}`;
 

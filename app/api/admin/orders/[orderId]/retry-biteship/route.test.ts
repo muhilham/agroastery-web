@@ -39,8 +39,19 @@ describe("POST /api/admin/orders/{orderId}/retry-biteship", () => {
     expect(res.status).toBe(401);
   });
 
-  it("returns 500 when retry throws", async () => {
+  it("returns 200 when the retry chain rejects — fire-and-forget, outcome arrives via ops alerts (#199)", async () => {
     mockRetry.mockRejectedValue(new Error("Biteship down"));
+    const { req, params } = makeReq("11111111-1111-1111-1111-111111111111", "secret-123");
+    const res = await POST(req, { params });
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.success).toBe(true);
+  });
+
+  it("returns 500 when retry throws synchronously (guard-entry failure)", async () => {
+    mockRetry.mockImplementation(() => {
+      throw new Error("Biteship down");
+    });
     const { req, params } = makeReq("11111111-1111-1111-1111-111111111111", "secret-123");
     const res = await POST(req, { params });
     expect(res.status).toBe(500);

@@ -45,6 +45,17 @@ vi.mock("@/lib/biteship/createDraft", () => ({
   createBiteshipDraft: (...a: unknown[]) => mockCreateBiteshipDraft(...a),
 }));
 
+// The route imports BOTH retryBiteshipDraft and isRetryableDraftError from
+// retryDraft — keep the real classifier, stub only the chain (#199).
+const mockRetryBiteshipDraft = vi.fn().mockResolvedValue(undefined);
+vi.mock("@/lib/biteship/retryDraft", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/biteship/retryDraft")>();
+  return {
+    ...actual,
+    retryBiteshipDraft: (...a: unknown[]) => mockRetryBiteshipDraft(...a),
+  };
+});
+
 vi.mock("@/lib/resend/sendOrderEmail", () => ({
   sendOrderEmail: (...a: unknown[]) => mockSendOrderEmail(...a),
 }));
@@ -179,7 +190,7 @@ describe("pivot webhook — ecom orders", () => {
     expect(mockCreateJubelioOrder).toHaveBeenCalledWith("order-1");
   });
 
-  it("triggers sendOpsAlert when Biteship draft fails", async () => {
+  it("routes a retryable Biteship draft failure into the retry chain without alerting ops", async () => {
     mockFrom.mockImplementation((table: string) => {
       if (table === "ecom_orders") {
         return {
@@ -210,6 +221,45 @@ describe("pivot webhook — ecom orders", () => {
     // Wait for fire-and-forget side effects
     await new Promise((r) => setTimeout(r, 10));
 
+    // "Biteship down" is not a known data-bug prefix -> retry chain, no alert (#199)
+    expect(mockRetryBiteshipDraft).toHaveBeenCalledWith("order-1");
+    expect(mockOpsAlert).not.toHaveBeenCalledWith(
+      expect.objectContaining({ issue: "BITESHIP GAGAL — buat order manual" })
+    );
+  });
+
+  it("alerts ops immediately (no retry) when draft fails with a non-retryable error", async () => {
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "ecom_orders") {
+        return {
+          select: () => ({
+            eq: () => ({
+              single: vi.fn().mockResolvedValue({ data: { id: "order-1", payment_status: "unpaid" }, error: null }),
+            }),
+          }),
+          ...mockPaidUpdate(PAID_ORDER_ROW),
+        };
+      }
+      if (table === "ecom_order_items") {
+        return {
+          select: () => ({
+            eq: () => Promise.resolve({ data: [{ product_name: "Kopi", quantity: 1 }], error: null }),
+          }),
+        };
+      }
+      return { select: () => resolvedChain(null) };
+    });
+
+    mockCreateBiteshipDraft.mockRejectedValue(
+      new Error("[createBiteshipDraft] No order items found for order: order-1")
+    );
+
+    const req = webhookReq("PAYMENT.PAID", { id: "ps_1", chargeDetails: [{ paidAt: "2026-07-23T10:00:00Z" }] });
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+
+    await new Promise((r) => setTimeout(r, 10));
+
     expect(mockOpsAlert).toHaveBeenCalledWith(
       expect.objectContaining({
         orderId: "order-1",
@@ -217,6 +267,7 @@ describe("pivot webhook — ecom orders", () => {
         issue: "BITESHIP GAGAL — buat order manual",
       })
     );
+    expect(mockRetryBiteshipDraft).not.toHaveBeenCalled();
   });
 
   it("triggers sendOpsAlert when Jubelio sync fails", async () => {
