@@ -52,11 +52,20 @@ export async function retryBiteshipDraft(
   // not_found): if the webhook's nulling update failed, its clearError log
   // fired but the flow continued; we deliberately short-circuit here because
   // the stale non-null id means a draft exists and re-drafting is riskier.
-  const { data: existing } = await supabase
+  const { data: existing, error: guardErr } = await supabase
     .from('ecom_orders')
     .select('biteship_draft_id')
     .eq('id', orderId)
     .maybeSingle();
+
+  if (guardErr) {
+    // Contract pins behavior only for a non-null draft id; on a read failure
+    // the state is unknown. Proceed with the retry (a transient DB glitch
+    // must not silently kill the whole chain) but leave a trace.
+    console.warn(
+      `[retryBiteshipDraft] Guard read failed for ${orderId}: ${guardErr.message} — proceeding (draft-id state unknown)`
+    );
+  }
 
   if (existing?.biteship_draft_id) {
     console.warn(
@@ -72,10 +81,32 @@ export async function retryBiteshipDraft(
       .eq('id', orderId)
       .single();
 
-    await supabase
+    // Conditional write doubles as a concurrent-chain dedupe: if a parallel
+    // chain (e.g. admin endpoint invoked mid-backoff) already flagged this
+    // order, this UPDATE matches 0 rows and we skip the second GAGAL-3x
+    // alert. When the write errors for any other reason (e.g. the live
+    // CHECK constraint still rejects 'requires_attention' until agr-ops
+    // migration 051 is applied), we still alert — the terminal failure must
+    // never go silent (issue #199 AC3).
+    const { error: statusErr, data: flaggedRows } = await supabase
       .from('ecom_orders')
       .update({ status: 'requires_attention' })
-      .eq('id', orderId);
+      .eq('id', orderId)
+      .neq('status', 'requires_attention')
+      .select('id');
+
+    if (statusErr) {
+      console.error(
+        `[retryBiteshipDraft] requires_attention write failed for ${orderId}: ${statusErr.message} (expected until agr-ops migration 051 is applied to prod)`
+      );
+    }
+
+    if (!statusErr && (flaggedRows?.length ?? 0) === 0) {
+      console.warn(
+        `[retryBiteshipDraft] Order ${orderId} already flagged requires_attention by a concurrent chain — skipping duplicate alert`
+      );
+      return;
+    }
 
     await sendOpsAlert({
       orderId,

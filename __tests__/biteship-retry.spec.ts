@@ -19,14 +19,16 @@ vi.mock('@/lib/telegram/opsAlert', () => ({
   sendOpsAlert: mockOpsAlert,
 }));
 
-function resolvedChain(data: unknown, error: unknown = null) {
-  const result = Object.assign(Promise.resolve({ data, error }), {
+function resolvedChain(data: unknown, error: unknown = null, count: unknown = undefined) {
+  const result = Object.assign(Promise.resolve({ data, error, count }), {
     eq: vi.fn(),
+    neq: vi.fn(),
     select: vi.fn(),
-    single: vi.fn().mockResolvedValue({ data, error }),
-    maybeSingle: vi.fn().mockResolvedValue({ data, error }),
+    single: vi.fn().mockResolvedValue({ data, error, count }),
+    maybeSingle: vi.fn().mockResolvedValue({ data, error, count }),
   });
   result.eq.mockReturnValue(result);
+  result.neq.mockReturnValue(result);
   result.select.mockReturnValue(result);
   return result;
 }
@@ -108,7 +110,9 @@ describe('retryBiteshipDraft', () => {
 
   it('recursively retries up to MAX_RETRIES then alerts and sets requires_attention', async () => {
     mockCreateDraft.mockRejectedValue(new Error('Biteship error'));
-    const updateMock = vi.fn().mockReturnValue(resolvedChain(null));
+    // data rows non-empty — the conditional update matched the row (order
+    // not yet flagged), so the terminal alert must fire.
+    const updateMock = vi.fn().mockReturnValue(resolvedChain([{ id: 'order-1' }]));
     mockFrom.mockReturnValue({
       select: vi.fn().mockImplementation(() => {
         // Guard read resolves via maybeSingle; exhaustion read via single.
@@ -128,6 +132,48 @@ describe('retryBiteshipDraft', () => {
 
     expect(mockCreateDraft).toHaveBeenCalledTimes(3);
     expect(updateMock).toHaveBeenCalledWith({ status: 'requires_attention' });
+    expect(mockOpsAlert).toHaveBeenCalledWith(
+      expect.objectContaining({ issue: 'BITESHIP GAGAL 3x — perlu tindakan manual' })
+    );
+  });
+
+  it('skips the terminal alert when a concurrent chain already flagged requires_attention (0 rows matched)', async () => {
+    mockCreateDraft.mockRejectedValue(new Error('Biteship error'));
+    // Conditional update (.neq status) matches nothing -> data [] -> dedupe.
+    const updateMock = vi.fn().mockReturnValue(resolvedChain([]));
+    mockFrom.mockReturnValue({
+      select: vi.fn().mockImplementation(() => {
+        const chain = resolvedChain(ORDER_ROW);
+        chain.maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+        return chain;
+      }),
+      update: updateMock,
+    });
+
+    const { retryBiteshipDraft } = await import('@/lib/biteship/retryDraft');
+    await retryBiteshipDraft('order-1', 3);
+
+    expect(updateMock).toHaveBeenCalledWith({ status: 'requires_attention' });
+    expect(mockOpsAlert).not.toHaveBeenCalled();
+  });
+
+  it('still alerts on exhaustion when the requires_attention write errors (pre-migration-051 CHECK violation)', async () => {
+    mockCreateDraft.mockRejectedValue(new Error('Biteship error'));
+    const updateMock = vi.fn().mockReturnValue(
+      resolvedChain(null, { message: 'new row for relation "ecom_orders" violates check constraint "ecom_orders_status_check"' })
+    );
+    mockFrom.mockReturnValue({
+      select: vi.fn().mockImplementation(() => {
+        const chain = resolvedChain(ORDER_ROW);
+        chain.maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+        return chain;
+      }),
+      update: updateMock,
+    });
+
+    const { retryBiteshipDraft } = await import('@/lib/biteship/retryDraft');
+    await retryBiteshipDraft('order-1', 3);
+
     expect(mockOpsAlert).toHaveBeenCalledWith(
       expect.objectContaining({ issue: 'BITESHIP GAGAL 3x — perlu tindakan manual' })
     );
