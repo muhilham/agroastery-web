@@ -39,14 +39,19 @@ const PRODUCT_SELECT = `
  * The web app must never fail the PDP just because the data layer lags.
  */
 export async function getAggregateSoldCount(productId: string): Promise<number | null> {
-  const supabase = createSupabaseAdminClient();
-  const { data, error } = await supabase
-    .from("product_sold_counts")
-    .select("sold_count")
-    .eq("product_id", productId);
+  try {
+    const supabase = createSupabaseAdminClient();
+    const { data, error } = await supabase
+      .from("product_sold_counts")
+      .select("sold_count")
+      .eq("product_id", productId);
 
-  if (error || !data || data.length === 0) return null;
-  return data.reduce((sum, row) => sum + (row.sold_count ?? 0), 0);
+    if (error || !data || data.length === 0) return null;
+    return data.reduce((sum, row) => sum + (row.sold_count ?? 0), 0);
+  } catch {
+    // Table missing, DB down, network failure — PDP must stay up
+    return null;
+  }
 }
 
 function enrichProductWithDiscounts(
