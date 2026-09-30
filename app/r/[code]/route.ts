@@ -11,7 +11,7 @@ import { NextRequest, NextResponse } from "next/server";
  * print runs need no reprint when the target moves.
  *
  * HOW TO ADD A CODE: append one `["<code>", { path, campaign }]` entry to
- * QR_LINKS below (lowercase code, path starts with `/`, campaign
+ * QR_LINKS below (lowercase code, path starts and ends with `/`, campaign
  * `reorder-<product>`) AND the matching path+campaign entry to
  * EXPECTED_LINKS in route.test.ts (frozen print-run snapshot; key-set
  * mismatch fails CI on purpose), then `pnpm test` — route.test.ts enforces
