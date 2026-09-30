@@ -36,10 +36,54 @@ export function isRetryableDraftError(err: unknown): boolean {
 
 export async function retryBiteshipDraft(
   orderId: string,
-  attemptNumber?: number
+  attemptNumber?: number,
+  flaggedAtEntry?: boolean
 ): Promise<void> {
   const supabase = createSupabaseAdminClient();
   const attempt = attemptNumber ?? 0;
+
+  // Duplicate-draft guard (issue #199) — runs on EVERY entry, including the
+  // attempt >= MAX_RETRIES re-entry: if a concurrent chain (e.g. the admin
+  // endpoint) succeeded mid-backoff and stored a draft id, this chain must
+  // not fire the exhaustion alert or overwrite status below it.
+  // Retries use unique reference_ids, which bypasses createDraft's
+  // 42211015 same-reference idempotency recovery — if a draft id is already
+  // stored, re-drafting risks a second server-side draft, so short-circuit.
+  // This also makes admin-endpoint re-invocation safe. Known edge (courier_
+  // not_found): if the webhook's nulling update failed, its clearError log
+  // fired but the flow continued; we deliberately short-circuit here because
+  // the stale non-null id means a draft exists and re-drafting is riskier.
+  // Best-effort: two chains already in flight before either stores a draft
+  // id can still both create (read-then-act TOCTOU) — covered by #199's
+  // accepted cost (unconfirmed drafts are harmless until confirmed).
+  const { data: existing, error: guardErr } = await supabase
+    .from('ecom_orders')
+    .select('biteship_draft_id, status')
+    .eq('id', orderId)
+    .maybeSingle();
+
+  if (guardErr) {
+    // Contract pins behavior only for a non-null draft id; on a read failure
+    // the state is unknown. Proceed with the retry (a transient DB glitch
+    // must not silently kill the whole chain) but leave a trace.
+    console.warn(
+      `[retryBiteshipDraft] Guard read failed for ${orderId}: ${guardErr.message} — proceeding (draft-id state unknown)`
+    );
+  }
+
+  if (existing?.biteship_draft_id) {
+    console.warn(
+      `[retryBiteshipDraft] Order ${orderId} already has biteship_draft_id=${existing.biteship_draft_id} — skipping retry to avoid a duplicate draft`
+    );
+    return;
+  }
+
+  // Stale-vs-concurrent discriminator for the exhaustion dedupe below,
+  // pinned ONCE at true chain entry (attempt 0) and carried through the
+  // recursion: mid-chain guard re-reads must NOT re-pin it, or a concurrent
+  // chain's fresh flag would be mislabeled 'stale' and double-alert.
+  const wasAlreadyFlagged =
+    flaggedAtEntry ?? (existing?.status === 'requires_attention');
 
   if (attempt >= MAX_RETRIES) {
     const { data: order } = await supabase
@@ -48,10 +92,38 @@ export async function retryBiteshipDraft(
       .eq('id', orderId)
       .single();
 
-    await supabase
+    // Conditional write doubles as a dedupe. Three terminal states (issue #199 AC3):
+    // - write errors (e.g. the live CHECK constraint still rejects
+    //   'requires_attention' until agr-ops migration 051 is applied):
+    //   console.error AND still alert — a terminal failure never goes silent.
+    // - write matched 0 rows AND the order was NOT flagged when this chain
+    //   entered: a parallel chain flagged it mid-backoff (genuinely
+    //   concurrent) — suppress the duplicate GAGAL-3x alert.
+    // - write matched 0 rows BUT this chain saw status='requires_attention'
+    //   at entry (stale flag from a previous failed chain; admin re-retry):
+    //   that is a NEW terminal failure event, not a duplicate — alert anyway
+    //   so ops hears about the re-exhaustion instead of silence behind a 200.
+    const { error: statusErr, data: flaggedRows } = await supabase
       .from('ecom_orders')
       .update({ status: 'requires_attention' })
-      .eq('id', orderId);
+      .eq('id', orderId)
+      .neq('status', 'requires_attention')
+      .select('id');
+
+    if (statusErr) {
+      console.error(
+        `[retryBiteshipDraft] requires_attention write failed for ${orderId}: ${statusErr.message} (expected until agr-ops migration 051 is applied to prod)`
+      );
+    }
+
+    const flaggedByOtherChain =
+      !statusErr && (flaggedRows?.length ?? 0) === 0 && !wasAlreadyFlagged;
+    if (flaggedByOtherChain) {
+      console.warn(
+        `[retryBiteshipDraft] Order ${orderId} flagged requires_attention by a concurrent chain during this retry — skipping duplicate alert`
+      );
+      return;
+    }
 
     await sendOpsAlert({
       orderId,
@@ -64,27 +136,6 @@ export async function retryBiteshipDraft(
     return;
   }
 
-  // Duplicate-draft guard (issue #199): retries use unique reference_ids,
-  // which bypasses createDraft's 42211015 same-reference idempotency
-  // recovery. If a draft id is already stored, re-drafting risks a second
-  // server-side draft — short-circuit instead. This also makes admin-endpoint
-  // re-invocation safe. Known edge (courier_not_found): if the webhook's
-  // nulling update failed, its clearError log fired but the flow continued;
-  // we deliberately short-circuit here because the stale non-null id means a
-  // draft exists and re-drafting is the riskier choice.
-  const { data: existing } = await supabase
-    .from('ecom_orders')
-    .select('biteship_draft_id')
-    .eq('id', orderId)
-    .maybeSingle();
-
-  if (existing?.biteship_draft_id) {
-    console.warn(
-      `[retryBiteshipDraft] Order ${orderId} already has biteship_draft_id=${existing.biteship_draft_id} — skipping retry to avoid a duplicate draft`
-    );
-    return;
-  }
-
   await new Promise((resolve) => setTimeout(resolve, RETRY_DELAYS_MS[attempt]));
 
   const referenceId = `${orderId}--retry-${Date.now()}-${attempt}`;
@@ -94,11 +145,11 @@ export async function retryBiteshipDraft(
     console.log(`[retryBiteshipDraft] Retry ${attempt + 1} succeeded for order ${orderId} with ref ${referenceId}`);
   } catch (err) {
     console.error(`[retryBiteshipDraft] Retry ${attempt + 1} failed for order ${orderId}:`, err);
-    await retryBiteshipDraft(orderId, attempt + 1);
+    await retryBiteshipDraft(orderId, attempt + 1, wasAlreadyFlagged);
     return;
   }
 
-  // Non-retryable: status update and notification
+  // Success path: persist processing status and send the recovery alert
   const { data: order } = await supabase
     .from('ecom_orders')
     .update({ status: 'processing' })
