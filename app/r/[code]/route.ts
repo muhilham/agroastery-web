@@ -12,7 +12,10 @@ import { NextRequest, NextResponse } from "next/server";
  *
  * HOW TO ADD A CODE: append one `["<code>", { path, campaign }]` entry to
  * QR_LINKS below (lowercase code, path starts with `/`, campaign
- * `reorder-<product>`), then `pnpm test` — route.test.ts enforces registry
+ * `reorder-<product>`) AND the matching path+campaign entry to
+ * EXPECTED_LINKS in route.test.ts (frozen print-run snapshot; key-set
+ * mismatch fails CI on purpose), then `pnpm test` — route.test.ts enforces
+ * registry
  * integrity: non-/product/ paths must be a real static route dir under `app/`;
  * /product/<slug>/ paths are only format-checked, so confirm the slug is
  * active in the catalog/sitemap before print approval. Unknown/retired
