@@ -53,6 +53,9 @@ export async function retryBiteshipDraft(
   // not_found): if the webhook's nulling update failed, its clearError log
   // fired but the flow continued; we deliberately short-circuit here because
   // the stale non-null id means a draft exists and re-drafting is riskier.
+  // Best-effort: two chains already in flight before either stores a draft
+  // id can still both create (read-then-act TOCTOU) — covered by #199's
+  // accepted cost (unconfirmed drafts are harmless until confirmed).
   const { data: existing, error: guardErr } = await supabase
     .from('ecom_orders')
     .select('biteship_draft_id, status')
