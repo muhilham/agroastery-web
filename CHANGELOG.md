@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.34.1](https://github.com/muhilham/agroastery-web/compare/v0.34.0...v0.34.1) (2026-09-30)
+
+
+### Bug Fixes
+
+* **biteship:** guard runs before exhaustion branch — [#204](https://github.com/muhilham/agroastery-web/issues/204) review fix that missed the merge ([#206](https://github.com/muhilham/agroastery-web/issues/206)) ([3203093](https://github.com/muhilham/agroastery-web/commit/32030937b04ac69859d62b2d6d63ca19a79b8dd7))
+* **biteship:** route draft-create failures into backed-off retry chain ([#199](https://github.com/muhilham/agroastery-web/issues/199)) ([#204](https://github.com/muhilham/agroastery-web/issues/204)) ([2c62c96](https://github.com/muhilham/agroastery-web/commit/2c62c96b524c2e4793124f8d6408107d4eac9d96))
+
 ## [0.34.0](https://github.com/muhilham/agroastery-web/compare/v0.33.0...v0.34.0) (2026-09-29)
 
 
