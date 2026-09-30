@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.35.0](https://github.com/muhilham/agroastery-web/compare/v0.34.1...v0.35.0) (2026-09-30)
+
+
+### Features
+
+* **qr:** extend /r short-link registry for print run v2 + integrity test ([#203](https://github.com/muhilham/agroastery-web/issues/203)) ([#207](https://github.com/muhilham/agroastery-web/issues/207)) ([0aff786](https://github.com/muhilham/agroastery-web/commit/0aff7867638d0070cfb0652b5edaca04514cf601))
+
+
+### Tests
+
+* **qr:** fix (root) resolver + pin registry snapshot ([#203](https://github.com/muhilham/agroastery-web/issues/203) follow-up) ([#209](https://github.com/muhilham/agroastery-web/issues/209)) ([d6d6773](https://github.com/muhilham/agroastery-web/commit/d6d677303ed6f1c8fe06c88fc490d498d2fc758e))
+
 ## [0.34.1](https://github.com/muhilham/agroastery-web/compare/v0.34.0...v0.34.1) (2026-09-30)
 
 
