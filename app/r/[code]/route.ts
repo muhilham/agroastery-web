@@ -80,7 +80,9 @@ export const QR_LINKS = new Map<string, { path: string; campaign: string }>([
       campaign: "reorder-house-blend-prime73",
     },
   ],
-  // Single origins — the two active STANDARD full-arabica sellers.
+  // Single origins — the two top-volume STANDARD full-arabica sellers by
+  // last-120d qty (solok-selatan and brazil-cerrado are also active but
+  // lower volume; revisit if they earn cards).
   [
     "gayo",
     {
