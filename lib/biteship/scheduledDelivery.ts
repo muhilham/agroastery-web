@@ -129,13 +129,19 @@ export function getSchedulingFields(
 
 // ---- Internal helpers ----
 
+/**
+ * Identifies same-day/instant couriers subject to cutoff-based scheduling (issue #212).
+ * Lalamove is excluded — it operates 24/7 in Jakarta, so its `delivery_type: 'now'`
+ * requests are always serviceable regardless of wall-clock time.
+ * Only Grab and Gojek have hard operating windows that cause Biteship rejections after hours.
+ */
 function isSameDayCourier(courierCode: string, serviceCode: string): boolean {
-  const samedayCouriers = ['grab', 'gojek', 'lalamove'];
+  const restrictedCouriers = ['grab', 'gojek']; // lalamove excluded — available 24h
   const samedayServices = ['same_day', 'sameday'];
   const instantServices = ['instant', 'instant_courier', 'go_send', 'grab_express'];
   
   return (
-    samedayCouriers.includes(courierCode.toLowerCase()) ||
+    restrictedCouriers.includes(courierCode.toLowerCase()) ||
     samedayServices.some(s => serviceCode.toLowerCase().includes(s)) ||
     instantServices.some(s => serviceCode.toLowerCase().includes(s))
   );
