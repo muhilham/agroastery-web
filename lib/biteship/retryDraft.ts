@@ -1,5 +1,6 @@
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { createBiteshipDraft } from './createDraft';
+import { attemptCourierFallback, formatCandidatesForAlert } from './courierFallback';
 import { sendOpsAlert } from '@/lib/telegram/opsAlert';
 
 const MAX_RETRIES = 3;
@@ -125,11 +126,41 @@ export async function retryBiteshipDraft(
       return;
     }
 
+    // Fallback before declaring terminal failure (issue #200): re-quote the
+    // lane and book the best in-budget alternative. A successful fallback
+    // means the order is drafted — mirror the success path (processing + the
+    // FALLBACK KURIR alert attemptCourierFallback already sent) instead of
+    // alerting GAGAL 3x. Only when nothing applies does the order stay
+    // requires_attention, and the alert then carries the RANKED alternatives
+    // so a human decides in seconds.
+    // Runs AFTER the concurrent-flag dedupe: if another chain just flagged
+    // this order, that chain owns its own fallback pass — we must not race a
+    // second re-quote/swap against it.
+    const fallback = await attemptCourierFallback(orderId).catch((err: unknown) => {
+      console.error(`[retryBiteshipDraft] fallback errored for order ${orderId}:`, err);
+      return null;
+    });
+
+    if (fallback?.kind === 'applied') {
+      await supabase
+        .from('ecom_orders')
+        .update({ status: 'processing' })
+        .eq('id', orderId)
+        .then(() => {});
+      console.log(
+        `[retryBiteshipDraft] Fallback applied for order ${orderId} via ${fallback.applied.rate.courier_code}/${fallback.applied.rate.courier_service_code}`
+      );
+      return;
+    }
+
+    const rankedList = fallback
+      ? formatCandidatesForAlert(fallback.ranked)
+      : '(re-quote tidak berjalan)';
     await sendOpsAlert({
       orderId,
       orderNumber: order?.order_number ?? 'UNKNOWN',
       issue: 'BITESHIP GAGAL 3x — perlu tindakan manual',
-      action: 'Cek Biteship dashboard atau gunakan endpoint retry manual',
+      action: `Cek Biteship dashboard atau gunakan endpoint retry manual.\nAlternatif re-quote lane (terbaik dulu):\n${rankedList}`,
     }).catch(() => {});
 
     console.error(`[retryBiteshipDraft] Max retries (${MAX_RETRIES}) reached for order ${orderId}`);

@@ -14,7 +14,23 @@ vi.mock('@/lib/supabase/server', () => ({
 
 const mockRetryDraft = vi.fn().mockResolvedValue(undefined);
 vi.mock('@/lib/biteship/retryDraft', () => ({
-  retryBiteshipDraft: mockRetryDraft,
+  retryBiteshipDraft: (...args: unknown[]) => {
+    CALL_ORDER.push('retry');
+    return mockRetryDraft(...args);
+  },
+}));
+
+// Shared call-order trace so the courier_not_found tests can pin that the
+// fallback pass runs BEFORE the same-courier retry chain (issue #200).
+const CALL_ORDER: string[] = [];
+
+const mockFallback = vi.fn();
+vi.mock('@/lib/biteship/courierFallback', () => ({
+  attemptCourierFallback: (...args: unknown[]) => {
+    CALL_ORDER.push('fallback');
+    return mockFallback(...args);
+  },
+  formatCandidatesForAlert: () => '• mock/in-budget Rp 10.000',
 }));
 
 const mockOpsAlert = vi.fn().mockResolvedValue(undefined);
@@ -45,6 +61,10 @@ function makeRequest(body: unknown, secret = 'test-secret') {
 describe('POST /api/webhooks/biteship', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    CALL_ORDER.length = 0;
+    // Default fallback outcome: nothing applicable — the legacy retry path
+    // must still run (issue #200: fallback FIRST, same-courier retry after).
+    mockFallback.mockResolvedValue({ kind: 'no_candidates', tried: [], ranked: [], reason: 'no in-budget tier 1/2 alternative' });
     process.env.BITESHIP_WEBHOOK_SECRET = 'test-secret';
     delete process.env.BITESHIP_API_KEY;
     makeChain();
@@ -478,7 +498,7 @@ describe('POST /api/webhooks/biteship', () => {
     expect(updateAttachOrderId).toHaveBeenCalledWith({ biteship_order_id: 'bs-new-after-confirm' });
   });
 
-  it('handles courier_not_found: archives, clears IDs, and triggers retry', async () => {
+  it('handles courier_not_found: archives, clears IDs with requires_attention (NOT cancelled), tries fallback before same-courier retry', async () => {
     const matched = { data: { id: 'ecom-99', order_number: 'AGR-001', customer_name: 'Budi', customer_phone: '08111', total: 100000, biteship_draft_id: 'bs-draft-old' }, error: null };
     const updateClear = vi.fn().mockReturnValue({
       eq: vi.fn().mockResolvedValue({ data: null, error: null }),
@@ -516,17 +536,57 @@ describe('POST /api/webhooks/biteship', () => {
       biteship_draft_id: 'bs-draft-old',
       biteship_status: 'courier_not_found',
     });
+    // Issue #200 A1: a paid order must never flip to 'cancelled' silently —
+    // the holding state is requires_attention while fallback + retry run.
     expect(updateClear).toHaveBeenCalledWith({
       biteship_order_id: null,
       biteship_draft_id: null,
       tracking_number: null,
       courier_tracking_id: null,
-      status: 'cancelled',
+      status: 'requires_attention',
     });
+    // Fallback BEFORE the same-courier retry chain (issue #200).
+    expect(mockFallback).toHaveBeenCalledWith('ecom-99');
+    expect(CALL_ORDER).toEqual(['fallback', 'retry']);
     expect(mockRetryDraft).toHaveBeenCalledWith('ecom-99');
     expect(mockOpsAlert).toHaveBeenCalledWith(
       expect.objectContaining({ issue: 'BITESHIP COURIER NOT FOUND — mencoba ulang' })
     );
+  });
+
+  it('courier_not_found fallback applied: skips same-courier retry, flips processing, no GAGAL alert', async () => {
+    mockFallback.mockResolvedValueOnce({
+      kind: 'applied',
+      applied: { rate: { courier_code: 'grab', courier_service_code: 'instant_car', courier_service_name: 'Instant Car', price: 20000, currency: 'IDR', courier_name: 'Grab', courier_service_name_dup: undefined } as never, tier: 1, withinBudget: true },
+      tried: [],
+    });
+    const matched = { data: { id: 'ecom-99', order_number: 'AGR-001', customer_name: 'Budi', customer_phone: '08111', total: 100000, biteship_draft_id: 'bs-draft-old' }, error: null };
+    let call = 0;
+    mockFrom.mockImplementation(() => {
+      call++;
+      if (call === 1) return {
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            maybeSingle: vi.fn().mockResolvedValue(matched),
+          }),
+        }),
+      };
+      return {
+        insert: vi.fn().mockResolvedValue({ data: null, error: null }),
+        update: vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ data: null, error: null }) }),
+      };
+    });
+
+    const { POST } = await import('@/app/api/webhooks/biteship/route');
+    const res = await POST(
+      makeRequest({ event: 'order.status', order_id: 'bs-123', status: 'courier_not_found' })
+    );
+    expect(res.status).toBe(200);
+    // No same-courier retry when the fallback already booked a draft.
+    expect(mockRetryDraft).not.toHaveBeenCalled();
+    // No "mencoba ulang" ops alert either — the FALLBACK KURIR alert came
+    // from attemptCourierFallback itself (asserted in courierFallback.test).
+    expect(mockOpsAlert).not.toHaveBeenCalled();
   });
 
   it('history fallback skips status updates from dead orders', async () => {
