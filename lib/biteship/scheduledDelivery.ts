@@ -14,8 +14,6 @@
  */
 
 // ---- Cutoff config via env vars (overridable per season, vendor negotiation) ----
-const INSTANT_CUTOFF_HOUR = Number(process.env.SAME_DAY_CUTOFF_HOUR ?? 15);
-const INSTANT_CUTOFF_MINUTE = Number(process.env.SAME_DAY_CUTOFF_MINUTE ?? 0);
 const SAMEDAY_CUTOFF_HOUR = Number(process.env.SAMEDAY_CUTOFF_HOUR ?? 16);
 const SAMEDAY_CUTOFF_MINUTE = Number(process.env.SAMEDAY_CUTOFF_MINUTE ?? 0);
 
@@ -62,15 +60,17 @@ export function determineDeliveryType(courierCode: string, serviceCode: string):
   const minute = nowWib.getMinutes();
   const dayOfWeek = nowWib.getDay(); // 0=Sunday, 6=Saturday
 
-  // Determine if this is a same-day/instant courier
+  // Determine if this is a same-day (NOT instant) courier — the only type
+  // subject to cutoff-based scheduling. Instant/Lalamove/regular couriers
+  // always get `delivery_type: 'now'` regardless of wall-clock time.
   const isSameDay = isSameDayCourier(courierCode, serviceCode);
-
+  
   if (!isSameDay) {
     return { deliveryType: 'now' };
   }
-
-  // Check if we're past cutoff time
-  const isPastCutoff = isTimePastCutoff(hour, minute, !isInstantCourier(courierCode, serviceCode));
+  
+  // Check if we're past the same-day cutoff (16:00 WIB default)
+  const isPastCutoff = isTimePastCutoff(hour, minute);
 
   if (!isPastCutoff) {
     return { deliveryType: 'now' };
@@ -130,33 +130,26 @@ export function getSchedulingFields(
 // ---- Internal helpers ----
 
 /**
- * Identifies same-day/instant couriers subject to cutoff-based scheduling (issue #212).
- * Lalamove is excluded — it operates 24/7 in Jakarta, so its `delivery_type: 'now'`
- * requests are always serviceable regardless of wall-clock time.
- * Only Grab and Gojek have hard operating windows that cause Biteship rejections after hours.
+ * Identifies same-day (NOT instant) couriers subject to cutoff-based scheduling.
+ * Instant services (GrabExpress/GoSend) and Lalamove run 24/7 in Jakarta — always
+ * return `{ delivery_type: 'now' }`. Only same_day services get past-cutoff scheduling.
  */
 function isSameDayCourier(courierCode: string, serviceCode: string): boolean {
-  const restrictedCouriers = ['grab', 'gojek']; // lalamove excluded — available 24h
-  const samedayServices = ['same_day', 'sameday'];
-  const instantServices = ['instant', 'instant_courier', 'go_send', 'grab_express'];
+  const restrictedCouriers = ['grab', 'gojek']; // only these have same_day operating hours
+  const samedayServices = ['same_day', 'sameday']; // NOT instant
   
   return (
-    restrictedCouriers.includes(courierCode.toLowerCase()) ||
-    samedayServices.some(s => serviceCode.toLowerCase().includes(s)) ||
-    instantServices.some(s => serviceCode.toLowerCase().includes(s))
+    restrictedCouriers.includes(courierCode.toLowerCase()) &&
+    samedayServices.some(s => serviceCode.toLowerCase().includes(s))
   );
 }
 
-function isInstantCourier(courierCode: string, serviceCode: string): boolean {
-  const instantServices = ['instant', 'instant_courier', 'go_send', 'grab_express'];
-  return instantServices.some(s => serviceCode.toLowerCase().includes(s));
-}
-
-function isTimePastCutoff(currentHour: number, currentMinute: number, isSameDay: boolean): boolean {
-  const cutoffHour = isSameDay ? SAMEDAY_CUTOFF_HOUR : INSTANT_CUTOFF_HOUR;
-  const cutoffMinute = isSameDay ? SAMEDAY_CUTOFF_MINUTE : INSTANT_CUTOFF_MINUTE;
-  
-  return currentHour > cutoffHour || (currentHour === cutoffHour && currentMinute >= cutoffMinute);
+/**
+ * Check if current WIB time is past the same-day cutoff.
+ * Instant services (GrabExpress/GoSend) and Lalamove are NOT subject to this cutoff.
+ */
+function isTimePastCutoff(currentHour: number, currentMinute: number): boolean {
+  return currentHour > SAMEDAY_CUTOFF_HOUR || (currentHour === SAMEDAY_CUTOFF_HOUR && currentMinute >= SAMEDAY_CUTOFF_MINUTE);
 }
 
 /**
