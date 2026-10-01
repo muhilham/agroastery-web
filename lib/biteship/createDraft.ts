@@ -85,7 +85,7 @@ export async function createBiteshipDraft(
 
     courier_company: order.shipping_courier,
     courier_type: order.shipping_service,
-    ...getSchedulingFields(order.shipping_courier, order.shipping_service),
+    ...getSchedulingFields(order.shipping_courier, order.shipping_service, referenceId),
     ...(order.notes ? { order_note: order.notes } : {}),
     reference_id: referenceId,
 

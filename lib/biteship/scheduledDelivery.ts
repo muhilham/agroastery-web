@@ -91,12 +91,25 @@ export function determineDeliveryType(courierCode: string, serviceCode: string):
  * `delivery_type: 'now'` in createDraft so it can switch to scheduled
  * automatically when same-day orders are placed after cutoff.
  */
-export function getSchedulingFields(courierCode: string, serviceCode: string): Record<string, unknown> {
+export function getSchedulingFields(
+  courierCode: string,
+  serviceCode: string,
+  orderId?: string
+): Record<string, unknown> {
   const info = determineDeliveryType(courierCode, serviceCode);
   
   if (info.deliveryType === 'now') {
     return { delivery_type: 'now' };
   }
+  
+  console.info(
+    '[scheduledDelivery] Order %s switched to scheduled delivery — %s %s → pickup %s @ %s WIB',
+    orderId ?? 'unknown',
+    courierCode,
+    serviceCode,
+    info.scheduledDate,
+    info.scheduledTime
+  );
   
   return {
     delivery_type: 'scheduled',
