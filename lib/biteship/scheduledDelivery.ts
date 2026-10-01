@@ -1,16 +1,19 @@
 /**
  * Schedule-aware Biteship delivery type selection (issue #212).
  *
- * Same-day/Instant couriers fail after operating hours because Grab/Gojek/Lalamove
- * don't dispatch late at night. Instead of hard-hiding these options (P0) or creating
- * duplicate manual work (the current retry exhaustion path), we **auto-schedule**
- * them for next-morning pickup. The courier/service stay exactly what the customer chose —
- * only the dispatch timing shifts.
+ * When a Grab/Gojek **same-day** order is placed after operating hours, Biteship's
+ * courier rejects it because no drivers are available. Instead of hard-hiding this
+ * option (P0) or creating duplicate manual work (the current retry exhaustion path),
+ * we auto-schedule for next-morning pickup. The courier/service stay exactly what
+ * the customer chose — only the dispatch timing shifts.
+ *
+ * Instant services (GrabExpress/GoSend) and Lalamove operate 24/7 in Jakarta and are
+ * NOT subject to any cutoff — they always use \`delivery_type: 'now'\`.
  *
  * Flow:
- * 1. Check if selected courier is same-day/instant
- * 2. If yes AND current WIB is past cutoff → schedule for next business morning
- * 3. If no OR before cutoff → normal `delivery_type: 'now'`
+ * 1. Is selected courier Grab/Gojek with same_day service? → Check WIB cutoff (16:00).
+ *    If past cutoff → schedule for next business morning 08:00.
+ * 2. Otherwise → normal \`delivery_type: 'now'\` dispatch.
  */
 
 // ---- Cutoff config via env vars (overridable per season, vendor negotiation) ----
