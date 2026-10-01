@@ -303,6 +303,38 @@ describe('attemptCourierFallback (#200: re-quote, pick, book, notify)', () => {
     expect(issue).not.toContain('wa.me');
   });
 
+  it('stops the pass when the swap guard matches 0 rows (concurrent chain stored a draft)', async () => {
+    // update().is().select() resolving [] = the .is(biteship_draft_id null)
+    // guard lost the race. Drafting anyway would stack a second shipment on
+    // top of the other chain's draft.
+    mockFrom.mockImplementation((table: string) => {
+      if (table === 'ecom_order_items') {
+        const c = chain([{ product_name: 'Coffee', unit_price: 150000, quantity: 1, ship_weight_grams: 500 }]);
+        return { select: () => c };
+      }
+      return {
+        select: () => {
+          const c = chain(null);
+          c.eq.mockImplementation(() => chain(ORDER_ROW));
+          return c;
+        },
+        update: () => {
+          const c = chain(null);
+          c.eq.mockReturnValue(c);
+          c.is.mockReturnValue(c);
+          c.select.mockResolvedValue({ data: [], error: null });
+          return c;
+        },
+      };
+    });
+
+    const out = await attemptCourierFallback('order-1');
+    expect(out.kind).toBe('no_candidates');
+    if (out.kind !== 'no_candidates') return;
+    expect(out.reason).toContain('concurrently');
+    expect(mockCreateDraft).not.toHaveBeenCalled();
+  });
+
   it('tries the next candidate when drafting fails, restoring the original pair first', async () => {
     mockFetchRates.mockResolvedValue([
       rate('grab', 'instant_car', 20000, 'instant'),
