@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.36.0](https://github.com/muhilham/agroastery-web/compare/v0.35.0...v0.36.0) (2026-10-01)
+
+
+### Features
+
+* **biteship:** schedule same-day orders after cutoff ([#212](https://github.com/muhilham/agroastery-web/issues/212)) ([86b6e3d](https://github.com/muhilham/agroastery-web/commit/86b6e3da582ad5672744802b49b5ac5a9e5b194e))
+* **biteship:** schedule same-day orders after cutoff ([#212](https://github.com/muhilham/agroastery-web/issues/212)) ([#213](https://github.com/muhilham/agroastery-web/issues/213)) ([a9520eb](https://github.com/muhilham/agroastery-web/commit/a9520ebb949438da81c31377864cf46f09b4cbea))
+
+
+### Bug Fixes
+
+* **biteship:** lane re-quote + in-budget courier fallback on terminal retry failure ([#200](https://github.com/muhilham/agroastery-web/issues/200)) ([#210](https://github.com/muhilham/agroastery-web/issues/210)) ([eb352f8](https://github.com/muhilham/agroastery-web/commit/eb352f843f11a185b2a023b805bb06c7df718da4))
+
 ## [0.35.0](https://github.com/muhilham/agroastery-web/compare/v0.34.1...v0.35.0) (2026-09-30)
 
 
