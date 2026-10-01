@@ -9,18 +9,20 @@
  *
  * Ranking follows issue #200 amendment A3: SLA match first, price second,
  * budget as a hard constraint on AUTO application only:
- *  - Tier 1: same courier, different service (silent swap allowed, A2)
+ *  - Tier 1: same courier, different service, SAME SLA group (silent swap
+ *            allowed, A2)
  *  - Tier 2: different courier, same-day-or-faster group, within the paid
  *            shipping budget (auto swap + proactive customer notification)
- *  - Tier 3: regular/overnight within budget — SLA downgrade, NEVER auto:
- *            requires explicit human clearance + customer notification
+ *  - Tier 3: regular/overnight (incl. same-courier regular — still an SLA
+ *            downgrade) — NEVER auto: requires explicit human clearance +
+ *            customer notification
  *  - Over budget: never auto-shipped (the merchant would eat the difference
  *            against the shipping the customer already paid); surfaced in
  *            the ranked ops alert for a human decision.
  */
 
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
-import { fetchBiteshipRates, findRateMatch } from './rates';
+import { fetchBiteshipRates } from './rates';
 import { createBiteshipDraft } from './createDraft';
 import { sendOpsAlert } from '@/lib/telegram/opsAlert';
 import { buildCourierChangeWhatsAppLink } from '@/lib/whatsapp';
@@ -52,10 +54,14 @@ export type SelectedPair = {
 
 /**
  * Pure ranking (exported for tests). Excludes the failed pair itself, then:
- * tier 1 = same courier / different service, tier 2 = instant|same_day from
- * another courier, tier 3 = everything else. Within each tier: price asc,
- * then courier/service code for determinism. Over-budget rates keep their
- * tier but get `withinBudget: false` — they belong in the human alert only.
+ * tier 1 = same courier / different service IN THE SAME SLA GROUP, tier 2 =
+ * instant|same_day from another courier, tier 3 = everything else —
+ * including same-courier regular services: a same-brand SLA downgrade is
+ * still a downgrade and needs the human clearance + customer notification
+ * path (#200 A2/A3: "cheapest regular courier — only with explicit
+ * clearance"). Within each tier: price asc, then courier/service code for
+ * determinism. Over-budget rates keep their tier but get
+ * `withinBudget: false` — they belong in the human alert only.
  */
 export function rankFallbackCandidates(
   pricing: BiteshipPricing[],
@@ -69,7 +75,10 @@ export function rankFallbackCandidates(
     .map((rate) => {
       const sameCourier = rate.courier_code === selected.courierCode;
       const instan = classifyRateGroup({ serviceType: rate.service_type }) === 'instan';
-      const tier: FallbackTier = sameCourier ? 1 : instan ? 2 : 3;
+      // Tier 1 = same courier AND same SLA group (silent swap). A
+      // same-courier regular service is an SLA downgrade like any other
+      // reguler rate — tier 3, human clearance, never silent (A2/A3).
+      const tier: FallbackTier = instan ? (sameCourier ? 1 : 2) : 3;
       return { rate, tier, withinBudget: rate.price <= selected.budget };
     });
 
@@ -263,17 +272,30 @@ export async function attemptCourierFallback(orderId: string): Promise<FallbackO
       // re-reads shipping_courier/shipping_service from the row. shipping_cost
       // stays what the customer paid; ETD is overwritten only on success below
       // (stays as-is if drafting fails and we move to the next candidate).
-      const { error: swapError } = await supabase
+      const { error: swapError, data: swappedRows } = await supabase
         .from('ecom_orders')
         .update({
           shipping_courier: candidate.rate.courier_code,
           shipping_service: candidate.rate.courier_service_code,
         })
         .eq('id', orderId)
-        .is('biteship_draft_id', null);
+        .is('biteship_draft_id', null)
+        .select('id');
       if (swapError) {
         console.error(`[courierFallback] swap update failed for ${orderId}:`, swapError);
         continue;
+      }
+      // The guard matched 0 rows — a concurrent chain stored a draft id
+      // mid-await. Proceeding would draft a SECOND shipment on top of it
+      // (createBiteshipDraft re-reads the row and overwrites the id). Stop
+      // the whole pass; the other chain's draft owns the order now.
+      if (swappedRows?.length === 0) {
+        return {
+          kind: 'no_candidates',
+          tried: [],
+          ranked,
+          reason: 'draft id appeared concurrently — fallback pass stopped',
+        };
       }
 
       await createBiteshipDraft(orderId, referenceId);
@@ -302,6 +324,7 @@ export async function attemptCourierFallback(orderId: string): Promise<FallbackO
               newService: candidate.rate.courier_service_code,
               newServiceName: candidate.rate.courier_service_name,
               newEta: candidate.rate.duration,
+              orderId,
             })
           : null;
 
@@ -341,7 +364,3 @@ export async function attemptCourierFallback(orderId: string): Promise<FallbackO
 
   return { kind: 'all_failed', tried, ranked };
 }
-
-/** Reference for parity with the checkout-selected pair in the ranked list
- * (kept exported so tests/alerts can show what was originally selected). */
-export { findRateMatch };

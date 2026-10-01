@@ -54,7 +54,8 @@ export function buildCourierChangeWhatsAppLink(params: {
   let message = `Halo ${params.customerName || "Kak"}, pesanan ${params.orderNumber} kami pindahkan ke kurir ${newName}`;
   message += ` karena kurir ${params.oldCourier.toUpperCase()} ${params.oldService} sedang tidak tersedia untuk rute ini.`;
   if (params.newEta) message += `\nEstimasi tiba: ${params.newEta}.`;
-  message += `\n\nBalas pesan ini jika ada pertanyaan. Lacak pesanan: ${appUrl}/track/${params.orderId ?? ""}/`;
+  message += `\n\nBalas pesan ini jika ada pertanyaan.`;
+  if (params.orderId) message += ` Lacak pesanan: ${appUrl}/track/${params.orderId}/`;
   message += `\n\nTerima kasih! 🙏`;
 
   return buildWhatsAppLink(message);

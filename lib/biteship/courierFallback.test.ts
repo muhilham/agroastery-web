@@ -108,6 +108,26 @@ describe('rankFallbackCandidates (#200 A3: SLA first, price second)', () => {
     );
     expect(ranked[0].tier).toBe(3);
   });
+
+  it('same-courier REGULER service is tier 3, not a silent tier-1 swap (A2/A3)', () => {
+    // grab/reg after grab/same_day died is the same brand but an SLA
+    // downgrade: needs human clearance + customer notification, never
+    // auto-booked silently.
+    const ranked = rankFallbackCandidates(
+      [rate('grab', 'reg', 12000, 'standard', '2 - 3 days')],
+      SELECTED
+    );
+    expect(ranked[0].tier).toBe(3);
+    expect(autoApplicableCandidates(ranked)).toHaveLength(0);
+  });
+
+  it('same-courier same-day-instant service is tier 1 (silent swap, A2)', () => {
+    const ranked = rankFallbackCandidates(
+      [rate('grab', 'instant', 19000, 'instant', '1-2 hours')],
+      SELECTED
+    );
+    expect(ranked[0].tier).toBe(1);
+  });
 });
 
 describe('autoApplicableCandidates (#200 money model + A3)', () => {
