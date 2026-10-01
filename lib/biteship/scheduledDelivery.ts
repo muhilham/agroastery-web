@@ -160,16 +160,16 @@ function isTimePastCutoff(currentHour: number, currentMinute: number, isSameDay:
  * a different day-of-week → wrong weekend skip logic.
  */
 function calculateNextMorningPickup(nowWib: Date, todayDayOfWeek: number): { dateStr: string; timeStr: string } {
-  // Skip weekends: Saturday (6) and Sunday (0) → next Monday (1)
-  let daysToAdd = 0;
-  if (todayDayOfWeek === 0) {
-    // Sunday → Monday
-    daysToAdd = 1;
-  } else if (todayDayOfWeek === 6) {
-    // Saturday → Monday
+  // Always schedule for tomorrow as the baseline. Then adjust if tomorrow falls
+  // on a weekend (Sat→Mon, Sun→Mon).
+  let daysToAdd = 1; // Tomorrow
+  
+  // If today is Saturday (+1 would land on Sunday) → push to Monday
+  if (todayDayOfWeek === 6) {
     daysToAdd = 2;
   }
-
+  // Sunday → already +1 = Monday, no adjustment needed
+  
   const pickupDate = new Date(nowWib.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
 
   // Set pickup time components
