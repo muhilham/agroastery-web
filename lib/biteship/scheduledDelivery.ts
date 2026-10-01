@@ -64,21 +64,22 @@ export function determineDeliveryType(courierCode: string, serviceCode: string):
 
   // Determine if this is a same-day/instant courier
   const isSameDay = isSameDayCourier(courierCode, serviceCode);
-  
+
   if (!isSameDay) {
     return { deliveryType: 'now' };
   }
 
   // Check if we're past cutoff time
   const isPastCutoff = isTimePastCutoff(hour, minute, !isInstantCourier(courierCode, serviceCode));
-  
+
   if (!isPastCutoff) {
     return { deliveryType: 'now' };
   }
 
   // After cutoff → schedule for next business morning
-  const { dateStr, timeStr } = calculateNextMorningPickup(dayOfWeek);
-  
+  // Pass NOWIB directly to avoid re-querying wibNow() near midnight (race condition)
+  const { dateStr, timeStr } = calculateNextMorningPickup(nowWib, dayOfWeek);
+
   return {
     deliveryType: 'scheduled',
     scheduledDate: dateStr,
@@ -97,11 +98,19 @@ export function getSchedulingFields(
   orderId?: string
 ): Record<string, unknown> {
   const info = determineDeliveryType(courierCode, serviceCode);
-  
+
   if (info.deliveryType === 'now') {
     return { delivery_type: 'now' };
   }
-  
+
+  // Assert scheduled values are defined — they should always be present for
+  // scheduled mode (calculateNextMorningPickup guarantees YYYY-MM-DD and HH:mm).
+  if (!info.scheduledDate || !info.scheduledTime) {
+    throw new Error(
+      `[scheduledDelivery] Missing scheduling fields for ${courierCode}/${serviceCode} (${orderId ?? 'unknown'})`
+    );
+  }
+
   console.info(
     '[scheduledDelivery] Order %s switched to scheduled delivery — %s %s → pickup %s @ %s WIB',
     orderId ?? 'unknown',
@@ -110,7 +119,7 @@ export function getSchedulingFields(
     info.scheduledDate,
     info.scheduledTime
   );
-  
+
   return {
     delivery_type: 'scheduled',
     delivery_date: info.scheduledDate,
@@ -144,7 +153,13 @@ function isTimePastCutoff(currentHour: number, currentMinute: number, isSameDay:
   return currentHour > cutoffHour || (currentHour === cutoffHour && currentMinute >= cutoffMinute);
 }
 
-function calculateNextMorningPickup(todayDayOfWeek: number): { dateStr: string; timeStr: string } {
+/**
+ * Calculate next business morning pickup date/time.
+ * Uses the already-computed WIB Date from determineDeliveryType() to avoid
+ * race conditions near midnight WIB where a second wibNow() call could yield
+ * a different day-of-week → wrong weekend skip logic.
+ */
+function calculateNextMorningPickup(nowWib: Date, todayDayOfWeek: number): { dateStr: string; timeStr: string } {
   // Skip weekends: Saturday (6) and Sunday (0) → next Monday (1)
   let daysToAdd = 0;
   if (todayDayOfWeek === 0) {
@@ -155,16 +170,15 @@ function calculateNextMorningPickup(todayDayOfWeek: number): { dateStr: string; 
     daysToAdd = 2;
   }
 
-  const today = wibNow();
-  const pickupDate = new Date(today.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
-  
+  const pickupDate = new Date(nowWib.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
+
   // Set pickup time components
   pickupDate.setHours(MORNING_PICKUP_HOUR, MORNING_PICKUP_MINUTE, 0, 0);
-  
+
   // Format as YYYY-MM-DD
   const pad = (n: number) => n.toString().padStart(2, '0');
   const dateStr = `${pickupDate.getFullYear()}-${pad(pickupDate.getMonth() + 1)}-${pad(pickupDate.getDate())}`;
   const timeStr = `${pad(MORNING_PICKUP_HOUR)}:${pad(MORNING_PICKUP_MINUTE)}`;
-  
+
   return { dateStr, timeStr };
 }
