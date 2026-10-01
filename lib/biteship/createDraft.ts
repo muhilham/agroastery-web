@@ -1,5 +1,6 @@
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { checkoutOriginGeo, checkoutOriginPostal } from '@/lib/checkout/shippingQuote';
+import { getSchedulingFields } from './scheduledDelivery';
 
 type BiteshipDraftResponse = {
   success: boolean;
@@ -84,7 +85,7 @@ export async function createBiteshipDraft(
 
     courier_company: order.shipping_courier,
     courier_type: order.shipping_service,
-    delivery_type: 'now',
+    ...getSchedulingFields(order.shipping_courier, order.shipping_service),
     ...(order.notes ? { order_note: order.notes } : {}),
     reference_id: referenceId,
 
