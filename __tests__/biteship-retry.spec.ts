@@ -19,6 +19,13 @@ vi.mock('@/lib/telegram/opsAlert', () => ({
   sendOpsAlert: mockOpsAlert,
 }));
 
+const mockFallback = vi.fn();
+vi.mock('@/lib/biteship/courierFallback', () => ({
+  attemptCourierFallback: mockFallback,
+  formatCandidatesForAlert: (ranked: unknown[]) =>
+    `mock-ranked(${ranked.length})`,
+}));
+
 function resolvedChain(data: unknown, error: unknown = null, count: unknown = undefined) {
   const result = Object.assign(Promise.resolve({ data, error, count }), {
     eq: vi.fn(),
@@ -50,6 +57,10 @@ const ORDER_ROW = {
 describe('retryBiteshipDraft', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Default: the #200 fallback pass finds nothing, so exhaustion behaves
+    // like before (requires_attention + GAGAL 3x alert carrying the ranked
+    // list). Fallback-specific tests override this per-case.
+    mockFallback.mockResolvedValue({ kind: 'no_candidates', tried: [], ranked: [], reason: 'no in-budget tier 1/2 alternative' });
   });
 
   afterEach(() => {
@@ -292,6 +303,112 @@ describe('retryBiteshipDraft', () => {
     await retryBiteshipDraft('order-1');
 
     expect(updateMock).toHaveBeenCalledWith({ status: 'processing' });
+  });
+
+  // ---- issue #200: fallback pass at exhaustion ----
+
+  it('exhaustion with a successful fallback: flips processing, no GAGAL 3x alert', async () => {
+    mockCreateDraft.mockRejectedValue(new Error('Biteship error'));
+    mockFallback.mockResolvedValue({
+      kind: 'applied',
+      applied: { rate: { courier_code: 'grab', courier_service_code: 'instant_car' }, tier: 1, withinBudget: true },
+      tried: [],
+    });
+    const updateMock = vi.fn().mockReturnValue(resolvedChain([{ id: 'order-1' }]));
+    mockFrom.mockReturnValue({
+      select: vi.fn().mockImplementation(() => {
+        const chain = resolvedChain(ORDER_ROW);
+        chain.maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+        return chain;
+      }),
+      update: updateMock,
+    });
+
+    const { retryBiteshipDraft } = await import('@/lib/biteship/retryDraft');
+    await retryBiteshipDraft('order-1', 3);
+
+    expect(mockFallback).toHaveBeenCalledWith('order-1');
+    // Known, accepted flicker: the dedupe write flags requires_attention
+    // first (so a crash mid-fallback never leaves a silently "normal" order),
+    // then the successful fallback flips processing. Final state is the one
+    // that matters.
+    expect(updateMock).toHaveBeenCalledWith({ status: 'requires_attention' });
+    expect(updateMock).toHaveBeenCalledWith({ status: 'processing' });
+    expect(mockOpsAlert).not.toHaveBeenCalledWith(
+      expect.objectContaining({ issue: 'BITESHIP GAGAL 3x — perlu tindakan manual' })
+    );
+  });
+
+  it('exhaustion with no fallback candidate: requires_attention alert carries the RANKED alternatives', async () => {
+    mockCreateDraft.mockRejectedValue(new Error('Biteship error'));
+    mockFallback.mockResolvedValue({
+      kind: 'no_candidates',
+      tried: [],
+      ranked: [{ tier: 3 }, { tier: 2, withinBudget: false }],
+      reason: 'no in-budget tier 1/2 alternative',
+    });
+    const updateMock = vi.fn().mockReturnValue(resolvedChain([{ id: 'order-1' }]));
+    mockFrom.mockReturnValue({
+      select: vi.fn().mockImplementation(() => {
+        const chain = resolvedChain(ORDER_ROW);
+        chain.maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+        return chain;
+      }),
+      update: updateMock,
+    });
+
+    const { retryBiteshipDraft } = await import('@/lib/biteship/retryDraft');
+    await retryBiteshipDraft('order-1', 3);
+
+    expect(mockOpsAlert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        issue: 'BITESHIP GAGAL 3x — perlu tindakan manual',
+        action: expect.stringContaining('mock-ranked(2)'),
+      })
+    );
+  });
+
+  it('fallback throwing never loses the terminal alert (degrades to re-quote tidak berjalan)', async () => {
+    mockCreateDraft.mockRejectedValue(new Error('Biteship error'));
+    mockFallback.mockRejectedValue(new Error('fallback exploded'));
+    const updateMock = vi.fn().mockReturnValue(resolvedChain([{ id: 'order-1' }]));
+    mockFrom.mockReturnValue({
+      select: vi.fn().mockImplementation(() => {
+        const chain = resolvedChain(ORDER_ROW);
+        chain.maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+        return chain;
+      }),
+      update: updateMock,
+    });
+
+    const { retryBiteshipDraft } = await import('@/lib/biteship/retryDraft');
+    await retryBiteshipDraft('order-1', 3);
+
+    expect(updateMock).toHaveBeenCalledWith({ status: 'requires_attention' });
+    expect(mockOpsAlert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: expect.stringContaining('(re-quote tidak berjalan)'),
+      })
+    );
+  });
+
+  it('fallback is NOT attempted when a concurrent chain already flagged (dedupe returns first)', async () => {
+    mockCreateDraft.mockRejectedValue(new Error('Biteship error'));
+    const updateChain = resolvedChain([]);
+    const updateMock = vi.fn().mockReturnValue(updateChain);
+    mockFrom.mockReturnValue({
+      select: vi.fn().mockImplementation(() => {
+        const chain = resolvedChain(ORDER_ROW);
+        chain.maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+        return chain;
+      }),
+      update: updateMock,
+    });
+
+    const { retryBiteshipDraft } = await import('@/lib/biteship/retryDraft');
+    await retryBiteshipDraft('order-1', 3);
+
+    expect(mockFallback).not.toHaveBeenCalled();
   });
 });
 

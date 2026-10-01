@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { timingSafeEqual } from 'crypto';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
 import { retryBiteshipDraft } from '@/lib/biteship/retryDraft';
+import { attemptCourierFallback, formatCandidatesForAlert } from '@/lib/biteship/courierFallback';
 import { sendOpsAlert } from '@/lib/telegram/opsAlert';
 
 // Maps Biteship order status to ecom_orders.status
@@ -291,6 +292,13 @@ export async function POST(request: NextRequest) {
           console.error(`[biteship-webhook] Failed to archive history for order ${orderRow.id}:`, historyError);
         }
 
+        // Clear the dead shipment's identifiers so retryDraft's duplicate-draft
+        // guard lets the chain run — but do NOT flip a paid order to
+        // 'cancelled' here (issue #200 A1 + acceptance): cancellation of a
+        // paid order without customer notification + refund initiation was a
+        // silent DB status flip. 'requires_attention' is the honest holding
+        // state while fallback + retry exhaust; only a human cancels (via the
+        // admin path) with the customer informed.
         const { error: clearError } = await supabase
           .from('ecom_orders')
           .update({
@@ -298,17 +306,38 @@ export async function POST(request: NextRequest) {
             biteship_draft_id: null,
             tracking_number: null,
             courier_tracking_id: null,
-            status: 'cancelled',
+            status: 'requires_attention',
           })
           .eq('id', orderRow.id);
         if (clearError) {
           console.error(`[biteship-webhook] Failed to clear Biteship IDs for order ${orderRow.id}:`, clearError);
         }
 
+        // Fallback BEFORE cancelling/retrying the same courier (issue #200):
+        // re-quote the lane and book the best in-budget alternative. Only if
+        // nothing applies does the same-courier retry chain run, and its
+        // exhaustion alert then carries the ranked alternatives.
+        const fallback = await attemptCourierFallback(orderRow.id).catch((err: unknown) => {
+          console.error(`[biteship-webhook] Fallback errored for order ${orderRow.id}:`, err);
+          return null;
+        });
+
+        if (fallback?.kind === 'applied') {
+          await supabase
+            .from('ecom_orders')
+            .update({ status: 'processing' })
+            .eq('id', orderRow.id)
+            .then(() => {});
+          return NextResponse.json({ received: true });
+        }
+
         sendOpsAlert({
           orderId: orderRow.id,
           orderNumber: orderRow.order_number,
           issue: 'BITESHIP COURIER NOT FOUND — mencoba ulang',
+          action: fallback
+            ? `Fallback re-quote belum pas. Alternatif (terbaik dulu):\n${formatCandidatesForAlert(fallback.ranked)}`
+            : null,
         }).catch(() => {});
 
         retryBiteshipDraft(orderRow.id).catch((err) =>

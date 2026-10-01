@@ -28,6 +28,45 @@ export function buildWhatsAppLink(message: string): string {
   return `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
 }
 
+/** Pre-filled WA message for a courier swap on a paid order (issue #200 A2/A4).
+ * Max one "choice" (accept the new courier / ask questions) — never the full
+ * ranked list. Returns null when the phone can't be normalized for wa.me, so
+ * callers can fall back to manual contact. Sender number is ORIGIN_CONTACT_PHONE
+ * (customer taps and messages the roastery). */
+export function buildCourierChangeWhatsAppLink(params: {
+  phone: string;
+  customerName: string;
+  orderNumber: string;
+  oldCourier: string;
+  oldService: string;
+  newCourier: string;
+  newService: string;
+  newServiceName?: string;
+  newEta?: string;
+  orderId?: string;
+}): string | null {
+  const cleanPhone = formatPhoneForWaMe(params.phone);
+  if (!cleanPhone) return null;
+
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "https://agroastery.com").replace(/\/$/, "");
+  const newName = joinCourierServiceName(params.newCourier, params.newService, params.newServiceName);
+
+  let message = `Halo ${params.customerName || "Kak"}, pesanan ${params.orderNumber} kami pindahkan ke kurir ${newName}`;
+  message += ` karena kurir ${params.oldCourier.toUpperCase()} ${params.oldService} sedang tidak tersedia untuk rute ini.`;
+  if (params.newEta) message += `\nEstimasi tiba: ${params.newEta}.`;
+  message += `\n\nBalas pesan ini jika ada pertanyaan. Lacak pesanan: ${appUrl}/track/${params.orderId ?? ""}/`;
+  message += `\n\nTerima kasih! 🙏`;
+
+  return buildWhatsAppLink(message);
+}
+
+function joinCourierServiceName(courier: string, service: string, serviceName?: string): string {
+  const display = (serviceName ?? service).trim();
+  if (!display || display.toLowerCase() === courier.toLowerCase()) return service.toUpperCase();
+  if (display.toLowerCase().startsWith(courier.toLowerCase())) return display;
+  return `${courier.toUpperCase()} ${display}`;
+}
+
 type PaymentWhatsAppItem = {
   productName: string;
   quantity: number;
