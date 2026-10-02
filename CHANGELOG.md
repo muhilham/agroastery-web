@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.36.1](https://github.com/muhilham/agroastery-web/compare/v0.36.0...v0.36.1) (2026-10-02)
+
+
+### Bug Fixes
+
+* decode HTML entities in stripHtml — resolves [#214](https://github.com/muhilham/agroastery-web/issues/214) ([#215](https://github.com/muhilham/agroastery-web/issues/215)) ([60f215d](https://github.com/muhilham/agroastery-web/commit/60f215df287e1341a0a9dc9d2212b853b6d7f169))
+
 ## [0.36.0](https://github.com/muhilham/agroastery-web/compare/v0.35.0...v0.36.0) (2026-10-01)
 
 
