@@ -1,13 +1,6 @@
-/**
- * JSON-LD builders for the issue #178 SEO content pages.
- *
- * Pure data functions returning { __html } payloads (same pattern as
- * lib/consultations/jsonld.ts) so unit tests assert structure without
- * rendering a page tree. Breadcrumb JSON-LD stays on <BreadcrumbJsonLd />
- * from components/ — do not duplicate it here.
- */
 import type { ArabicaPriceRow } from "./arabica-pricing";
 import { SITE_URL } from "./content-pages";
+import { stripHtml } from "@/lib/utils";
 
 /** CollectionPage with a product sub-graph built from the live catalog grid. */
 export function collectionPageJsonLd(opts: {
@@ -29,7 +22,7 @@ export function collectionPageJsonLd(opts: {
       name: product.name,
       url: `${SITE_URL}/product/${product.slug}`,
       description:
-        stripHtml(product.shortDescription ?? product.description) ||
+        stripHtml(product.shortDescription ?? product.description ?? '') ||
         product.name,
       offers: {
         "@type": "Offer" as const,
@@ -114,9 +107,4 @@ function escapeJsonLd(value: string): string {
   return value
     .replace(/<\/script>/gi, "<\\/script>")
     .replace(/<!--/g, "<\\!--");
-}
-
-function stripHtml(value: string | null | undefined): string {
-  if (!value) return "";
-  return value.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 }
