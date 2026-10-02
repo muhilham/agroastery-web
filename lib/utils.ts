@@ -13,9 +13,20 @@ export const slugify = (slug: string) =>
     .replace(/\s+/g, '-');
 
 /**
- * Strip HTML tags from a string and return plain text.
- * Safe for use in JSX where HTML should not be rendered.
+ * Strip HTML tags and decode common HTML entities from a string.
+ * Handles: &nbsp; &amp; &lt; &gt; &quot; &#39;
+ * Returns plain text safe for display in JSX.
  */
 export function stripHtml(html: string): string {
-  return html.replace(/<[^>]*>/g, '');
+  if (!html) return '';
+  // Decode common HTML entities first (order matters: &amp; must come before others)
+  const decoded = html
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&nbsp;/gi, ' ');
+  // Then strip remaining HTML tags
+  return decoded.replace(/<[^>]*>/g, '');
 }
