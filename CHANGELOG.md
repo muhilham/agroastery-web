@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.36.2](https://github.com/muhilham/agroastery-web/compare/v0.36.1...v0.36.2) (2026-10-14)
+
+
+### Bug Fixes
+
+* **biteship:** align alert label with sort axis (price-first) ([#218](https://github.com/muhilham/agroastery-web/issues/218)) ([5f97871](https://github.com/muhilham/agroastery-web/commit/5f97871600c32de08514f54d9741d20c1a5f3ec2))
+
 ## [0.36.1](https://github.com/muhilham/agroastery-web/compare/v0.36.0...v0.36.1) (2026-10-02)
 
 
