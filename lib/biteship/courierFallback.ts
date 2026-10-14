@@ -82,9 +82,13 @@ export function rankFallbackCandidates(
       return { rate, tier, withinBudget: rate.price <= selected.budget };
     });
 
+  // Sort order: price ascending (cheapest first). This matters because this
+  // alert fires only when all auto-bookable options failed — ops must pick
+  // the cheapest available immediately. Never change this sort without also
+  // updating the label at retryDraft.ts:163 ("Alternatif re-quote lane...").
   candidates.sort((a, b) => {
-    if (a.tier !== b.tier) return a.tier - b.tier;
     if (a.rate.price !== b.rate.price) return a.rate.price - b.rate.price;
+    if (a.tier !== b.tier) return a.tier - b.tier;
     const ka = `${a.rate.courier_code}/${a.rate.courier_service_code}`;
     const kb = `${b.rate.courier_code}/${b.rate.courier_service_code}`;
     return ka.localeCompare(kb);

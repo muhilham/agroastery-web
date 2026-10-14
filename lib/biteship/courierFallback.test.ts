@@ -75,15 +75,20 @@ const LANE = [
 
 const SELECTED = { courierCode: 'grab', serviceCode: 'same_day', budget: 23000 };
 
-describe('rankFallbackCandidates (#200 A3: SLA first, price second)', () => {
-  it('orders tier 1 → tier 2 → tier 3, price ascending inside each tier', () => {
+describe('rankFallbackCandidates (#200 A3: price first, tier second)', () => {
+  it('orders by cheapest first, tier as tiebreaker', () => {
     const ranked = rankFallbackCandidates(LANE, SELECTED);
-    expect(ranked.map((c) => c.tier)).toEqual([1, 2, 3, 3, 3]);
-    expect(ranked[0].rate.courier_code).toBe('grab');
-    expect(ranked[0].rate.courier_service_code).toBe('instant_car');
-    expect(ranked[1].rate.courier_code).toBe('gojek'); // same-day-equivalent next, even over budget
-    // tier 3 sorted by price: jne reg 10k before sicepat best 14k before jne yes 18k
-    expect(ranked.slice(2).map((c) => c.rate.price)).toEqual([10000, 14000, 18000]);
+    // price-first: jne/reg 10k (tier 3) comes first; grab/instant_car 20k (tier 1) ranks later
+    expect(ranked[0].rate.courier_code).toBe('jne');
+    expect(ranked[0].rate.courier_service_code).toBe('reg');
+    expect(ranked[0].rate.price).toBe(10000);
+    expect(ranked.map((c) => c.rate.price)).toEqual([10000, 14000, 18000, 20000, 34000]);
+    // tier order follows price: tier 3 × 3 (cheapest), tier 1 (mid-price), tier 2 (most expensive)
+    expect(ranked.map((c) => c.tier)).toEqual([3, 3, 3, 1, 2]);
+    // grab/instant_car is auto-applicable (tier 1 AND within budget)
+    const grab = ranked.find((c) => c.rate.courier_code === 'grab');
+    expect(grab!.withinBudget).toBe(true);
+    expect(grab!.tier).toBe(1);
   });
 
   it('excludes the failed courier/service pair itself', () => {

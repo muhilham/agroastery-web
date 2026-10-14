@@ -160,7 +160,7 @@ export async function retryBiteshipDraft(
       orderId,
       orderNumber: order?.order_number ?? 'UNKNOWN',
       issue: 'BITESHIP GAGAL 3x — perlu tindakan manual',
-      action: `Cek Biteship dashboard atau gunakan endpoint retry manual.\nAlternatif re-quote lane (terbaik dulu):\n${rankedList}`,
+      action: `Cek Biteship dashboard atau gunakan endpoint retry manual.\nAlternatif re-quote lane (diurutkan dari harga terendah):\n${rankedList}`,
     }).catch(() => {});
 
     console.error(`[retryBiteshipDraft] Max retries (${MAX_RETRIES}) reached for order ${orderId}`);
