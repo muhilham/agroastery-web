@@ -43,10 +43,6 @@ export default function QrConsultationClient({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);
   const [isSimulating, setIsSimulating] = useState(false);
-  const [totalSeconds, setTotalSeconds] = useState(() => {
-    const t = new Date(initialQrExpiresAt ?? "").getTime();
-    return Number.isFinite(t) ? Math.max(1, Math.floor((t - Date.now()) / 1000)) : 1;
-  });
   const [refreshNotice, setRefreshNotice] = useState(false);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const autoFailuresRef = useRef(0);
@@ -93,8 +89,6 @@ export default function QrConsultationClient({
       }
       setQrString(data.qrString ?? "");
       setQrExpiresAt(data.qrExpiresAt);
-      const t = new Date(data.qrExpiresAt).getTime();
-      setTotalSeconds(Number.isFinite(t) ? Math.max(1, Math.floor((t - Date.now()) / 1000)) : 1);
       return "success";
     } catch {
       setRefreshError("Terjadi kesalahan. Coba lagi.");

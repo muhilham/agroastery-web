@@ -35,10 +35,21 @@ export async function POST(request: NextRequest) {
     }
 
     if (Date.now() - new Date(booking.created_at as string).getTime() > QRIS_MAX_HOLD_MINUTES * 60_000) {
-      await supabase
+      // Atomic lock: only expire if still awaiting payment (late-confirmed
+      // bookings must never be overwritten).
+      const { data: locked } = await supabase
         .from("consultation_bookings")
         .update({ status: "expired" })
-        .eq("id", bookingId);
+        .eq("id", bookingId)
+        .eq("status", "pending_payment")
+        .select("id")
+        .maybeSingle();
+      if (!locked) {
+        return NextResponse.json(
+          { error: "Status booking berubah. Muat ulang halaman.", code: "STATE_CHANGED" },
+          { status: 409 }
+        );
+      }
       return NextResponse.json(
         { error: "Batas waktu pemesanan telah terlewati. Silakan pesan ulang.", code: "HOLD_EXPIRED" },
         { status: 410 }

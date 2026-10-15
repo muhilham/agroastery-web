@@ -38,19 +38,32 @@ export async function POST(request: NextRequest) {
     }
 
     if (Date.now() - new Date(order.created_at as string).getTime() > QRIS_MAX_HOLD_MINUTES * 60_000) {
-      await supabase
+      // Atomic lock (same pattern as the PAYMENT.EXPIRED webhook): only cancel
+      // if still awaiting payment — a late PAID must never be overwritten.
+      const { data: locked } = await supabase
         .from("ecom_orders")
         .update({ status: "cancelled", payment_status: "expired" })
-        .eq("id", orderId);
+        .eq("id", orderId)
+        .eq("payment_status", "pending_payment")
+        .select("id")
+        .maybeSingle();
+      if (!locked) {
+        return NextResponse.json(
+          { error: "Status pesanan berubah. Muat ulang halaman.", code: "STATE_CHANGED" },
+          { status: 409 }
+        );
+      }
       const { data: items } = await supabase
         .from("ecom_order_items")
         .select("variant_id, quantity")
         .eq("order_id", orderId);
       for (const item of items ?? []) {
-        await supabase.rpc("ecom_restore_stock", {
-          p_variant_id: item.variant_id as string,
-          p_quantity: item.quantity as number,
-        });
+        if (item.variant_id) {
+          await supabase.rpc("ecom_restore_stock", {
+            p_variant_id: item.variant_id as string,
+            p_quantity: item.quantity as number,
+          });
+        }
       }
       return NextResponse.json(
         { error: "Batas waktu pemesanan telah terlewati. Silakan pesan ulang.", code: "HOLD_EXPIRED" },
