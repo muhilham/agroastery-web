@@ -881,34 +881,6 @@ CREATE OR REPLACE VIEW "public"."current_employee" AS
 ALTER VIEW "public"."current_employee" OWNER TO "postgres";
 
 
-CREATE TABLE IF NOT EXISTS "public"."consultation_bookings" (
-    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
-    "user_id" "uuid",
-    "name" "text" NOT NULL,
-    "email" "text" NOT NULL,
-    "phone" "text" NOT NULL,
-    "purpose" "text" NOT NULL,
-    "booking_date" "date" NOT NULL,
-    "time_slot" "text" NOT NULL,
-    "status" "text" DEFAULT 'pending_payment'::"text" NOT NULL,
-    "amount" bigint DEFAULT 250000 NOT NULL,
-    "pivot_payment_session_id" "text",
-    "pivot_qr_string" "text",
-    "pivot_qr_url" "text",
-    "pivot_qr_expires_at" timestamp with time zone,
-    "pivot_qr_acquirer" text,
-    "paid_at" timestamp with time zone,
-    "manage_token" "text" DEFAULT "encode"("gen_random_bytes"(24), 'hex'::"text") NOT NULL,
-    "notes" "text",
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "cancelled_at" timestamp with time zone
-);
-
-
-ALTER TABLE "public"."consultation_bookings" OWNER TO "postgres";
-
-
 CREATE TABLE IF NOT EXISTS "public"."ecom_notification_logs" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "type" "text" NOT NULL,
@@ -1296,16 +1268,6 @@ ALTER TABLE ONLY "public"."ecom_orders"
 
 ALTER TABLE ONLY "public"."ecom_orders"
     ADD CONSTRAINT "ecom_orders_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "public"."consultation_bookings"
-    ADD CONSTRAINT "consultation_bookings_pkey" PRIMARY KEY ("id");
-
-
-
-ALTER TABLE ONLY "public"."consultation_bookings"
-    ADD CONSTRAINT "consultation_bookings_booking_date_time_slot_key" UNIQUE ("booking_date", "time_slot");
 
 
 
@@ -2629,6 +2591,8 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "anon";
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "authenticated";
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TABLES TO "service_role";
+
+
 
 
 
