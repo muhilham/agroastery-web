@@ -17,6 +17,7 @@ export const QRIS_MAX_HOLD_MINUTES = 240;
 // ─── Token cache ─────────────────────────────────────────────────────────────
 
 let tokenCache: { token: string; expiresAt: number } | null = null;
+let hasWarnedAboutMissingQrisAcquirer = false;
 
 async function getPivotToken(): Promise<string> {
   const now = Date.now();
@@ -80,6 +81,7 @@ export interface QrisSessionResult {
   qrUrl: string;
   qrString: string; // raw EMVCO QRIS string for client-side QR rendering
   qrExpiresAt: string; // ISO 8601
+  acquirer: string | null;
 }
 
 export async function createQrisPaymentSession(
@@ -142,6 +144,11 @@ export async function createQrisPaymentSession(
   if (typeof qr.expiryAt !== "string" || !Number.isFinite(new Date(qr.expiryAt).getTime())) {
     throw new Error("Pivot response missing qr.expiryAt");
   }
+  const acquirer: string | null = typeof qr.acquirer === "string" ? qr.acquirer : null;
+  if (acquirer === null && !hasWarnedAboutMissingQrisAcquirer) {
+    console.warn("Pivot response missing qr.acquirer");
+    hasWarnedAboutMissingQrisAcquirer = true;
+  }
 
   // Raw QRIS EMVCO string — try common field names from Pivot/Bank Neo API
   const qrString: string = qr.qrString ?? qr.qrContent ?? qr.content ?? "";
@@ -154,6 +161,7 @@ export async function createQrisPaymentSession(
     qrUrl: qr.qrUrl,
     qrString,
     qrExpiresAt: qr.expiryAt,
+    acquirer,
   };
 }
 

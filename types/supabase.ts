@@ -352,6 +352,7 @@ export type Database = {
           pivot_qr_string: string | null
           pivot_qr_url: string | null
           pivot_qr_expires_at: string | null
+          pivot_qr_acquirer: string | null
           paid_at: string | null
           manage_token: string
           notes: string | null
@@ -374,6 +375,7 @@ export type Database = {
           pivot_qr_string?: string | null
           pivot_qr_url?: string | null
           pivot_qr_expires_at?: string | null
+          pivot_qr_acquirer?: string | null
           paid_at?: string | null
           manage_token?: string
           notes?: string | null
@@ -396,6 +398,7 @@ export type Database = {
           pivot_qr_string?: string | null
           pivot_qr_url?: string | null
           pivot_qr_expires_at?: string | null
+          pivot_qr_acquirer?: string | null
           paid_at?: string | null
           manage_token?: string
           notes?: string | null
@@ -526,6 +529,7 @@ export type Database = {
           payment_status: string | null
           pivot_payment_session_id: string | null
           pivot_qr_expires_at: string | null
+          pivot_qr_acquirer: string | null
           pivot_qr_string: string | null
           pivot_qr_url: string | null
           shipping_address: Json
@@ -560,6 +564,7 @@ export type Database = {
           payment_status?: string | null
           pivot_payment_session_id?: string | null
           pivot_qr_expires_at?: string | null
+          pivot_qr_acquirer?: string | null
           pivot_qr_string?: string | null
           pivot_qr_url?: string | null
           shipping_address: Json
@@ -594,6 +599,7 @@ export type Database = {
           payment_status?: string | null
           pivot_payment_session_id?: string | null
           pivot_qr_expires_at?: string | null
+          pivot_qr_acquirer?: string | null
           pivot_qr_string?: string | null
           pivot_qr_url?: string | null
           shipping_address?: Json

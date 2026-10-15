@@ -79,6 +79,7 @@ export async function POST(request: NextRequest) {
         pivot_qr_string: session.qrString,
         pivot_qr_url: session.qrUrl,
         pivot_qr_expires_at: session.qrExpiresAt,
+        pivot_qr_acquirer: session.acquirer,
       })
       .eq("id", bookingId);
     if (updateError) throw updateError;

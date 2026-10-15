@@ -941,6 +941,7 @@ CREATE TABLE IF NOT EXISTS "public"."ecom_orders" (
     "pivot_payment_session_id" "text",
     "pivot_qr_url" "text",
     "pivot_qr_expires_at" timestamp with time zone,
+    "pivot_qr_acquirer" text,
     "pivot_qr_string" "text",
     "jubelio_salesorder_id" bigint,
     "jubelio_invoice_no" "text",

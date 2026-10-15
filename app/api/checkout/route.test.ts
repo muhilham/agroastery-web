@@ -83,9 +83,11 @@ function checkoutReq(body: Record<string, unknown>): NextRequest {
 
 describe("POST /api/checkout", () => {
   let lastOrderInsert: Record<string, unknown> | null = null;
+  let lastSessionUpdate: Record<string, unknown> | null = null;
 
   beforeEach(() => {
     lastOrderInsert = null;
+    lastSessionUpdate = null;
     vi.clearAllMocks();
     mockValidateStockAvailability.mockReturnValue({ valid: true });
     mockDecrementStock.mockResolvedValue({ success: true });
@@ -132,7 +134,10 @@ describe("POST /api/checkout", () => {
             lastOrderInsert = payload;
             return { select: () => ({ single: () => Promise.resolve({ data: { id: "order-1", order_number: "AGR-X", total: 115000, status: "pending_payment" }, error: null }) }) };
           },
-          update: () => ({ eq: () => Promise.resolve({ error: null }) }),
+          update: (payload: Record<string, unknown>) => {
+            lastSessionUpdate = payload;
+            return { eq: () => Promise.resolve({ error: null }) };
+          },
         };
       }
       if (table === "ecom_order_items") return { insert: () => Promise.resolve({ error: null }) };
@@ -140,7 +145,7 @@ describe("POST /api/checkout", () => {
       return { select: () => Promise.resolve({ data: null, error: null }) };
     });
     mockCreateQrisPaymentSession.mockResolvedValue({
-      paymentSessionId: "ps_1", qrUrl: "https://qr.test", qrString: "qr", qrExpiresAt: "2026-08-31T12:00:00Z",
+      paymentSessionId: "ps_1", qrUrl: "https://qr.test", qrString: "qr", qrExpiresAt: "2026-08-31T12:00:00Z", acquirer: "BRI",
     });
   }
 
@@ -160,6 +165,7 @@ describe("POST /api/checkout", () => {
     expect(lastOrderInsert).not.toBeNull();
     expect(lastOrderInsert!.shipping_etd).toBe("2 - 3 days");
     expect(lastOrderInsert!.shipping_cost).toBe(15000);
+    expect(lastSessionUpdate).toMatchObject({ pivot_qr_acquirer: "BRI" });
   });
 
   it("returns 409 SHIPPING_RATE_STALE when the quoted price drifted", async () => {
