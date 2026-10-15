@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.36.3](https://github.com/muhilham/agroastery-web/compare/v0.36.2...v0.36.3) (2026-10-15)
+
+
+### Bug Fixes
+
+* **pivot:** 60-min QRIS window, bounded auto-reissue, 240-min hold cap, null-safe countdown, payment-link email ([#221](https://github.com/muhilham/agroastery-web/issues/221)) ([#222](https://github.com/muhilham/agroastery-web/issues/222)) ([748517d](https://github.com/muhilham/agroastery-web/commit/748517dd3835e668910000fa3ed36db87bed6e56))
+
 ## [0.36.2](https://github.com/muhilham/agroastery-web/compare/v0.36.1...v0.36.2) (2026-10-14)
 
 
