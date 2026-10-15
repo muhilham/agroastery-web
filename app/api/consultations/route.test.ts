@@ -5,6 +5,7 @@ const mockSingle = vi.fn();
 const mockInsert = vi.fn();
 const mockDeleteEq = vi.fn();
 const mockUpdateEq = vi.fn();
+let mockUpdatePayload: Record<string, unknown> | null = null;
 const mockGetUser = vi.fn();
 const mockCreateQris = vi.fn();
 
@@ -13,7 +14,7 @@ vi.mock("@/lib/supabase/server", () => ({
     from: () => ({
       insert: mockInsert,
       delete: () => ({ eq: mockDeleteEq }),
-      update: () => ({ eq: mockUpdateEq }),
+      update: (payload: Record<string, unknown>) => { mockUpdatePayload = payload; return { eq: mockUpdateEq }; },
     }),
   }),
   createSupabaseServerClient: async () => ({
@@ -63,11 +64,13 @@ describe("POST /api/consultations", () => {
     vi.clearAllMocks();
     mockGetUser.mockResolvedValue({ data: { user: null } });
     mockInsert.mockReturnValue({ select: () => ({ single: mockSingle }) });
+    mockUpdatePayload = null;
     mockCreateQris.mockResolvedValue({
       paymentSessionId: "ps_123",
       qrUrl: "https://qr",
       qrString: "EMVCO",
       qrExpiresAt: "2026-07-23T10:05:00.000Z",
+      acquirer: "BRI",
     });
     mockUpdateEq.mockResolvedValue({ error: null });
   });
@@ -80,6 +83,11 @@ describe("POST /api/consultations", () => {
     expect(json.bookingId).toBe("b-1");
     expect(json.qrString).toBe("EMVCO");
     expect(mockCreateQris).toHaveBeenCalledOnce();
+    expect(mockUpdatePayload).toMatchObject({
+      pivot_payment_session_id: "ps_123",
+      pivot_qr_acquirer: "BRI",
+      pivot_qr_expires_at: "2026-07-23T10:05:00.000Z",
+    });
   });
 
   it("returns 400 on invalid body", async () => {
