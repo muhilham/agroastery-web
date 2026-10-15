@@ -211,8 +211,9 @@ export default function QrPaymentClient({
       }
       if (result === "hold") return;
       autoFailuresRef.current += 1;
+      // 3 total attempts: initial + 2 backoff retries, then leave manual state.
       if (autoFailuresRef.current < 3) {
-        const delays = [5000, 15000, 45000];
+        const delays = [5000, 15000];
         autoRetryTimerRef.current = setTimeout(retry, delays[autoFailuresRef.current - 1]);
       }
     };
