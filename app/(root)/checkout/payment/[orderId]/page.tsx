@@ -48,7 +48,7 @@ export default async function PaymentPage({
       orderNumber={orderAny.order_number as string}
       total={orderAny.total as number}
       qrString={orderAny.pivot_qr_string ?? ""}
-      qrExpiresAt={orderAny.pivot_qr_expires_at ?? ""}
+      qrExpiresAt={orderAny.pivot_qr_expires_at}
     />
   );
 }

@@ -139,6 +139,54 @@ describe("QrPaymentClient — QR display", () => {
       screen.getByText(/screenshot QR ini/i)
     ).toBeDefined();
   });
+
+  it("renders a deterministic expired countdown for an empty expiry", () => {
+    render(<QrPaymentClient {...defaultProps} qrExpiresAt={null} />);
+    expect(screen.getByText("QR Kedaluwarsa")).toBeDefined();
+    expect(screen.queryByText(/NaN:NaN/)).toBeNull();
+  });
+
+  it("automatically refreshes once the countdown expires", async () => {
+    global.fetch = vi.fn().mockImplementation(async (url: string) => url.includes("refresh-qr")
+      ? { ok: true, json: async () => ({ qrString: "new-qr", qrExpiresAt: new Date(Date.now() + 3600_000).toISOString() }) }
+      : { ok: true, json: async () => ({ payment_status: "pending_payment" }) });
+    render(<QrPaymentClient {...defaultProps} qrExpiresAt={new Date(Date.now() + 1000).toISOString()} />);
+    await act(async () => { vi.advanceTimersByTime(1000); });
+    await waitFor(() => expect(global.fetch).toHaveBeenCalledWith("/api/checkout/refresh-qr", expect.any(Object)));
+  });
+
+  it("stops auto refresh after three failures and leaves manual state", async () => {
+    global.fetch = vi.fn().mockImplementation(async (url: string) => url.includes("refresh-qr")
+      ? { ok: false, json: async () => ({ error: "Gagal" }) }
+      : { ok: true, json: async () => ({ payment_status: "pending_payment" }) });
+    render(<QrPaymentClient {...defaultProps} qrExpiresAt={null} />);
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(5000); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(15000); });
+    const refreshCalls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls.filter(([url]) => url.includes("refresh-qr"));
+    expect(refreshCalls.length).toBeLessThanOrEqual(3);
+    expect(refreshCalls.length).toBeGreaterThan(0);
+    expect(screen.getByRole("button", { name: /perbarui qr/i })).toBeDefined();
+  });
+
+  it("shows a notice after auto refresh succeeds", async () => {
+    global.fetch = vi.fn().mockImplementation(async (url: string) => url.includes("refresh-qr")
+      ? { ok: true, json: async () => ({ qrString: "new-qr", qrExpiresAt: new Date(Date.now() + 3600_000).toISOString() }) }
+      : { ok: true, json: async () => ({ payment_status: "pending_payment" }) });
+    render(<QrPaymentClient {...defaultProps} qrExpiresAt={null} />);
+    await waitFor(() => expect(screen.getByText(/QR baru dibuat/i)).toBeDefined());
+  });
+
+  it("does not retry when the total hold is expired", async () => {
+    global.fetch = vi.fn().mockImplementation(async (url: string) => url.includes("refresh-qr")
+      ? { ok: false, json: async () => ({ error: "Batas waktu pemesanan telah terlewati. Silakan pesan ulang.", code: "HOLD_EXPIRED" }) }
+      : { ok: true, json: async () => ({ payment_status: "pending_payment" }) });
+    render(<QrPaymentClient {...defaultProps} qrExpiresAt={null} />);
+    await act(async () => { await Promise.resolve(); vi.advanceTimersByTime(60_000); });
+    const refreshCalls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls.filter(([url]) => url.includes("refresh-qr"));
+    expect(refreshCalls).toHaveLength(1);
+    expect(screen.getByText(/Batas waktu pemesanan/i)).toBeDefined();
+  });
 });
 
 describe("QrPaymentClient — expiry grace window (#187)", () => {

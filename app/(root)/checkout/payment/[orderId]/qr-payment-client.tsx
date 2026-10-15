@@ -13,7 +13,7 @@ interface Props {
   orderNumber: string;
   total: number;
   qrString: string; // raw EMVCO QRIS string
-  qrExpiresAt: string; // ISO 8601
+  qrExpiresAt: string | null; // ISO 8601
 }
 
 /**
@@ -22,9 +22,11 @@ interface Props {
  */
 const POLL_GRACE_MS = 10 * 60 * 1000;
 
-function useCountdown(expiresAtIso: string) {
-  const getSecondsLeft = () =>
-    Math.max(0, Math.floor((new Date(expiresAtIso).getTime() - Date.now()) / 1000));
+function useCountdown(expiresAtIso: string | null) {
+  const getSecondsLeft = () => {
+    const t = new Date(expiresAtIso ?? "").getTime();
+    return Number.isFinite(t) ? Math.max(0, Math.floor((t - Date.now()) / 1000)) : 0;
+  };
 
   const [secondsLeft, setSecondsLeft] = useState(getSecondsLeft);
 
@@ -107,13 +109,18 @@ export default function QrPaymentClient({
       setIsSimulating(false);
     }
   }, [orderId]);
-  const [totalSeconds, setTotalSeconds] = useState(() =>
-    Math.max(1, Math.floor((new Date(initialQrExpiresAt).getTime() - Date.now()) / 1000))
-  );
+  const [totalSeconds, setTotalSeconds] = useState(() => {
+    const t = new Date(initialQrExpiresAt ?? "").getTime();
+    return Number.isFinite(t) ? Math.max(1, Math.floor((t - Date.now()) / 1000)) : 1;
+  });
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const graceDeadlineRef = useRef<number | null>(null);
   const [inGracePeriod, setInGracePeriod] = useState(false);
   const [graceEnded, setGraceEnded] = useState(false);
+  const [refreshNotice, setRefreshNotice] = useState(false);
+  const autoFailuresRef = useRef(0);
+  const autoExpiryRef = useRef<string | null | undefined>(undefined);
+  const autoRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const secondsLeft = useCountdown(qrExpiresAt);
   const isExpired = secondsLeft === 0;
@@ -157,7 +164,7 @@ export default function QrPaymentClient({
     };
   }, [orderId, clearCart]);
 
-  const handleRefresh = useCallback(async () => {
+  const handleRefresh = useCallback(async (): Promise<"success" | "hold" | "failure"> => {
     setIsRefreshing(true);
     setRefreshError(null);
     try {
@@ -169,19 +176,46 @@ export default function QrPaymentClient({
       const data = await res.json();
       if (!res.ok) {
         setRefreshError(data.error ?? "Gagal memperbarui QR");
-        return;
+        return data.code === "HOLD_EXPIRED" ? "hold" : "failure";
       }
       setQrString(data.qrString ?? "");
       setQrExpiresAt(data.qrExpiresAt);
-      setTotalSeconds(
-        Math.max(1, Math.floor((new Date(data.qrExpiresAt).getTime() - Date.now()) / 1000))
-      );
+      const t = new Date(data.qrExpiresAt).getTime();
+      setTotalSeconds(Number.isFinite(t) ? Math.max(1, Math.floor((t - Date.now()) / 1000)) : 1);
+      return "success";
     } catch {
       setRefreshError("Terjadi kesalahan. Coba lagi.");
+      return "failure";
     } finally {
       setIsRefreshing(false);
     }
   }, [orderId]);
+
+  useEffect(() => {
+    if (!isExpired || autoExpiryRef.current === qrExpiresAt || !qrString) return;
+    autoExpiryRef.current = qrExpiresAt;
+    autoFailuresRef.current = 0;
+    let cancelled = false;
+    const retry = async () => {
+      const result = await handleRefresh();
+      if (cancelled) return;
+      if (result === "success") {
+        setRefreshNotice(true);
+        return;
+      }
+      if (result === "hold") return;
+      autoFailuresRef.current += 1;
+      if (autoFailuresRef.current < 3) {
+        const delays = [5000, 15000, 45000];
+        autoRetryTimerRef.current = setTimeout(retry, delays[autoFailuresRef.current - 1]);
+      }
+    };
+    void retry();
+    return () => {
+      cancelled = true;
+      if (autoRetryTimerRef.current) clearTimeout(autoRetryTimerRef.current);
+    };
+  }, [isExpired, qrExpiresAt, qrString, handleRefresh]);
 
   return (
     <div className="min-h-svh flex flex-col bg-background">
@@ -275,6 +309,13 @@ export default function QrPaymentClient({
                 <p className="text-sm font-medium text-red-700 leading-snug">
                   Pembayaran kedaluwarsa. Silakan pesan ulang.
                 </p>
+              </div>
+            )}
+
+            {refreshNotice && (
+              <div className="rounded-lg bg-green-50 border border-green-200 px-3 py-2 text-center">
+                <p className="text-sm font-medium text-green-800">QR baru dibuat — silakan scan kembali</p>
+                <button className="text-xs text-green-700 underline" onClick={() => setRefreshNotice(false)}>Tutup</button>
               </div>
             )}
 
