@@ -7,12 +7,12 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://agroastery.com";
 
 /**
  * QRIS payment-session expiry, merchant-set via `expiryAt`.
- * Pivot's own default is 15 mins; QRIS acquirer ceilings are far higher
- * (~7.8h / 28,000s for QR Dynamic per Pivot "QRIS Limitation" docs), so 15
- * mins is well within limits. The old 5-min value — and its "upstream hard
- * max" comment — was false (issue #187).
+ * Pivot defaults session expiry to 15 mins. QRIS acquirer ceilings in Pivot
+ * docs are 28,000s (BRI) and 24h (BNC); the production acquirer and whether
+ * Pivot echoes versus clamps this value remain unverified (issue #221 gap 1).
  */
-export const QRIS_EXPIRY_MINUTES = 15;
+export const QRIS_EXPIRY_MINUTES = 60;
+export const QRIS_MAX_HOLD_MINUTES = 240;
 
 // ─── Token cache ─────────────────────────────────────────────────────────────
 
@@ -97,6 +97,8 @@ export async function createQrisPaymentSession(
     amount: { value: total, currency: "IDR" },
     paymentType: "SINGLE",
     paymentMethod: { type: "QR" },
+    // Set the session-level value too: Pivot may give it precedence over QR options.
+    expiryAt,
     paymentMethodOptions: { qr: { expiryAt } },
     mode: "API",
     redirectUrl: {
@@ -136,6 +138,9 @@ export async function createQrisPaymentSession(
   const qr = data.chargeDetails?.[0]?.qr;
   if (!qr?.qrUrl) {
     throw new Error("Pivot response missing QR URL");
+  }
+  if (typeof qr.expiryAt !== "string" || !Number.isFinite(new Date(qr.expiryAt).getTime())) {
+    throw new Error("Pivot response missing qr.expiryAt");
   }
 
   // Raw QRIS EMVCO string — try common field names from Pivot/Bank Neo API
