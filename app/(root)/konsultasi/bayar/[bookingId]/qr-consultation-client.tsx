@@ -85,6 +85,12 @@ export default function QrConsultationClient({
       const data = await res.json();
       if (!res.ok) {
         setRefreshError(data.error ?? "Gagal memperbarui QR");
+        // 409: payment landed (or state changed) under us — reload to the
+        // authoritative page instead of retrying a doomed refresh.
+        if (data.code === "STATE_CHANGED") {
+          window.location.reload();
+          return "hold";
+        }
         return data.code === "HOLD_EXPIRED" ? "hold" : "failure";
       }
       setQrString(data.qrString ?? "");

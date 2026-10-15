@@ -187,6 +187,22 @@ describe("QrPaymentClient — QR display", () => {
     expect(refreshCalls).toHaveLength(1);
     expect(screen.getByText(/Batas waktu pemesanan/i)).toBeDefined();
   });
+
+  it("reloads the page (no retry) when refresh returns 409 STATE_CHANGED", async () => {
+    const reload = vi.fn();
+    const origLocation = window.location;
+    Object.defineProperty(window, "location", { configurable: true, writable: true, value: { ...origLocation, reload } });
+    global.fetch = vi.fn().mockImplementation(async (url: string) => url.includes("refresh-qr")
+      ? { ok: false, json: async () => ({ error: "Status pesanan berubah. Muat ulang halaman.", code: "STATE_CHANGED" }) }
+      : { ok: true, json: async () => ({ payment_status: "pending_payment" }) });
+    render(<QrPaymentClient {...defaultProps} qrExpiresAt={null} />);
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(5000); });
+    const refreshCalls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls.filter(([url]) => url.includes("refresh-qr"));
+    expect(refreshCalls).toHaveLength(1);
+    expect(reload).toHaveBeenCalledTimes(1);
+    Object.defineProperty(window, "location", { configurable: true, writable: true, value: origLocation });
+  });
 });
 
 describe("QrPaymentClient — expiry grace window (#187)", () => {
