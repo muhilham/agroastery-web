@@ -5,7 +5,6 @@ const from = vi.fn();
 const rpc = vi.fn();
 const createQris = vi.fn();
 const lockMaybeSingle = vi.fn();
-const persistUpdate = vi.fn();
 vi.mock("@/lib/supabase/server", () => ({ createSupabaseAdminClient: () => ({ from, rpc }) }));
 vi.mock("@/lib/pivot/client", () => ({ QRIS_MAX_HOLD_MINUTES: 240, createQrisPaymentSession: (...args: unknown[]) => createQris(...args) }));
 import { POST } from "./route";
@@ -30,7 +29,6 @@ describe("POST /api/checkout/refresh-qr", () => {
     vi.clearAllMocks();
     createQris.mockResolvedValue({ paymentSessionId: "ps", qrUrl: "url", qrString: "qr", qrExpiresAt: "2026-01-01T00:00:00.000Z" });
     lockMaybeSingle.mockResolvedValue({ data: { id } });
-    persistUpdate.mockResolvedValue({ error: null });
   });
   it("expires an order past the total hold and restores stock (null-variant items skipped)", async () => {
     setOrder(new Date(Date.now() - 241 * 60_000).toISOString());
