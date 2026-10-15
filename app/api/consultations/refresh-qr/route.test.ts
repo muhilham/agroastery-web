@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 
 const mockSingle = vi.fn();
 const mockUpdateEq = vi.fn();
+const mockRpc = vi.fn();
 const mockCreateQris = vi.fn();
 
 vi.mock("@/lib/supabase/server", () => ({
@@ -11,10 +12,12 @@ vi.mock("@/lib/supabase/server", () => ({
       select: () => ({ eq: () => ({ single: mockSingle }) }),
       update: () => ({ eq: mockUpdateEq }),
     }),
+    rpc: mockRpc,
   }),
 }));
 
 vi.mock("@/lib/pivot/client", () => ({
+  QRIS_MAX_HOLD_MINUTES: 240,
   createQrisPaymentSession: (...args: unknown[]) => mockCreateQris(...args),
 }));
 
@@ -75,5 +78,17 @@ describe("POST /api/consultations/refresh-qr", () => {
     const json = await res.json();
     expect(json.qrString).toBe("EMVCO2");
     expect(mockCreateQris).toHaveBeenCalledOnce();
+  });
+
+  it("expires a booking past the total hold without creating a session", async () => {
+    mockSingle.mockResolvedValue({
+      data: { id: "11111111-1111-1111-1111-111111111111", status: "pending_payment", created_at: new Date(Date.now() - 241 * 60_000).toISOString() },
+      error: null,
+    });
+    const res = await POST(req({ bookingId: "11111111-1111-1111-1111-111111111111" }));
+    expect(res.status).toBe(410);
+    expect((await res.json()).code).toBe("HOLD_EXPIRED");
+    expect(mockCreateQris).not.toHaveBeenCalled();
+    expect(mockUpdateEq).toHaveBeenCalled();
   });
 });
