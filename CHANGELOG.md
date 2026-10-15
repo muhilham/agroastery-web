@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.37.0](https://github.com/muhilham/agroastery-web/compare/v0.36.3...v0.37.0) (2026-10-15)
+
+
+### Features
+
+* **pivot:** persist QRIS acquirer per order ([#221](https://github.com/muhilham/agroastery-web/issues/221) AC10) ([#224](https://github.com/muhilham/agroastery-web/issues/224)) ([38a6fcd](https://github.com/muhilham/agroastery-web/commit/38a6fcd12983c13563b5533f89c838f00851887e))
+
 ## [0.36.3](https://github.com/muhilham/agroastery-web/compare/v0.36.2...v0.36.3) (2026-10-15)
 
 
