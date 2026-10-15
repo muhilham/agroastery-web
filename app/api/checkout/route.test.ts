@@ -21,6 +21,11 @@ vi.mock("@/lib/telegram/notify", () => ({
   sendOrderNotification: vi.fn(),
 }));
 
+const mockSendPaymentLinkEmail = vi.fn();
+vi.mock("@/lib/resend/sendPaymentLinkEmail", () => ({
+  sendPaymentLinkEmail: (...args: unknown[]) => mockSendPaymentLinkEmail(...args),
+}));
+
 vi.mock("@/lib/supabase/queries/discounts", () => ({
   getActiveGlobalDiscounts: vi.fn().mockResolvedValue([]),
   getActiveProductDiscounts: vi.fn().mockResolvedValue([]),
@@ -87,6 +92,7 @@ describe("POST /api/checkout", () => {
     // Default: a fresh quote agreeing with baseBody.shippingCost (15000),
     // so legacy tests exercise the happy re-quote path unless overridden.
     mockFetchBiteshipRates.mockResolvedValue([rateEntry(15000)]);
+    mockSendPaymentLinkEmail.mockResolvedValue(undefined);
   });
 
   // ---- Shipping re-quote (issue #138) ----
@@ -347,6 +353,14 @@ describe("POST /api/checkout", () => {
     expect(json.orderId).toBe("order-1");
     expect(json.orderNumber).toMatch(/^AGR-\d{8}-[A-Z0-9]{6}$/);
     expect(json.total).toBe(115000);
+    expect(mockSendPaymentLinkEmail).toHaveBeenCalledWith("order-1");
+  });
+
+  it("returns success when payment-link email rejects", async () => {
+    mockHappyDb();
+    mockSendPaymentLinkEmail.mockRejectedValue(new Error("email down"));
+    const response = await POST(checkoutReq(deliveryBody));
+    expect(response.status).toBe(200);
   });
 
   it("returns 400 when stock validation rejects insufficient stock", async () => {

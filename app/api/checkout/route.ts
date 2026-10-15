@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
 import { createQrisPaymentSession } from "@/lib/pivot/client";
 import { sendOrderNotification } from "@/lib/telegram/notify";
+import { sendPaymentLinkEmail } from "@/lib/resend/sendPaymentLinkEmail";
 import { getActiveGlobalDiscounts, getActiveProductDiscounts } from "@/lib/supabase/queries/discounts";
 import { calculateDiscountedPrice } from "@/lib/utils/discount";
 import { isShippingCostInvalid } from "@/lib/checkout/validateShippingCost";
@@ -450,6 +451,10 @@ export async function POST(request: NextRequest) {
         { status: 502 }
       );
     }
+
+    sendPaymentLinkEmail(order.id as string).catch((err) =>
+      console.error("[checkout] Payment-link email failed:", err)
+    );
 
     // Notify Telegram group (fire-and-forget — never blocks the response)
     sendOrderNotification({
