@@ -11,12 +11,14 @@ interface Props {
   bookingId: string;
   amount: number;
   qrString: string;
-  qrExpiresAt: string;
+  qrExpiresAt: string | null;
 }
 
-function useCountdown(expiresAtIso: string) {
-  const getSecondsLeft = () =>
-    Math.max(0, Math.floor((new Date(expiresAtIso).getTime() - Date.now()) / 1000));
+function useCountdown(expiresAtIso: string | null) {
+  const getSecondsLeft = () => {
+    const t = new Date(expiresAtIso ?? "").getTime();
+    return Number.isFinite(t) ? Math.max(0, Math.floor((t - Date.now()) / 1000)) : 0;
+  };
   const [secondsLeft, setSecondsLeft] = useState(getSecondsLeft);
   useEffect(() => {
     const id = setInterval(() => {
@@ -41,7 +43,11 @@ export default function QrConsultationClient({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);
   const [isSimulating, setIsSimulating] = useState(false);
+  const [refreshNotice, setRefreshNotice] = useState(false);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const autoFailuresRef = useRef(0);
+  const autoExpiryRef = useRef<string | null | undefined>(undefined);
+  const autoRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const secondsLeft = useCountdown(qrExpiresAt);
   const isExpired = secondsLeft === 0;
@@ -67,7 +73,7 @@ export default function QrConsultationClient({
     };
   }, [bookingId, router]);
 
-  const handleRefresh = useCallback(async () => {
+  const handleRefresh = useCallback(async (): Promise<"success" | "hold" | "failure"> => {
     setIsRefreshing(true);
     setRefreshError(null);
     try {
@@ -79,16 +85,48 @@ export default function QrConsultationClient({
       const data = await res.json();
       if (!res.ok) {
         setRefreshError(data.error ?? "Gagal memperbarui QR");
-        return;
+        // 409: payment landed (or state changed) under us — reload to the
+        // authoritative page instead of retrying a doomed refresh.
+        if (data.code === "STATE_CHANGED") {
+          window.location.reload();
+          return "hold";
+        }
+        return data.code === "HOLD_EXPIRED" ? "hold" : "failure";
       }
       setQrString(data.qrString ?? "");
       setQrExpiresAt(data.qrExpiresAt);
+      return "success";
     } catch {
       setRefreshError("Terjadi kesalahan. Coba lagi.");
+      return "failure";
     } finally {
       setIsRefreshing(false);
     }
   }, [bookingId]);
+
+  useEffect(() => {
+    if (!isExpired || autoExpiryRef.current === qrExpiresAt || !qrString) return;
+    autoExpiryRef.current = qrExpiresAt;
+    autoFailuresRef.current = 0;
+    let cancelled = false;
+    const retry = async () => {
+      const result = await handleRefresh();
+      if (cancelled) return;
+      if (result === "success") { setRefreshNotice(true); return; }
+      if (result === "hold") return;
+      autoFailuresRef.current += 1;
+      // 3 total attempts: initial + 2 backoff retries, then leave manual state.
+      if (autoFailuresRef.current < 3) {
+        const delays = [5000, 15000];
+        autoRetryTimerRef.current = setTimeout(retry, delays[autoFailuresRef.current - 1]);
+      }
+    };
+    void retry();
+    return () => {
+      cancelled = true;
+      if (autoRetryTimerRef.current) clearTimeout(autoRetryTimerRef.current);
+    };
+  }, [isExpired, qrExpiresAt, qrString, handleRefresh]);
 
   const handleSimulate = useCallback(async () => {
     setIsSimulating(true);
@@ -160,6 +198,13 @@ export default function QrConsultationClient({
               Download QR
             </a>
           </>
+        )}
+
+        {refreshNotice && (
+          <div className="rounded-lg bg-green-50 border border-green-200 px-3 py-2 text-center">
+            <p className="text-sm font-medium text-green-800">QR baru dibuat — silakan scan kembali</p>
+            <button className="text-xs text-green-700 underline" onClick={() => setRefreshNotice(false)}>Tutup</button>
+          </div>
         )}
 
         <Button

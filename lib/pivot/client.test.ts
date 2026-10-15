@@ -67,14 +67,14 @@ describe("buildRequestId", () => {
   });
 });
 
-describe("QRIS session expiry (issue #187)", () => {
-  it("QRIS_EXPIRY_MINUTES is 15 (Pivot default; merchant-set, not an upstream hard max)", async () => {
+describe("QRIS session expiry (issue #221)", () => {
+  it("QRIS_EXPIRY_MINUTES is 60", async () => {
     vi.resetModules();
     const mod = await import("./client");
-    expect(mod.QRIS_EXPIRY_MINUTES).toBe(15);
+    expect(mod.QRIS_EXPIRY_MINUTES).toBe(60);
   });
 
-  it("createQrisPaymentSession sends expiryAt ~15 minutes in the future", async () => {
+  it("createQrisPaymentSession sends matching expiryAt values ~60 minutes in the future", async () => {
     vi.resetModules();
     let capturedBody: Record<string, unknown> | undefined;
     const mockFetch = vi.fn(async (url: unknown, init?: { body?: string }) => {
@@ -124,10 +124,24 @@ describe("QRIS session expiry (issue #187)", () => {
       const expiryAt = (capturedBody as { paymentMethodOptions: { qr: { expiryAt: string } } })
         .paymentMethodOptions.qr.expiryAt;
       const deltaMs = new Date(expiryAt).getTime() - Date.now();
-      // ~15 minutes, with slack for test execution
-      expect(deltaMs).toBeGreaterThan(14 * 60 * 1000);
-      expect(deltaMs).toBeLessThanOrEqual(15.5 * 60 * 1000);
+      expect(deltaMs).toBeGreaterThan(59 * 60 * 1000);
+      expect(deltaMs).toBeLessThanOrEqual(60.5 * 60 * 1000);
+      expect((capturedBody as { expiryAt: string }).expiryAt).toBe(expiryAt);
       expect(result.qrExpiresAt).toBe(expiryAt);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("throws when Pivot omits the conditional QR expiryAt", async () => {
+    vi.resetModules();
+    vi.stubGlobal("fetch", vi.fn(async (url: unknown) => String(url).includes("access-token")
+      ? { ok: true, json: async () => ({ code: "00", data: { accessToken: "token", expiresIn: "900" } }) }
+      : { ok: true, json: async () => ({ code: "00", data: { id: "session-1", chargeDetails: [{ qr: { qrUrl: "https://qr.example/1" } }] } }) }
+    ));
+    try {
+      const { createQrisPaymentSession } = await import("./client");
+      await expect(createQrisPaymentSession({ orderId: "550e8400-e29b-41d4-a716-446655440000", orderNumber: "AGR-1", total: 1, customerName: "Test", customerPhone: "08123456789" })).rejects.toThrow("Pivot response missing qr.expiryAt");
     } finally {
       vi.unstubAllGlobals();
     }

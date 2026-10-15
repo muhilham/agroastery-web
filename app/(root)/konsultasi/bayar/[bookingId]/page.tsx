@@ -39,7 +39,7 @@ export default async function ConsultationPaymentPage({ params }: Props) {
           bookingId={booking.id as string}
           amount={booking.amount as number}
           qrString={(booking.pivot_qr_string as string) ?? ""}
-          qrExpiresAt={(booking.pivot_qr_expires_at as string) ?? new Date().toISOString()}
+          qrExpiresAt={booking.pivot_qr_expires_at as string | null}
         />
       </main>
     </div>

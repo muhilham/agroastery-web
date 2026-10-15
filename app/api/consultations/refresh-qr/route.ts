@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
-import { createQrisPaymentSession } from "@/lib/pivot/client";
+import { createQrisPaymentSession, QRIS_MAX_HOLD_MINUTES } from "@/lib/pivot/client";
 import { formatConsultationOrderNumber } from "@/lib/consultations/constants";
 
 const RefreshSchema = z.object({ bookingId: z.string().uuid() });
@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
 
     const { data: booking, error } = await supabase
       .from("consultation_bookings")
-      .select("id, status, booking_date, time_slot, amount, name, email, phone")
+      .select("id, status, created_at, booking_date, time_slot, amount, name, email, phone")
       .eq("id", bookingId)
       .single();
 
@@ -31,6 +31,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "Booking tidak menunggu pembayaran" },
         { status: 400 }
+      );
+    }
+
+    if (Date.now() - new Date(booking.created_at as string).getTime() > QRIS_MAX_HOLD_MINUTES * 60_000) {
+      // Atomic lock: only expire if still awaiting payment (late-confirmed
+      // bookings must never be overwritten).
+      const { data: locked } = await supabase
+        .from("consultation_bookings")
+        .update({ status: "expired" })
+        .eq("id", bookingId)
+        .eq("status", "pending_payment")
+        .select("id")
+        .maybeSingle();
+      if (!locked) {
+        return NextResponse.json(
+          { error: "Status booking berubah. Muat ulang halaman.", code: "STATE_CHANGED" },
+          { status: 409 }
+        );
+      }
+      return NextResponse.json(
+        { error: "Batas waktu pemesanan telah terlewati. Silakan pesan ulang.", code: "HOLD_EXPIRED" },
+        { status: 410 }
       );
     }
 
@@ -50,7 +72,7 @@ export async function POST(request: NextRequest) {
       suffix
     );
 
-    await supabase
+    const { error: updateError } = await supabase
       .from("consultation_bookings")
       .update({
         pivot_payment_session_id: session.paymentSessionId,
@@ -59,6 +81,7 @@ export async function POST(request: NextRequest) {
         pivot_qr_expires_at: session.qrExpiresAt,
       })
       .eq("id", bookingId);
+    if (updateError) throw updateError;
 
     return NextResponse.json({
       qrUrl: session.qrUrl,
