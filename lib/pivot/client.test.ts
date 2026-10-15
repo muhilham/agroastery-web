@@ -146,4 +146,34 @@ describe("QRIS session expiry (issue #221)", () => {
       vi.unstubAllGlobals();
     }
   });
+
+  it("returns Pivot's QR acquirer", async () => {
+    vi.resetModules();
+    vi.stubGlobal("fetch", vi.fn(async (url: unknown) => String(url).includes("access-token")
+      ? { ok: true, json: async () => ({ code: "00", data: { accessToken: "token", expiresIn: "900" } }) }
+      : { ok: true, json: async () => ({ code: "00", data: { id: "session-1", chargeDetails: [{ qr: { qrUrl: "https://qr.example/1", qrString: "000201", expiryAt: "2026-01-01T00:00:00.000Z", acquirer: "BRI" } }] } }) }
+    ));
+    try {
+      const { createQrisPaymentSession } = await import("./client");
+      const result = await createQrisPaymentSession({ orderId: "550e8400-e29b-41d4-a716-446655440000", orderNumber: "AGR-1", total: 1, customerName: "Test", customerPhone: "08123456789" });
+      expect(result.acquirer).toBe("BRI");
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("returns null when Pivot omits the QR acquirer", async () => {
+    vi.resetModules();
+    vi.stubGlobal("fetch", vi.fn(async (url: unknown) => String(url).includes("access-token")
+      ? { ok: true, json: async () => ({ code: "00", data: { accessToken: "token", expiresIn: "900" } }) }
+      : { ok: true, json: async () => ({ code: "00", data: { id: "session-1", chargeDetails: [{ qr: { qrUrl: "https://qr.example/1", qrString: "000201", expiryAt: "2026-01-01T00:00:00.000Z" } }] } }) }
+    ));
+    try {
+      const { createQrisPaymentSession } = await import("./client");
+      const result = await createQrisPaymentSession({ orderId: "550e8400-e29b-41d4-a716-446655440000", orderNumber: "AGR-1", total: 1, customerName: "Test", customerPhone: "08123456789" });
+      expect(result.acquirer).toBeNull();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
 });

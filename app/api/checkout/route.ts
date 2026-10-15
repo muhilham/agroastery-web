@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdminClient, createSupabaseServerClient } from "@/lib/supabase/server";
-import { createQrisPaymentSession } from "@/lib/pivot/client";
+import { createQrisPaymentSession, type QrisSessionResult } from "@/lib/pivot/client";
 import { sendOrderNotification } from "@/lib/telegram/notify";
 import { sendPaymentLinkEmail } from "@/lib/resend/sendPaymentLinkEmail";
 import { getActiveGlobalDiscounts, getActiveProductDiscounts } from "@/lib/supabase/queries/discounts";
@@ -399,7 +399,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create Pivot QRIS payment session
-    let pivotSession: { paymentSessionId: string; qrUrl: string; qrString: string; qrExpiresAt: string };
+    let pivotSession: QrisSessionResult;
     try {
       pivotSession = await createQrisPaymentSession({
         orderId: order.id as string,
@@ -434,6 +434,7 @@ export async function POST(request: NextRequest) {
           pivot_qr_url: pivotSession.qrUrl,
           pivot_qr_string: pivotSession.qrString,
           pivot_qr_expires_at: pivotSession.qrExpiresAt,
+          pivot_qr_acquirer: pivotSession.acquirer,
         })
         .eq("id", order.id as string);
       if (!error) { sessionUpdateError = null; break; }

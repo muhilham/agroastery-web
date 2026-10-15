@@ -5,6 +5,7 @@ const from = vi.fn();
 const rpc = vi.fn();
 const createQris = vi.fn();
 const lockMaybeSingle = vi.fn();
+const sessionUpdate = vi.fn();
 vi.mock("@/lib/supabase/server", () => ({ createSupabaseAdminClient: () => ({ from, rpc }) }));
 vi.mock("@/lib/pivot/client", () => ({ QRIS_MAX_HOLD_MINUTES: 240, createQrisPaymentSession: (...args: unknown[]) => createQris(...args) }));
 import { POST } from "./route";
@@ -18,7 +19,10 @@ function setOrder(createdAt: string) {
   from.mockImplementation((table: string) => {
     if (table === "ecom_orders") return {
       select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: { id, order_number: "AGR-1", total: 1, payment_status: "pending_payment", status: "pending_payment", created_at: createdAt, customer_name: "Budi", customer_email: "b@e.com", customer_phone: "081" }, error: null }) }) }),
-      update: () => ({ eq: () => lock, then: (resolve: (v: { error: null }) => unknown) => resolve({ error: null }) }),
+      update: (payload: Record<string, unknown>) => {
+        sessionUpdate(payload);
+        return { eq: () => lock, then: (resolve: (v: { error: null }) => unknown) => resolve({ error: null }) };
+      },
     };
     return { select: () => ({ eq: () => Promise.resolve({ data: [{ variant_id: "variant-1", quantity: 2 }, { variant_id: null, quantity: 1 }], error: null }) }) };
   });
@@ -27,7 +31,7 @@ function setOrder(createdAt: string) {
 describe("POST /api/checkout/refresh-qr", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    createQris.mockResolvedValue({ paymentSessionId: "ps", qrUrl: "url", qrString: "qr", qrExpiresAt: "2026-01-01T00:00:00.000Z" });
+    createQris.mockResolvedValue({ paymentSessionId: "ps", qrUrl: "url", qrString: "qr", qrExpiresAt: "2026-01-01T00:00:00.000Z", acquirer: "BRI" });
     lockMaybeSingle.mockResolvedValue({ data: { id } });
   });
   it("expires an order past the total hold and restores stock (null-variant items skipped)", async () => {
@@ -53,5 +57,6 @@ describe("POST /api/checkout/refresh-qr", () => {
     const response = await POST(request());
     expect(response.status).toBe(200);
     expect(createQris).toHaveBeenCalledOnce();
+    expect(sessionUpdate).toHaveBeenCalledWith(expect.objectContaining({ pivot_qr_acquirer: "BRI" }));
   });
 });

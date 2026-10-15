@@ -5,6 +5,7 @@ const mockSingle = vi.fn();
 const mockLockMaybeSingle = vi.fn();
 const mockRpc = vi.fn();
 const mockCreateQris = vi.fn();
+const mockSessionUpdate = vi.fn();
 
 // Chainable update mock: serves both the session-persist path
 // (await update().eq("id") -> {error}) and the cap-lock path
@@ -20,7 +21,10 @@ vi.mock("@/lib/supabase/server", () => ({
   createSupabaseAdminClient: () => ({
     from: () => ({
       select: () => ({ eq: () => ({ single: mockSingle }) }),
-      update: () => updateChain,
+      update: (payload: Record<string, unknown>) => {
+        mockSessionUpdate(payload);
+        return updateChain;
+      },
     }),
     rpc: mockRpc,
   }),
@@ -50,6 +54,7 @@ describe("POST /api/consultations/refresh-qr", () => {
       qrUrl: "https://qr2",
       qrString: "EMVCO2",
       qrExpiresAt: "2026-07-23T10:10:00.000Z",
+      acquirer: "BRI",
     });
     mockLockMaybeSingle.mockResolvedValue({ data: { id: bookingId } });
   });
@@ -90,6 +95,7 @@ describe("POST /api/consultations/refresh-qr", () => {
     const json = await res.json();
     expect(json.qrString).toBe("EMVCO2");
     expect(mockCreateQris).toHaveBeenCalledOnce();
+    expect(mockSessionUpdate).toHaveBeenCalledWith(expect.objectContaining({ pivot_qr_acquirer: "BRI" }));
   });
 
   it("expires a booking past the total hold without creating a session", async () => {
