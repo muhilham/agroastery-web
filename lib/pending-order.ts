@@ -19,10 +19,13 @@ function isValidPendingOrder(data: unknown): data is PendingOrder {
   if (typeof data !== "object" || data === null) return false;
   const p = data as Record<string, unknown>;
   return (
+    // UUID shape enforced: the banner interpolates orderId into a fetch URL,
+    // so a tampered "../../x" payload must never survive the load-time check.
     typeof p.orderId === "string" &&
-    p.orderId.length > 0 &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(p.orderId) &&
     typeof p.orderNumber === "string" &&
     p.orderNumber.length > 0 &&
+    p.orderNumber.length <= 64 &&
     typeof p.total === "number" &&
     Number.isFinite(p.total) &&
     typeof p.savedAt === "string" &&

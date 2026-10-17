@@ -34,6 +34,17 @@ describe("pending-order pointer storage (#226 P1a)", () => {
     expect(loadPendingOrder()).toBeNull();
   });
 
+  it("rejects a non-UUID orderId (tampered payload must never reach a fetch URL)", () => {
+    localStorage.setItem(
+      PENDING_ORDER_STORAGE_KEY,
+      JSON.stringify({ ...pointer, orderId: "../../other-api-route" })
+    );
+    localStorage.setItem(PENDING_ORDER_VERSION_KEY, "1");
+    expect(loadPendingOrder()).toBeNull();
+    // invalid payload is dropped, not trusted
+    expect(localStorage.getItem(PENDING_ORDER_STORAGE_KEY)).toBeNull();
+  });
+
   it("clears silently when nothing is stored", () => {
     clearPendingOrder();
     expect(loadPendingOrder()).toBeNull();
