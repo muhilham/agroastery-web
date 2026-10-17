@@ -6,7 +6,7 @@ import Navigation from "@/components/navigation";
 import { Button } from "@/components/ui/button";
 import { numberToIdr } from "@/lib/numberToIdr";
 import { useCart } from "@/lib/hooks/useCart";
-import { clearPendingOrder } from "@/lib/pending-order";
+import { clearPendingOrder, loadPendingOrder } from "@/lib/pending-order";
 import { RefreshCw, Loader2, Camera, Download } from "lucide-react";
 
 interface Props {
@@ -142,10 +142,12 @@ export default function QrPaymentClient({
           clearInterval(pollingRef.current!);
           clearCart();
           // #226 P1a: this order is paid — drop the same-browser recovery
-          // pointer unconditionally so /checkout and /cart can never show a
-          // stale "belum dibayar" banner (covers the paid-via-this-page case;
-          // paid-via-elsewhere is covered by the banner's own status check).
-          clearPendingOrder();
+          // pointer when (and only when) it points at THIS order. An
+          // unconditional clear would also wipe the pointer of a NEWER
+          // unpaid order (checkout B, then pay A via email in the same
+          // browser), silently killing B's recovery banner.
+          const pointer = loadPendingOrder();
+          if (pointer && pointer.orderId === orderId) clearPendingOrder();
           // Hard navigation: SPA router.push renders /checkout/success
           // without order params, so PurchaseTracking never mounts with data
           // and the GA4 purchase event never fires (issue #186).

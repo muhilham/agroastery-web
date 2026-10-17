@@ -382,4 +382,33 @@ describe("QrPaymentClient — recovery copy + pointer lifecycle (#226 P1a/P1c)",
     delete window.location;
     Object.defineProperty(window, "location", { configurable: true, value: originalLocation });
   });
+
+  it("keeps a pointer belonging to a DIFFERENT order when this one pays", async () => {
+    mockFetch({ payment_status: "paid" });
+    const other = {
+      orderId: "bbbbbbbb-2222-2222-2222-222222222222",
+      orderNumber: "AGR-20260903-NEW",
+      total: 99000,
+      savedAt: new Date().toISOString(),
+    };
+    localStorage.setItem(PENDING_ORDER_STORAGE_KEY, JSON.stringify(other));
+    localStorage.setItem(PENDING_ORDER_VERSION_KEY, "1");
+
+    const originalLocation = window.location;
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: { ...originalLocation, assign() {}, replace() {} },
+    });
+
+    render(<QrPaymentClient {...defaultProps} />);
+    await act(async () => { vi.advanceTimersByTime(3000); });
+
+    // Paying order A must not destroy the recovery pointer for newer order B
+    // (checkout B abandoned, then A paid via its own QR page, same browser).
+    expect(localStorage.getItem(PENDING_ORDER_STORAGE_KEY)).toContain(other.orderId);
+
+    // @ts-expect-error restore jsdom location for other tests
+    delete window.location;
+    Object.defineProperty(window, "location", { configurable: true, value: originalLocation });
+  });
 });
