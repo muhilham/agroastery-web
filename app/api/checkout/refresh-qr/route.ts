@@ -30,7 +30,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
 
-    if (order.payment_status !== "pending_payment") {
+    // Real enum: `pending_payment` is the ORDER status; payment_status is
+    // unpaid/paid/expired/refunded. Checking payment_status alone rejected
+    // every genuine unpaid order with 400 — auto-reissue never ran.
+    if (!(order.payment_status === "unpaid" && order.status === "pending_payment")) {
       return NextResponse.json(
         { error: "Order is not awaiting payment" },
         { status: 400 }
@@ -44,7 +47,8 @@ export async function POST(request: NextRequest) {
         .from("ecom_orders")
         .update({ status: "cancelled", payment_status: "expired" })
         .eq("id", orderId)
-        .eq("payment_status", "pending_payment")
+        .eq("payment_status", "unpaid")
+        .eq("status", "pending_payment")
         .select("id")
         .maybeSingle();
       if (!locked) {

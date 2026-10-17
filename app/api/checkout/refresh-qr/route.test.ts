@@ -13,12 +13,18 @@ import { POST } from "./route";
 const id = "11111111-1111-1111-1111-111111111111";
 const request = () => new NextRequest("http://localhost/api/checkout/refresh-qr", { method: "POST", body: JSON.stringify({ orderId: id }) });
 
-function setOrder(createdAt: string) {
+const lockEq = vi.fn();
+
+function setOrder(createdAt: string, overrides: Record<string, unknown> = {}) {
   // Chainable lock mock: update().eq().eq().select().maybeSingle()
-  const lock = { eq: () => lock, select: () => lock, maybeSingle: () => lockMaybeSingle() };
+  const lock = {
+    eq: (...args: unknown[]) => { lockEq(...args); return lock; },
+    select: () => lock,
+    maybeSingle: () => lockMaybeSingle(),
+  };
   from.mockImplementation((table: string) => {
     if (table === "ecom_orders") return {
-      select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: { id, order_number: "AGR-1", total: 1, payment_status: "pending_payment", status: "pending_payment", created_at: createdAt, customer_name: "Budi", customer_email: "b@e.com", customer_phone: "081" }, error: null }) }) }),
+      select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: { id, order_number: "AGR-1", total: 1, payment_status: "unpaid", status: "pending_payment", created_at: createdAt, customer_name: "Budi", customer_email: "b@e.com", customer_phone: "081", ...overrides }, error: null }) }) }),
       update: (payload: Record<string, unknown>) => {
         sessionUpdate(payload);
         return { eq: () => lock, then: (resolve: (v: { error: null }) => unknown) => resolve({ error: null }) };
@@ -42,6 +48,18 @@ describe("POST /api/checkout/refresh-qr", () => {
     expect(createQris).not.toHaveBeenCalled();
     expect(rpc).toHaveBeenCalledWith("ecom_restore_stock", { p_variant_id: "variant-1", p_quantity: 2 });
     expect(rpc.mock.calls.length).toBe(1); // null variant_id skipped
+    // Atomic lock must match BOTH real columns; payment_status is never
+    // 'pending_payment', so the old filter updated zero rows and the order
+    // was never cancelled nor its stock restored.
+    expect(lockEq).toHaveBeenCalledWith("payment_status", "unpaid");
+    expect(lockEq).toHaveBeenCalledWith("status", "pending_payment");
+  });
+
+  it("400s an order that is no longer awaiting payment (paid)", async () => {
+    setOrder(new Date().toISOString(), { status: "paid", payment_status: "paid" });
+    const response = await POST(request());
+    expect(response.status).toBe(400);
+    expect(createQris).not.toHaveBeenCalled();
   });
   it("409s when the hold lock finds the order already paid (late-PAID race)", async () => {
     setOrder(new Date(Date.now() - 241 * 60_000).toISOString());

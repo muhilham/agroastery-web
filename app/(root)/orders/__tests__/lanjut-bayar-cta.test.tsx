@@ -42,8 +42,11 @@ function makeOrder(overrides: Record<string, unknown> = {}) {
   return {
     id: ORDER_ID,
     order_number: "AGR-20260903-TEST",
+    // Real production shape (verified against live ecom_orders):
+    // status='pending_payment' + payment_status='unpaid' for a fresh order;
+    // the payment_status column is only ever unpaid/paid/expired/refunded.
     status: "pending_payment",
-    payment_status: "pending_payment",
+    payment_status: "unpaid",
     total: 185000,
     subtotal: 150000,
     shipping_cost: 35000,
@@ -74,10 +77,10 @@ function chainFor(rows: unknown, single = false) {
   return chain;
 }
 
-async function renderOrdersList(payment_status: string) {
+async function renderOrdersList(overrides: Record<string, unknown> = {}) {
   mockGetUser.mockResolvedValue({ data: { user: { id: "u1" } } });
   mockFrom.mockReturnValue(
-    chainFor([{ ...makeOrder({ payment_status }),
+    chainFor([{ ...makeOrder(overrides),
       // list select omits nested items
     }])
   );
@@ -85,17 +88,17 @@ async function renderOrdersList(payment_status: string) {
   return render(await OrdersPage());
 }
 
-async function renderOrderDetail(payment_status: string) {
+async function renderOrderDetail(overrides: Record<string, unknown> = {}) {
   mockGetUser.mockResolvedValue({ data: { user: { id: "u1" } } });
   mockFrom.mockImplementation((table: string) =>
-    chainFor(table === "ecom_orders" ? makeOrder({ payment_status }) : [], table === "ecom_orders")
+    chainFor(table === "ecom_orders" ? makeOrder(overrides) : [], table === "ecom_orders")
   );
   const DetailPage = (await import("@/app/(root)/orders/[id]/page")).default;
   return render(await DetailPage({ params: Promise.resolve({ id: ORDER_ID }) }));
 }
 
-async function renderTrack(payment_status: string) {
-  mockFrom.mockReturnValue(chainFor(makeOrder({ payment_status }), true));
+async function renderTrack(overrides: Record<string, unknown> = {}) {
+  mockFrom.mockReturnValue(chainFor(makeOrder(overrides), true));
   const TrackPage = (await import("@/app/(root)/track/[orderId]/page")).default;
   return render(await TrackPage({ params: Promise.resolve({ orderId: ORDER_ID }) }));
 }
@@ -107,19 +110,26 @@ describe("/orders list CTA (#226 P1b)", () => {
     mockGetUser.mockReset();
   });
 
-  it("shows Lanjut Bayar for pending_payment rows", async () => {
-    await renderOrdersList("pending_payment");
+  it("shows Lanjut Bayar for status=pending_payment + payment_status=unpaid", async () => {
+    await renderOrdersList({ status: "pending_payment", payment_status: "unpaid" });
     const cta = screen.getByTestId("lanjut-bayar-AGR-20260903-TEST");
     expect(cta.getAttribute("href")).toBe(`/checkout/payment/${ORDER_ID}`);
   });
 
   it("hides the CTA for paid rows", async () => {
-    await renderOrdersList("paid");
+    await renderOrdersList({ status: "paid", payment_status: "paid" });
     expect(screen.queryByTestId("lanjut-bayar-AGR-20260903-TEST")).toBeNull();
   });
 
   it("hides the CTA for expired rows", async () => {
-    await renderOrdersList("expired");
+    await renderOrdersList({ status: "cancelled", payment_status: "expired" });
+    expect(screen.queryByTestId("lanjut-bayar-AGR-20260903-TEST")).toBeNull();
+  });
+
+  it("hides the CTA for cancelled+unpaid rows (real prod shape) — paying a cancelled order 410s", async () => {
+    // Live data has exactly this pair; a payment_status-only check would be
+    // 'unpaid' here and wrongly offer a link that HOLD_EXPIREDs on click.
+    await renderOrdersList({ status: "cancelled", payment_status: "unpaid" });
     expect(screen.queryByTestId("lanjut-bayar-AGR-20260903-TEST")).toBeNull();
   });
 });
@@ -131,14 +141,19 @@ describe("/orders/[id] detail CTA (#226 P1b)", () => {
     mockGetUser.mockReset();
   });
 
-  it("shows Lanjut Bayar when payment_status is pending_payment", async () => {
-    await renderOrderDetail("pending_payment");
+  it("shows Lanjut Bayar when status=pending_payment and payment_status=unpaid", async () => {
+    await renderOrderDetail({ status: "pending_payment", payment_status: "unpaid" });
     const cta = screen.getByTestId("lanjut-bayar-detail");
     expect(cta.getAttribute("href")).toBe(`/checkout/payment/${ORDER_ID}`);
   });
 
   it("hides Lanjut Bayar once paid", async () => {
-    await renderOrderDetail("paid");
+    await renderOrderDetail({ status: "paid", payment_status: "paid" });
+    expect(screen.queryByTestId("lanjut-bayar-detail")).toBeNull();
+  });
+
+  it("hides Lanjut Bayar for a cancelled+unpaid order", async () => {
+    await renderOrderDetail({ status: "cancelled", payment_status: "unpaid" });
     expect(screen.queryByTestId("lanjut-bayar-detail")).toBeNull();
   });
 });
@@ -150,13 +165,13 @@ describe("/track/[orderId] CTA (#226 P1b)", () => {
   });
 
   it("shows Lanjut Bayar for unpaid orders — the lookup funnel dead-end fix", async () => {
-    await renderTrack("pending_payment");
+    await renderTrack({ status: "pending_payment", payment_status: "unpaid" });
     const cta = screen.getByTestId("lanjut-bayar-track");
     expect(cta.getAttribute("href")).toBe(`/checkout/payment/${ORDER_ID}`);
   });
 
   it("hides Lanjut Bayar for paid orders", async () => {
-    await renderTrack("paid");
+    await renderTrack({ status: "paid", payment_status: "paid" });
     expect(screen.queryByTestId("lanjut-bayar-track")).toBeNull();
   });
 });
