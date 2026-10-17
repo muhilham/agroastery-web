@@ -20,7 +20,7 @@ export default async function PaymentPage({
 
   const { data: order } = await supabase
     .from("ecom_orders")
-    .select("id, order_number, total, payment_status, status, pivot_qr_url, pivot_qr_string, pivot_qr_expires_at")
+    .select("id, order_number, total, payment_status, status, customer_email, pivot_qr_url, pivot_qr_string, pivot_qr_expires_at")
     .eq("id", orderId)
     .single();
 
@@ -49,6 +49,7 @@ export default async function PaymentPage({
       total={orderAny.total as number}
       qrString={orderAny.pivot_qr_string ?? ""}
       qrExpiresAt={orderAny.pivot_qr_expires_at}
+      hasPaymentEmail={Boolean(orderAny.customer_email)}
     />
   );
 }

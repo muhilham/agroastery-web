@@ -9,6 +9,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { COFFEE_BLUR_DATA_URL } from "@/lib/blurDataUrl";
 import { Minus, Plus, Trash2, ShoppingBag, LoaderCircle } from "lucide-react";
+import PendingOrderBanner from "@/components/PendingOrderBanner";
 
 function CartImage({ src, alt }: { src: string; alt: string }) {
   const [imgSrc, setImgSrc] = useState(src);
@@ -52,6 +53,9 @@ export default function CartPageContent() {
         <h1 className="text-xl tablet:text-2xl font-semibold text-primary mb-6 tracking-widest uppercase mt-4">
           Keranjang
         </h1>
+
+        {/* #226 P1a: recover an abandoned unpaid order from this browser */}
+        <PendingOrderBanner />
 
         {cartCount === 0 ? (
           <div className="flex flex-col items-center justify-center gap-6 py-20 text-center">

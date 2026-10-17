@@ -6,6 +6,7 @@ import Navigation from "@/components/navigation";
 import { Button } from "@/components/ui/button";
 import { numberToIdr } from "@/lib/numberToIdr";
 import { useCart } from "@/lib/hooks/useCart";
+import { clearPendingOrder } from "@/lib/pending-order";
 import { RefreshCw, Loader2, Camera, Download } from "lucide-react";
 
 interface Props {
@@ -14,6 +15,10 @@ interface Props {
   total: number;
   qrString: string; // raw EMVCO QRIS string
   qrExpiresAt: string | null; // ISO 8601
+  /** #226 P1c: true only when a payment-link email was actually sent to
+   *  customer_email. Copy must not promise an email that never arrived
+   *  (logged-in checkout allows empty email). */
+  hasPaymentEmail: boolean;
 }
 
 /**
@@ -80,6 +85,7 @@ export default function QrPaymentClient({
   total,
   qrString: initialQrString,
   qrExpiresAt: initialQrExpiresAt,
+  hasPaymentEmail,
 }: Props) {
   const { clearCart } = useCart();
   const [qrString, setQrString] = useState(initialQrString);
@@ -135,6 +141,11 @@ export default function QrPaymentClient({
         if (payment_status === "paid") {
           clearInterval(pollingRef.current!);
           clearCart();
+          // #226 P1a: this order is paid — drop the same-browser recovery
+          // pointer unconditionally so /checkout and /cart can never show a
+          // stale "belum dibayar" banner (covers the paid-via-this-page case;
+          // paid-via-elsewhere is covered by the banner's own status check).
+          clearPendingOrder();
           // Hard navigation: SPA router.push renders /checkout/success
           // without order params, so PurchaseTracking never mounts with data
           // and the GA4 purchase event never fires (issue #186).
@@ -284,6 +295,14 @@ export default function QrPaymentClient({
                   <Download className="w-4 h-4" />
                   Download QR
                 </a>
+                {/* #226 P1c: tell the customer how to get back if they leave.
+                    Conditional: a logged-in checkout can complete with an
+                    empty email, and promising "cek email" then would lie. */}
+                <p className="text-xs text-gray-500 text-center leading-relaxed" data-testid="recovery-copy">
+                  {hasPaymentEmail
+                    ? "Tutup halaman ini tidak apa-apa — tautan pembayaran juga dikirim ke email Anda, dan QR diperbarui otomatis selama pesanan aktif."
+                    : "Tutup halaman ini tidak apa-apa — kembali ke halaman Checkout dan banner “Lanjut bayar” akan membawa Anda ke QR ini, selama pesanan aktif."}
+                </p>
               </>
             )}
 

@@ -44,7 +44,8 @@ export default async function OrdersPage() {
 
   const { data: orders } = await supabase
     .from("ecom_orders")
-    .select("id, order_number, status, total, created_at, subtotal, shipping_cost")
+    // #226 P1b: payment_status powers the "Lanjut Bayar" CTA on unpaid rows
+    .select("id, order_number, status, payment_status, total, created_at, subtotal, shipping_cost")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
@@ -72,34 +73,53 @@ export default async function OrdersPage() {
             {orders.map((order) => {
               const statusLabel = STATUS_LABELS[order.status] ?? order.status;
               const statusColor = STATUS_COLORS[order.status] ?? "text-white/60 bg-white/5";
+              // #226 P1b: unpaid orders get a direct pay CTA. The row is a
+              // div (not a Link) because a <Link> inside a <Link> is invalid;
+              // the whole info area stays a link to the detail page.
+              const isPendingPayment = order.payment_status === "pending_payment";
               return (
-                <Link
+                <div
                   key={order.id}
-                  href={`/orders/${order.id}`}
-                  className="block p-4 rounded-xl bg-[#1a1a1a] border border-white/10 active:bg-[#222222] transition-colors"
+                  className="rounded-xl bg-[#1a1a1a] border border-white/10"
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-primary font-medium text-sm">{order.order_number}</p>
-                      <p className="text-secondary text-xs mt-0.5">
-                        {new Date(order.created_at as string).toLocaleDateString("id-ID", {
-                          day: "numeric",
-                          month: "long",
-                          year: "numeric",
-                        })}
-                      </p>
+                  <Link
+                    href={`/orders/${order.id}`}
+                    className="block p-4 active:bg-[#222222] transition-colors"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-primary font-medium text-sm">{order.order_number}</p>
+                        <p className="text-secondary text-xs mt-0.5">
+                          {new Date(order.created_at as string).toLocaleDateString("id-ID", {
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric",
+                          })}
+                        </p>
+                      </div>
+                      <span className={`text-xs font-medium px-2.5 py-1 rounded-full shrink-0 whitespace-nowrap ${statusColor}`}>
+                        {statusLabel}
+                      </span>
                     </div>
-                    <span className={`text-xs font-medium px-2.5 py-1 rounded-full shrink-0 whitespace-nowrap ${statusColor}`}>
-                      {statusLabel}
-                    </span>
-                  </div>
-                  <div className="mt-3 flex justify-between items-center">
-                    <span className="text-secondary text-sm">Total</span>
-                    <span className="text-primary font-semibold text-sm">
-                      {numberToIdr({ nominal: order.total as number })}
-                    </span>
-                  </div>
-                </Link>
+                    <div className="mt-3 flex justify-between items-center">
+                      <span className="text-secondary text-sm">Total</span>
+                      <span className="text-primary font-semibold text-sm">
+                        {numberToIdr({ nominal: order.total as number })}
+                      </span>
+                    </div>
+                  </Link>
+                  {isPendingPayment && (
+                    <div className="px-4 pb-4">
+                      <Link
+                        href={`/checkout/payment/${order.id}`}
+                        data-testid={`lanjut-bayar-${order.order_number}`}
+                        className="flex items-center justify-center rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-background hover:opacity-90 transition-opacity"
+                      >
+                        Lanjut Bayar
+                      </Link>
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>

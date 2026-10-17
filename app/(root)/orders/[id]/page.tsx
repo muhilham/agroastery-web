@@ -103,6 +103,17 @@ export default async function OrderDetailPage({ params }: PageProps) {
           </span>
         </div>
 
+        {/* #226 P1b: direct recovery path for an unpaid order */}
+        {order.payment_status === "pending_payment" && (
+          <Link
+            href={`/checkout/payment/${order.id}`}
+            data-testid="lanjut-bayar-detail"
+            className="mb-6 flex items-center justify-center rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-background hover:opacity-90 transition-opacity"
+          >
+            Lanjut Bayar
+          </Link>
+        )}
+
         {/* Items */}
         <div className="bg-[#1a1a1a] border border-white/10 rounded-xl p-4 mb-4">
           <h2 className="text-primary font-medium mb-3">Produk</h2>

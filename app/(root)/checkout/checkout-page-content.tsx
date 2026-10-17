@@ -16,6 +16,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { LoaderCircle, ShoppingBag } from "lucide-react";
+import PendingOrderBanner from "@/components/PendingOrderBanner";
 import { useCart } from "@/lib/hooks/useCart";
 import { trackBeginCheckout } from "@/lib/analytics/gtag";
 import Link from "next/link";
@@ -25,6 +26,7 @@ import { useAddresses } from "@/lib/hooks/useAddresses";
 import type { Address } from "@/lib/hooks/useAddresses";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { guestFormSchema, loggedInFormSchema, type TForm } from "./checkoutSchemas";
+import { savePendingOrder } from "@/lib/pending-order";
 import OrderSummary from "@/components/checkout/OrderSummary";
 import CheckoutForm from "@/components/checkout/CheckoutForm";
 import ShippingSelector from "@/components/checkout/ShippingSelector";
@@ -273,7 +275,19 @@ export default function CheckoutPageContent() {
       }
 
       // Redirect to QR payment page
-      const { orderId } = data;
+      const { orderId, orderNumber, total: orderTotal } = data as {
+        orderId: string;
+        orderNumber: string;
+        total: number;
+      };
+      // #226 P1a: remember the unpaid order in this browser so a customer who
+      // leaves before paying can come back via the /checkout or /cart banner.
+      savePendingOrder({
+        orderId,
+        orderNumber,
+        total: orderTotal,
+        savedAt: new Date().toISOString(),
+      });
       router.push(`/checkout/payment/${orderId}`);
     } catch (err) {
       console.error("Checkout error:", err);
@@ -328,6 +342,9 @@ export default function CheckoutPageContent() {
             <p className="text-primary text-lg mb-2">Keranjang kamu kosong</p>
             <p className="text-secondary text-sm">Tambahkan produk untuk melanjutkan checkout</p>
           </div>
+          {/* #226 P1a: the empty-cart view is the likeliest landing for a
+              returning buyer who abandoned payment but paid nothing since. */}
+          <PendingOrderBanner />
           <Link href="/katalog">
             <Button>Lihat Produk</Button>
           </Link>
@@ -370,6 +387,9 @@ export default function CheckoutPageContent() {
         <h1 className="text-xl font-semibold text-primary mb-6 tracking-widest uppercase mt-4">
           Checkout
         </h1>
+
+        {/* #226 P1a: recover an abandoned unpaid order from this browser */}
+        <PendingOrderBanner />
 
         <OrderSummary cartItems={cartItems} cartCount={cartCount} />
 

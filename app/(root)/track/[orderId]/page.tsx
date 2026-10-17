@@ -92,6 +92,18 @@ export default async function TrackingPage({ params }: PageProps) {
           </span>
         </div>
 
+        {/* #226 P1b: pending_payment is the one status where action matters —
+            the lookup funnel dead-ended here before. */}
+        {order.payment_status === "pending_payment" && (
+          <Link
+            href={`/checkout/payment/${orderId}`}
+            data-testid="lanjut-bayar-track"
+            className="mb-4 flex items-center justify-center rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-background hover:opacity-90 transition-opacity"
+          >
+            Lanjut Bayar
+          </Link>
+        )}
+
         {/* Shipping + live Biteship timeline */}
         {order.shipping_courier === "pickup" ? (
           <div className="bg-[#1a1a1a] border border-white/10 rounded-xl p-4 mb-4">
