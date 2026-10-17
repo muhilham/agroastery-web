@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
 import QrPaymentClient from "./qr-payment-client";
+import { PENDING_ORDER_STORAGE_KEY, PENDING_ORDER_VERSION_KEY } from "@/lib/pending-order";
 
 const mockPush = vi.fn();
 
@@ -29,6 +30,7 @@ const defaultProps = {
   total: 150000,
   qrString: "00020101021226...",
   qrExpiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+  hasPaymentEmail: true,
 };
 
 function mockFetch(response: object, ok = true) {
@@ -316,5 +318,97 @@ describe("QrPaymentClient — expiry grace window (#187)", () => {
       configurable: true,
       value: originalLocation,
     });
+  });
+});
+
+describe("QrPaymentClient — recovery copy + pointer lifecycle (#226 P1a/P1c)", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    vi.useFakeTimers({ toFake: ["setInterval", "clearInterval", "Date"] });
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  it("promises the email link only when a payment email was sent", () => {
+    mockFetch({ payment_status: "pending_payment" });
+    render(<QrPaymentClient {...defaultProps} hasPaymentEmail={true} />);
+    expect(screen.getByTestId("recovery-copy").textContent).toMatch(/email Anda/i);
+  });
+
+  it("points at the checkout banner instead of email when no email exists", () => {
+    mockFetch({ payment_status: "pending_payment" });
+    render(<QrPaymentClient {...defaultProps} hasPaymentEmail={false} />);
+    const copy = screen.getByTestId("recovery-copy").textContent ?? "";
+    expect(copy).not.toMatch(/email/i);
+    expect(copy).toMatch(/Lanjut bayar/i);
+  });
+
+  it("clears the same-browser pending pointer when payment is detected", async () => {
+    mockFetch({ payment_status: "paid" });
+    const originalLocation = window.location;
+    let navigatedTo = "";
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: {
+        ...originalLocation,
+        get href() {
+          return navigatedTo;
+        },
+        set href(value: string) {
+          navigatedTo = value;
+        },
+      },
+    });
+
+    localStorage.setItem(PENDING_ORDER_STORAGE_KEY, JSON.stringify({
+      orderId: defaultProps.orderId,
+      orderNumber: defaultProps.orderNumber,
+      total: defaultProps.total,
+      savedAt: new Date().toISOString(),
+    }));
+    localStorage.setItem(PENDING_ORDER_VERSION_KEY, "1");
+
+    render(<QrPaymentClient {...defaultProps} />);
+    await act(async () => { vi.advanceTimersByTime(3000); });
+
+    expect(localStorage.getItem(PENDING_ORDER_STORAGE_KEY)).toBeNull();
+    expect(navigatedTo).toBe(`/checkout/success?order=${defaultProps.orderId}`);
+
+    // @ts-expect-error restore jsdom location for other tests
+    delete window.location;
+    Object.defineProperty(window, "location", { configurable: true, value: originalLocation });
+  });
+
+  it("keeps a pointer belonging to a DIFFERENT order when this one pays", async () => {
+    mockFetch({ payment_status: "paid" });
+    const other = {
+      orderId: "bbbbbbbb-2222-2222-2222-222222222222",
+      orderNumber: "AGR-20260903-NEW",
+      total: 99000,
+      savedAt: new Date().toISOString(),
+    };
+    localStorage.setItem(PENDING_ORDER_STORAGE_KEY, JSON.stringify(other));
+    localStorage.setItem(PENDING_ORDER_VERSION_KEY, "1");
+
+    const originalLocation = window.location;
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: { ...originalLocation, assign() {}, replace() {} },
+    });
+
+    render(<QrPaymentClient {...defaultProps} />);
+    await act(async () => { vi.advanceTimersByTime(3000); });
+
+    // Paying order A must not destroy the recovery pointer for newer order B
+    // (checkout B abandoned, then A paid via its own QR page, same browser).
+    expect(localStorage.getItem(PENDING_ORDER_STORAGE_KEY)).toContain(other.orderId);
+
+    // @ts-expect-error restore jsdom location for other tests
+    delete window.location;
+    Object.defineProperty(window, "location", { configurable: true, value: originalLocation });
   });
 });
