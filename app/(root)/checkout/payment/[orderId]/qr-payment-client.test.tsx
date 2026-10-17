@@ -43,7 +43,7 @@ function mockFetch(response: object, ok = true) {
 describe("QrPaymentClient — simulate button", () => {
   beforeEach(() => {
     vi.useFakeTimers({ toFake: ["setInterval", "clearInterval", "Date"] });
-    mockFetch({ payment_status: "pending_payment" });
+    mockFetch({ payment_status: "unpaid" });
   });
 
   afterEach(() => {
@@ -121,7 +121,7 @@ describe("QrPaymentClient — simulate button", () => {
 describe("QrPaymentClient — QR display", () => {
   beforeEach(() => {
     vi.useFakeTimers({ toFake: ["setInterval", "clearInterval", "Date"] });
-    mockFetch({ payment_status: "pending_payment" });
+    mockFetch({ payment_status: "unpaid" });
   });
 
   afterEach(() => {
@@ -151,7 +151,7 @@ describe("QrPaymentClient — QR display", () => {
   it("automatically refreshes once the countdown expires", async () => {
     global.fetch = vi.fn().mockImplementation(async (url: string) => url.includes("refresh-qr")
       ? { ok: true, json: async () => ({ qrString: "new-qr", qrExpiresAt: new Date(Date.now() + 3600_000).toISOString() }) }
-      : { ok: true, json: async () => ({ payment_status: "pending_payment" }) });
+      : { ok: true, json: async () => ({ payment_status: "unpaid" }) });
     render(<QrPaymentClient {...defaultProps} qrExpiresAt={new Date(Date.now() + 1000).toISOString()} />);
     await act(async () => { vi.advanceTimersByTime(1000); });
     await waitFor(() => expect(global.fetch).toHaveBeenCalledWith("/api/checkout/refresh-qr", expect.any(Object)));
@@ -160,7 +160,7 @@ describe("QrPaymentClient — QR display", () => {
   it("stops auto refresh after three failures and leaves manual state", async () => {
     global.fetch = vi.fn().mockImplementation(async (url: string) => url.includes("refresh-qr")
       ? { ok: false, json: async () => ({ error: "Gagal" }) }
-      : { ok: true, json: async () => ({ payment_status: "pending_payment" }) });
+      : { ok: true, json: async () => ({ payment_status: "unpaid" }) });
     render(<QrPaymentClient {...defaultProps} qrExpiresAt={null} />);
     await act(async () => { await Promise.resolve(); await Promise.resolve(); });
     await act(async () => { await vi.advanceTimersByTimeAsync(5000); });
@@ -174,7 +174,7 @@ describe("QrPaymentClient — QR display", () => {
   it("shows a notice after auto refresh succeeds", async () => {
     global.fetch = vi.fn().mockImplementation(async (url: string) => url.includes("refresh-qr")
       ? { ok: true, json: async () => ({ qrString: "new-qr", qrExpiresAt: new Date(Date.now() + 3600_000).toISOString() }) }
-      : { ok: true, json: async () => ({ payment_status: "pending_payment" }) });
+      : { ok: true, json: async () => ({ payment_status: "unpaid" }) });
     render(<QrPaymentClient {...defaultProps} qrExpiresAt={null} />);
     await waitFor(() => expect(screen.getByText(/QR baru dibuat/i)).toBeDefined());
   });
@@ -182,7 +182,7 @@ describe("QrPaymentClient — QR display", () => {
   it("does not retry when the total hold is expired", async () => {
     global.fetch = vi.fn().mockImplementation(async (url: string) => url.includes("refresh-qr")
       ? { ok: false, json: async () => ({ error: "Batas waktu pemesanan telah terlewati. Silakan pesan ulang.", code: "HOLD_EXPIRED" }) }
-      : { ok: true, json: async () => ({ payment_status: "pending_payment" }) });
+      : { ok: true, json: async () => ({ payment_status: "unpaid" }) });
     render(<QrPaymentClient {...defaultProps} qrExpiresAt={null} />);
     await act(async () => { await Promise.resolve(); vi.advanceTimersByTime(60_000); });
     const refreshCalls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls.filter(([url]) => url.includes("refresh-qr"));
@@ -196,7 +196,7 @@ describe("QrPaymentClient — QR display", () => {
     Object.defineProperty(window, "location", { configurable: true, writable: true, value: { ...origLocation, reload } });
     global.fetch = vi.fn().mockImplementation(async (url: string) => url.includes("refresh-qr")
       ? { ok: false, json: async () => ({ error: "Status pesanan berubah. Muat ulang halaman.", code: "STATE_CHANGED" }) }
-      : { ok: true, json: async () => ({ payment_status: "pending_payment" }) });
+      : { ok: true, json: async () => ({ payment_status: "unpaid" }) });
     render(<QrPaymentClient {...defaultProps} qrExpiresAt={null} />);
     await act(async () => { await Promise.resolve(); await Promise.resolve(); });
     await act(async () => { await vi.advanceTimersByTimeAsync(5000); });
@@ -268,6 +268,24 @@ describe("QrPaymentClient — expiry grace window (#187)", () => {
     expect(screen.getByText(/kedaluwarsa/i)).toBeDefined();
   });
 
+  it("treats an ORDER status of cancelled as terminal while payment_status is still unpaid", async () => {
+    // `cancelled` lives on the status column, never on payment_status
+    // (unpaid/paid/expired/refunded) — checking payment_status there never
+    // matched, so a manually cancelled order kept polling forever.
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ payment_status: "unpaid", status: "cancelled" }),
+    });
+
+    render(<QrPaymentClient {...defaultProps} />);
+
+    await act(async () => {
+      vi.advanceTimersByTime(3000); // first cancelled observation → grace starts
+    });
+
+    expect(screen.getByTestId("payment-grace-notice")).toBeDefined();
+  });
+
   it("hard-navigates to success when a late payment lands during the grace window", async () => {
     // Issue #186: must be a full page load (window.location.href), NOT
     // router.push — SPA flight renders /checkout/success without the
@@ -334,13 +352,13 @@ describe("QrPaymentClient — recovery copy + pointer lifecycle (#226 P1a/P1c)",
   });
 
   it("promises the email link only when a payment email was sent", () => {
-    mockFetch({ payment_status: "pending_payment" });
+    mockFetch({ payment_status: "unpaid" });
     render(<QrPaymentClient {...defaultProps} hasPaymentEmail={true} />);
     expect(screen.getByTestId("recovery-copy").textContent).toMatch(/email Anda/i);
   });
 
   it("points at the checkout banner instead of email when no email exists", () => {
-    mockFetch({ payment_status: "pending_payment" });
+    mockFetch({ payment_status: "unpaid" });
     render(<QrPaymentClient {...defaultProps} hasPaymentEmail={false} />);
     const copy = screen.getByTestId("recovery-copy").textContent ?? "";
     expect(copy).not.toMatch(/email/i);

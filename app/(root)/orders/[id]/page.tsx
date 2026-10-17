@@ -103,8 +103,10 @@ export default async function OrderDetailPage({ params }: PageProps) {
           </span>
         </div>
 
-        {/* #226 P1b: direct recovery path for an unpaid order */}
-        {order.payment_status === "pending_payment" && (
+        {/* #226 P1b: direct recovery path for an unpaid order.
+            `pending_payment` is an ORDER status; payment_status is
+            unpaid/paid/expired/refunded — both must be checked. */}
+        {order.status === "pending_payment" && order.payment_status === "unpaid" && (
           <Link
             href={`/checkout/payment/${order.id}`}
             data-testid="lanjut-bayar-detail"

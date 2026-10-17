@@ -76,7 +76,12 @@ export default async function OrdersPage() {
               // #226 P1b: unpaid orders get a direct pay CTA. The row is a
               // div (not a Link) because a <Link> inside a <Link> is invalid;
               // the whole info area stays a link to the detail page.
-              const isPendingPayment = order.payment_status === "pending_payment";
+              // Predicate is a PAIR: `pending_payment` is an ORDER status,
+              // never a payment_status (that column is unpaid/paid/expired/
+              // refunded — verified against prod). Comparing payment_status
+              // to 'pending_payment' is always false and kills the CTA.
+              const isPendingPayment =
+                order.status === "pending_payment" && order.payment_status === "unpaid";
               return (
                 <div
                   key={order.id}

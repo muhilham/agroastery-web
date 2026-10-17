@@ -17,10 +17,14 @@ const pointer = {
   savedAt: new Date().toISOString(),
 };
 
-function mockStatusFetch(payment_status: string | null) {
+/** Mirrors the real /api/orders/[orderId]/status payload, which returns BOTH
+ *  columns. Real enum pairs: (pending_payment, unpaid) is a live order;
+ *  (cancelled, expired) and (paid, paid) are terminal; (cancelled, unpaid)
+ *  exists in prod and must NOT show a pay banner. */
+function mockStatusFetch(payment_status: string, status = "pending_payment") {
   return vi.fn().mockImplementation((url: string) => {
     if (String(url).includes("/status")) {
-      return Promise.resolve({ ok: true, json: async () => ({ payment_status }) });
+      return Promise.resolve({ ok: true, json: async () => ({ payment_status, status }) });
     }
     return Promise.resolve({ ok: false, json: async () => ({}) });
   });
@@ -36,14 +40,14 @@ describe("PendingOrderBanner (#226 P1a)", () => {
   });
 
   it("renders nothing when no pointer is stored", () => {
-    vi.stubGlobal("fetch", mockStatusFetch("pending_payment"));
+    vi.stubGlobal("fetch", mockStatusFetch("unpaid"));
     render(<PendingOrderBanner />);
     expect(screen.queryByText(/belum dibayar/i)).toBeNull();
   });
 
   it("shows the banner with order number and amount when the order is still unpaid", async () => {
     savePendingOrder(pointer);
-    vi.stubGlobal("fetch", mockStatusFetch("pending_payment"));
+    vi.stubGlobal("fetch", mockStatusFetch("unpaid"));
 
     render(<PendingOrderBanner />);
 
@@ -54,7 +58,7 @@ describe("PendingOrderBanner (#226 P1a)", () => {
 
   it("verifies against the status endpoint before showing", async () => {
     savePendingOrder(pointer);
-    const fetchMock = mockStatusFetch("pending_payment");
+    const fetchMock = mockStatusFetch("unpaid");
     vi.stubGlobal("fetch", fetchMock);
 
     render(<PendingOrderBanner />);
@@ -65,7 +69,20 @@ describe("PendingOrderBanner (#226 P1a)", () => {
 
   it("clears the pointer and stays hidden when the order is already paid", async () => {
     savePendingOrder(pointer);
-    vi.stubGlobal("fetch", mockStatusFetch("paid"));
+    vi.stubGlobal("fetch", mockStatusFetch("paid", "paid"));
+
+    render(<PendingOrderBanner />);
+
+    await waitFor(() => expect(loadPendingOrder()).toBeNull());
+    expect(screen.queryByText(/belum dibayar/i)).toBeNull();
+  });
+
+  it("clears the pointer for a cancelled+unpaid order — no banner for a dead link", async () => {
+    // Live prod pair (one row today): payment_status is still 'unpaid' after a
+    // cancellation, so a payment_status-only check would show a pay banner
+    // whose link HOLD_EXPIREDs on click.
+    savePendingOrder(pointer);
+    vi.stubGlobal("fetch", mockStatusFetch("unpaid", "cancelled"));
 
     render(<PendingOrderBanner />);
 
@@ -75,7 +92,7 @@ describe("PendingOrderBanner (#226 P1a)", () => {
 
   it("clears the pointer when the order expired", async () => {
     savePendingOrder(pointer);
-    vi.stubGlobal("fetch", mockStatusFetch("expired"));
+    vi.stubGlobal("fetch", mockStatusFetch("expired", "cancelled"));
 
     render(<PendingOrderBanner />);
 
@@ -108,7 +125,7 @@ describe("PendingOrderBanner (#226 P1a)", () => {
   it("ignores a payload stored under a mismatched version key", async () => {
     localStorage.setItem(PENDING_ORDER_STORAGE_KEY, JSON.stringify(pointer));
     localStorage.setItem(PENDING_ORDER_VERSION_KEY, "0");
-    const fetchMock = mockStatusFetch("pending_payment");
+    const fetchMock = mockStatusFetch("unpaid");
     vi.stubGlobal("fetch", fetchMock);
 
     render(<PendingOrderBanner />);
