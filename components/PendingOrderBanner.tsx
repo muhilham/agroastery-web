@@ -22,9 +22,9 @@ export default function PendingOrderBanner() {
     fetch(`/api/orders/${pending.orderId}/status`)
       .then((res) => {
         if (cancelled) return null;
-        // 404/500: order gone or DB hiccup only on !res.ok paths that are
-        // terminal (404) clear the pointer; genuine network failures throw
-        // and are handled below, keeping the pointer for the next visit.
+        // 404 is terminal (order no longer exists) → clear the pointer.
+        // Any other !res.ok (500 etc.) throws into the catch below, which
+        // deliberately KEEPS the pointer so the next mount retries.
         if (res.status === 404) return { terminal: true as const };
         if (!res.ok) throw new Error(`status ${res.status}`);
         return res.json().then((data: { payment_status?: string }) => ({
