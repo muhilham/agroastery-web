@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.38.0](https://github.com/muhilham/agroastery-web/compare/v0.37.0...v0.38.0) (2026-10-17)
+
+
+### Features
+
+* **checkout:** payment recovery entry points for abandoned QRIS orders ([#226](https://github.com/muhilham/agroastery-web/issues/226)) ([#227](https://github.com/muhilham/agroastery-web/issues/227)) ([80f477c](https://github.com/muhilham/agroastery-web/commit/80f477c0937b8db15ace43582f6a2fb02ce3059e))
+
 ## [0.37.0](https://github.com/muhilham/agroastery-web/compare/v0.36.3...v0.37.0) (2026-10-15)
 
 
