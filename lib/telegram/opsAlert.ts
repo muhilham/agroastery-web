@@ -3,7 +3,10 @@ import { createSupabaseAdminClient } from "@/lib/supabase/server";
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type OpsAlertParams = {
-  orderId: string;
+  /** ecom_orders id — persisted to notification_logs.order_id which has an
+   *  FK to ecom_orders. Pass null (not a foreign uuid!) for non-ecom rows
+   *  like consultation bookings; the id goes in the issue text instead. */
+  orderId: string | null;
   orderNumber: string;
   issue: string;
   action?: string | null;
@@ -67,7 +70,7 @@ async function logOpsNotification({
   status,
   error,
 }: {
-  orderId: string;
+  orderId: string | null;
   orderNumber: string;
   status: "sent" | "failed" | "skipped";
   error?: string;

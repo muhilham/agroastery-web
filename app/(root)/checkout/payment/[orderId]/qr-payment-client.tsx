@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { numberToIdr } from "@/lib/numberToIdr";
 import { useCart } from "@/lib/hooks/useCart";
 import { clearPendingOrder, loadPendingOrder } from "@/lib/pending-order";
+import { QRIS_REFRESH_AT_SECONDS } from "@/lib/pivot/qris-timing";
 import { RefreshCw, Loader2, Camera, Download } from "lucide-react";
 
 interface Props {
@@ -210,8 +211,15 @@ export default function QrPaymentClient({
     }
   }, [orderId]);
 
+  // #231 A3: the acquirer layer (BRI switch) evidently stops honoring a
+  // dynamic QRIS RRN long before the Pivot session's 60-min expiryAt, and the
+  // old design only regenerated at countdown-zero — minutes after the QR had
+  // gone unpayable. Proactively regenerate once the displayed QR enters the
+  // safety horizon, so an on-page customer always scans a young RRN.
+  const needsFreshQr = secondsLeft <= QRIS_REFRESH_AT_SECONDS;
+
   useEffect(() => {
-    if (!isExpired || autoExpiryRef.current === qrExpiresAt || !qrString) return;
+    if (!needsFreshQr || autoExpiryRef.current === qrExpiresAt || !qrString) return;
     autoExpiryRef.current = qrExpiresAt;
     autoFailuresRef.current = 0;
     let cancelled = false;
@@ -235,7 +243,7 @@ export default function QrPaymentClient({
       cancelled = true;
       if (autoRetryTimerRef.current) clearTimeout(autoRetryTimerRef.current);
     };
-  }, [isExpired, qrExpiresAt, qrString, handleRefresh]);
+  }, [needsFreshQr, qrExpiresAt, qrString, handleRefresh]);
 
   return (
     <div className="min-h-svh flex flex-col bg-background">
@@ -337,6 +345,16 @@ export default function QrPaymentClient({
                 <p className="text-sm font-medium text-red-700 leading-snug">
                   Pembayaran kedaluwarsa. Silakan pesan ulang.
                 </p>
+                {/* #231 A4: the notice said "pesan ulang" but gave no way to do
+                    it. Cart is only cleared on PAID (line above), so the items
+                    are still here — offer an explicit one-click reorder path. */}
+                <Link
+                  href="/cart"
+                  data-testid="reorder-cta"
+                  className="mt-2 inline-flex items-center justify-center w-full rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
+                >
+                  Pesan ulang dari keranjang
+                </Link>
               </div>
             )}
 
@@ -353,11 +371,9 @@ export default function QrPaymentClient({
 
             <Button
               onClick={handleRefresh}
-              disabled={isRefreshing || secondsLeft >= 30}
+              disabled={isRefreshing}
               variant="outline"
-              className={`w-full transition-opacity duration-300 ${
-                secondsLeft >= 30 ? "opacity-30" : "opacity-100"
-              }`}
+              className="w-full transition-opacity duration-300"
             >
               {isRefreshing ? (
                 <Loader2 className="animate-spin w-4 h-4 mr-2" />

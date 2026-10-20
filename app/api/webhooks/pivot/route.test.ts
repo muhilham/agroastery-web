@@ -553,3 +553,158 @@ describe("pivot webhook — ecom orders", () => {
     expect(mockCreateBiteshipDraft).toHaveBeenCalledWith("order-1");
   });
 });
+
+// ── #231 A6: replaced-session (reissue) webhook safety ────────────────────
+describe("pivot webhook — replaced-session recovery (#231 A6)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    process.env.PIVOT_CALLBACK_API_KEY = "test-key";
+  });
+
+  const ORD_UUID = "11111111-2222-3333-4444-555555555555";
+  const ORD_BARE = ORD_UUID.replace(/-/g, "");
+
+  it("recovers a PAID arriving on a REPLACED session via clientReferenceId", async () => {
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "ecom_orders") {
+        return {
+          // select-by-session (idempotency probe) -> nothing; recovery
+          // select-by-id -> row still pending_payment under a NEW session.
+          select: () => ({
+            eq: () => ({
+              single: vi.fn().mockResolvedValue({ data: null, error: null }),
+              maybeSingle: vi.fn().mockResolvedValue({
+                data: { id: ORD_UUID, payment_status: "pending_payment" },
+                error: null,
+              }),
+            }),
+          }),
+          // recovery CAS update, pending_payment step wins
+          update: () => ({
+            eq: () => ({
+              eq: () => ({
+                select: () => ({
+                  maybeSingle: vi.fn().mockResolvedValue({
+                    data: { ...PAID_ORDER_ROW, id: ORD_UUID, order_number: "AGR-RECOVER" },
+                    error: null,
+                  }),
+                }),
+              }),
+              not: () => ({
+                select: () => ({ maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }) }),
+              }),
+            }),
+          }),
+        };
+      }
+      if (table === "ecom_order_items") {
+        return { select: () => ({ eq: () => Promise.resolve({ data: [{ product_name: "Kopi", quantity: 1 }], error: null }) }) };
+      }
+      return { select: () => resolvedChain(null) };
+    });
+    mockRpc.mockResolvedValue({ data: null, error: null });
+
+    const req = webhookReq("PAYMENT.PAID", { id: "ps_OLD", clientReferenceId: ORD_BARE });
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+
+    // Money that landed on a replaced session must run the paid pipeline and
+    // alert ops — never fall through to the consultation path silently.
+    await new Promise((r) => setImmediate(r));
+    expect(mockPaymentNotification).toHaveBeenCalled();
+    expect(mockOpsAlert).toHaveBeenCalledWith(expect.objectContaining({ orderId: ORD_UUID }));
+  });
+
+it("alerts ops when PAID on a replaced session finds the order ALREADY paid (double-pay)", async () => {
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "ecom_orders") {
+        return {
+          select: () => ({
+            eq: () => ({
+              single: vi.fn().mockResolvedValue({ data: null, error: null }),
+              maybeSingle: vi.fn().mockResolvedValue({ data: { id: ORD_UUID, payment_status: "paid" }, error: null }),
+            }),
+          }),
+        };
+      }
+      return { select: () => resolvedChain(null) };
+    });
+
+    const req = webhookReq("PAYMENT.PAID", { id: "ps_OLD2", clientReferenceId: ORD_BARE });
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+
+    await new Promise((r) => setImmediate(r));
+    expect(mockOpsAlert).toHaveBeenCalledWith(
+      expect.objectContaining({ orderId: ORD_UUID, issue: expect.stringContaining("dobel") })
+    );
+    // no second paid pipeline for an already-settled order
+    expect(mockPaymentNotification).not.toHaveBeenCalled();
+  });
+
+    it("does NOT cancel the order when PAYMENT.EXPIRED arrives for a replaced session", async () => {
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "ecom_orders") {
+        return {
+          // CAS update by session id: no match (order now under ps_NEW)
+          update: () => ({
+            eq: () => ({
+              not: () => ({ select: () => ({ maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }) }) }),
+            }),
+          }),
+          // stale-session probe by id -> stored session differs -> downgrade
+          select: () => ({
+            eq: () => ({
+              maybeSingle: vi.fn().mockResolvedValue({
+                data: { id: ORD_UUID, order_number: "AGR-001", pivot_payment_session_id: "ps_NEW" },
+                error: null,
+              }),
+            }),
+          }),
+        };
+      }
+      return { select: () => resolvedChain(null) };
+    });
+    mockRpc.mockResolvedValue({ data: null, error: null });
+
+    const req = webhookReq("PAYMENT.EXPIRED", { id: "ps_OLD", clientReferenceId: ORD_BARE });
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+
+    expect(mockRpc).not.toHaveBeenCalled(); // no stock restore on the live order
+    await new Promise((r) => setImmediate(r));
+    expect(mockOpsAlert).toHaveBeenCalledWith(expect.objectContaining({ orderId: ORD_UUID }));
+  });
+
+  it("still cancels normally when EXPIRED matches the live session (no regression)", async () => {
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "ecom_orders") {
+        return {
+          update: () => ({
+            eq: () => ({
+              not: () => ({ select: () => ({ maybeSingle: vi.fn().mockResolvedValue({ data: { id: "order-9" }, error: null }) }) }),
+            }),
+          }),
+        };
+      }
+      if (table === "ecom_order_items") {
+        return { select: () => ({ eq: () => Promise.resolve({ data: [{ variant_id: "v9", quantity: 1 }], error: null }) }) };
+      }
+      return { select: () => resolvedChain(null) };
+    });
+    mockRpc.mockResolvedValue({ data: null, error: null });
+
+    const req = webhookReq("PAYMENT.EXPIRED", { id: "ps_live" });
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+    expect(mockRpc).toHaveBeenCalledWith("ecom_restore_stock", { p_variant_id: "v9", p_quantity: 1 });
+  });
+
+  it("restoreUuid handles bare hex, dashed input, and junk", async () => {
+    const { restoreUuid } = await import("./route");
+    expect(restoreUuid(ORD_BARE)).toBe(ORD_UUID);
+    expect(restoreUuid(ORD_UUID)).toBe(ORD_UUID);
+    expect(restoreUuid("not-a-uuid")).toBeNull();
+    expect(restoreUuid(undefined)).toBeNull();
+  });
+});

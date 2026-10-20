@@ -6,6 +6,7 @@ import QRCode from "react-qr-code";
 import { RefreshCw, Loader2, Camera, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { numberToIdr } from "@/lib/numberToIdr";
+import { QRIS_REFRESH_AT_SECONDS } from "@/lib/pivot/qris-timing";
 
 interface Props {
   bookingId: string;
@@ -104,8 +105,13 @@ export default function QrConsultationClient({
     }
   }, [bookingId]);
 
+  // #231 A3 (same class as the checkout page): regenerate proactively once the
+  // displayed QR enters the safety horizon instead of waiting for countdown-0,
+  // because the acquirer kills payability long before the Pivot session ends.
+  const needsFreshQr = secondsLeft <= QRIS_REFRESH_AT_SECONDS;
+
   useEffect(() => {
-    if (!isExpired || autoExpiryRef.current === qrExpiresAt || !qrString) return;
+    if (!needsFreshQr || autoExpiryRef.current === qrExpiresAt || !qrString) return;
     autoExpiryRef.current = qrExpiresAt;
     autoFailuresRef.current = 0;
     let cancelled = false;
@@ -126,7 +132,7 @@ export default function QrConsultationClient({
       cancelled = true;
       if (autoRetryTimerRef.current) clearTimeout(autoRetryTimerRef.current);
     };
-  }, [isExpired, qrExpiresAt, qrString, handleRefresh]);
+  }, [needsFreshQr, qrExpiresAt, qrString, handleRefresh]);
 
   const handleSimulate = useCallback(async () => {
     setIsSimulating(true);
@@ -209,9 +215,9 @@ export default function QrConsultationClient({
 
         <Button
           onClick={handleRefresh}
-          disabled={isRefreshing || secondsLeft >= 30}
+          disabled={isRefreshing}
           variant="outline"
-          className={`w-full transition-opacity duration-300 ${secondsLeft >= 30 ? "opacity-30" : "opacity-100"}`}
+          className="w-full transition-opacity duration-300"
         >
           {isRefreshing ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : <RefreshCw className="w-4 h-4 mr-2" />}
           {isRefreshing ? "Memperbarui..." : "Perbarui QR"}
