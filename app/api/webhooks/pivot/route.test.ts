@@ -615,7 +615,34 @@ describe("pivot webhook — replaced-session recovery (#231 A6)", () => {
     expect(mockOpsAlert).toHaveBeenCalledWith(expect.objectContaining({ orderId: ORD_UUID }));
   });
 
-  it("does NOT cancel the order when PAYMENT.EXPIRED arrives for a replaced session", async () => {
+it("alerts ops when PAID on a replaced session finds the order ALREADY paid (double-pay)", async () => {
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "ecom_orders") {
+        return {
+          select: () => ({
+            eq: () => ({
+              single: vi.fn().mockResolvedValue({ data: null, error: null }),
+              maybeSingle: vi.fn().mockResolvedValue({ data: { id: ORD_UUID, payment_status: "paid" }, error: null }),
+            }),
+          }),
+        };
+      }
+      return { select: () => resolvedChain(null) };
+    });
+
+    const req = webhookReq("PAYMENT.PAID", { id: "ps_OLD2", clientReferenceId: ORD_BARE });
+    const res = await POST(req);
+    expect(res.status).toBe(200);
+
+    await new Promise((r) => setImmediate(r));
+    expect(mockOpsAlert).toHaveBeenCalledWith(
+      expect.objectContaining({ orderId: ORD_UUID, issue: expect.stringContaining("dobel") })
+    );
+    // no second paid pipeline for an already-settled order
+    expect(mockPaymentNotification).not.toHaveBeenCalled();
+  });
+
+    it("does NOT cancel the order when PAYMENT.EXPIRED arrives for a replaced session", async () => {
     mockFrom.mockImplementation((table: string) => {
       if (table === "ecom_orders") {
         return {

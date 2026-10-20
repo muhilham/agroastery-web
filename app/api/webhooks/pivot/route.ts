@@ -271,7 +271,16 @@ async function recoverPaidByOrderId(
   if (!target) return false; // not an ecom order — consultation path may own it
 
   if (target.payment_status === "paid") {
-    // Already paid (settled through the live session or a duplicate delivery).
+    // Order already paid. Normal cause: duplicate webhook delivery (safe).
+    // #231 A6 risk: with two live sessions (old QR + reissued QR) a customer
+    // CAN pay both. The second PAID lands here — money in twice, order
+    // already shipped-path. Alert loudly so ops refunds.
+    sendOpsAlert({
+      orderId,
+      orderNumber: "",
+      issue: `PAID sesi ${paymentSessionId} datang saat order SUDAH paid — kemungkinan bayar dobel (QR lama + QR baru), cek mutasi & refund bila perlu (#231)`,
+      action: "Cek dua charge di Pivot dashboard",
+    }).catch(() => {});
     return true;
   }
 
@@ -460,8 +469,10 @@ async function handleConsultationPaid(
     ).data;
     if (byId && byId.pivot_payment_session_id !== paymentSessionId) {
       sendOpsAlert({
-        orderId: byId.id as string,
-        orderNumber: `BOOKING`,
+        // booking id is NOT an ecom_orders id — keep it out of order_id (FK),
+        // surface it in the issue text instead.
+        orderId: null,
+        orderNumber: `BOOKING ${byId.id}`,
         issue: `PAID pada sesi QRIS LAMA (${paymentSessionId}) — booking konsultasi dipulihkan via clientReferenceId (#231)`,
         action: null,
       }).catch(() => {});
