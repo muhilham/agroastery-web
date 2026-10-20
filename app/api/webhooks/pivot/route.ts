@@ -484,7 +484,16 @@ async function handleConsultationPaid(
   }
 
   if (!booking) {
+    // #231 A6: PAID whose session matches neither the live order path nor any
+    // booking (nor recovers via clientReferenceId) = money landed with no
+    // home. A console.warn is how Amin-2 got silently lost before; escalate.
     console.warn(`Pivot webhook: no consultation booking for session ${paymentSessionId}`);
+    sendOpsAlert({
+      orderId: null,
+      orderNumber: "",
+      issue: `PAID sesi ${paymentSessionId} tidak resolve ke order/booking mana pun — cek Pivot dashboard & mutasi (#231)`,
+      action: "Reconciliation manual",
+    }).catch(() => {});
     return;
   }
   if (booking.status === "confirmed") return;
