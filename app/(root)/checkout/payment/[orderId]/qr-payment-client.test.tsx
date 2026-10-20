@@ -29,7 +29,7 @@ const defaultProps = {
   orderNumber: "AGR-20260415-ABCD",
   total: 150000,
   qrString: "00020101021226...",
-  qrExpiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+  qrExpiresAt: new Date(Date.now() + 55 * 60 * 1000).toISOString(),
   hasPaymentEmail: true,
 };
 
@@ -410,5 +410,53 @@ describe("QrPaymentClient — recovery copy + pointer lifecycle (#226 P1a/P1c)",
     // @ts-expect-error restore jsdom location for other tests
     delete window.location;
     Object.defineProperty(window, "location", { configurable: true, value: originalLocation });
+  });
+});
+
+describe("QrPaymentClient — proactive reissue + dead-state CTA (#231 A3/A4)", () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["setInterval", "clearInterval", "Date"] });
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  it("auto-regenerates when the QR enters the horizon, long before countdown-zero", async () => {
+    global.fetch = vi.fn().mockImplementation(async (url: string) => url.includes("refresh-qr")
+      ? { ok: true, json: async () => ({ qrString: "new-qr", qrExpiresAt: new Date(Date.now() + 55 * 60_000).toISOString() }) }
+      : { ok: true, json: async () => ({ payment_status: "pending_payment" }) });
+    // 11 min remaining < 48-min trigger: pre-fix this NEVER fired (only at 0).
+    render(<QrPaymentClient {...defaultProps} qrExpiresAt={new Date(Date.now() + 11 * 60_000).toISOString()} />);
+    await waitFor(() => expect(global.fetch).toHaveBeenCalledWith("/api/checkout/refresh-qr", expect.any(Object)));
+  });
+
+  it("does NOT auto-regenerate while the QR is outside the horizon", async () => {
+    const fetchMock = vi.fn().mockImplementation(async () => ({ ok: true, json: async () => ({ payment_status: "pending_payment" }) }));
+    global.fetch = fetchMock;
+    render(<QrPaymentClient {...defaultProps} />); // defaultProps = 55 min remaining
+    await act(async () => { vi.advanceTimersByTime(60_000); });
+    expect(fetchMock.mock.calls.filter(([u]) => String(u).includes("refresh-qr"))).toHaveLength(0);
+  });
+
+  it("#231 A3: manual Perbarui QR is enabled with plenty of time left", async () => {
+    global.fetch = vi.fn().mockImplementation(async (url: string) => url.includes("refresh-qr")
+      ? { ok: true, json: async () => ({ qrString: "new-qr", qrExpiresAt: new Date(Date.now() + 55 * 60_000).toISOString() }) }
+      : { ok: true, json: async () => ({ payment_status: "pending_payment" }) });
+    render(<QrPaymentClient {...defaultProps} />); // 55 min remaining: outside the horizon, pre-fix button was disabled
+    const btn = screen.getByRole("button", { name: /perbarui qr/i });
+    expect(btn.hasAttribute("disabled")).toBe(false);
+  });
+
+  it("#231 A4: dead state offers a reorder CTA into the cart", async () => {
+    global.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ payment_status: "expired" }) });
+    render(<QrPaymentClient {...defaultProps} />);
+    await act(async () => { vi.advanceTimersByTime(3000); }); // observe expired -> grace
+    await act(async () => { vi.advanceTimersByTime(10 * 60 * 1000 + 3000); }); // grace lapses
+    expect(screen.getByTestId("payment-cancelled-notice")).toBeDefined();
+    const cta = screen.getByTestId("reorder-cta");
+    expect(cta.getAttribute("href")).toBe("/cart");
   });
 });

@@ -5,14 +5,10 @@ const PIVOT_MERCHANT_ID = process.env.PIVOT_MERCHANT_ID ?? "";
 const PIVOT_MERCHANT_SECRET = process.env.PIVOT_MERCHANT_SECRET ?? "";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://agroastery.com";
 
-/**
- * QRIS payment-session expiry, merchant-set via `expiryAt`.
- * Pivot defaults session expiry to 15 mins. QRIS acquirer ceilings in Pivot
- * docs are 28,000s (BRI) and 24h (BNC); the production acquirer and whether
- * Pivot echoes versus clamps this value remain unverified (issue #221 gap 1).
- */
-export const QRIS_EXPIRY_MINUTES = 60;
-export const QRIS_MAX_HOLD_MINUTES = 240;
+// QRIS timing constants live in ./qris-timing.ts so client components can
+// import them without bundling this API client (issue #231).
+export { QRIS_EXPIRY_MINUTES, QRIS_MAX_HOLD_MINUTES } from "./qris-timing";
+import { QRIS_EXPIRY_MINUTES } from "./qris-timing";
 
 // ─── Token cache ─────────────────────────────────────────────────────────────
 
