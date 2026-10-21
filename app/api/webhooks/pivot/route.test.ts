@@ -524,7 +524,7 @@ describe("pivot webhook — ecom orders", () => {
         return {
           select: () => ({
             eq: () => ({
-              single: vi.fn().mockResolvedValue({ data: { id: "order-1", payment_status: "pending_payment" }, error: null }),
+              single: vi.fn().mockResolvedValue({ data: { id: "order-1", payment_status: "unpaid" }, error: null }),
             }),
           }),
           ...mockPaidUpdate(PAID_ORDER_ROW),
@@ -565,36 +565,43 @@ describe("pivot webhook — replaced-session recovery (#231 A6)", () => {
   const ORD_BARE = ORD_UUID.replace(/-/g, "");
 
   it("recovers a PAID arriving on a REPLACED session via clientReferenceId", async () => {
+    const recoveryEq: Array<[string, unknown]> = [];
     mockFrom.mockImplementation((table: string) => {
       if (table === "ecom_orders") {
         return {
           // select-by-session (idempotency probe) -> nothing; recovery
-          // select-by-id -> row still pending_payment under a NEW session.
+          // select-by-id -> row still awaiting payment under a NEW session.
+          // payment_status 'unpaid' is the only truthful fixture (#226: the
+          // column never holds 'pending_payment').
           select: () => ({
             eq: () => ({
               single: vi.fn().mockResolvedValue({ data: null, error: null }),
               maybeSingle: vi.fn().mockResolvedValue({
-                data: { id: ORD_UUID, payment_status: "pending_payment" },
+                data: { id: ORD_UUID, payment_status: "unpaid" },
                 error: null,
               }),
             }),
           }),
-          // recovery CAS update, pending_payment step wins
-          update: () => ({
-            eq: () => ({
-              eq: () => ({
-                select: () => ({
-                  maybeSingle: vi.fn().mockResolvedValue({
-                    data: { ...PAID_ORDER_ROW, id: ORD_UUID, order_number: "AGR-RECOVER" },
-                    error: null,
-                  }),
-                }),
+          // Recovery CAS update: the row EXISTS and is unpaid, so the update
+          // may only win when the filter uses the real enum. A regression to
+          // .eq("payment_status","pending_payment") matches zero rows -> the
+          // mock returns null -> the test fails instead of silently passing.
+          update: () => {
+            const chain: Record<string, unknown> = {};
+            chain.eq = (col: string, val: unknown) => {
+              recoveryEq.push([col, val]);
+              return chain;
+            };
+            chain.select = () => ({
+              maybeSingle: vi.fn().mockResolvedValue({
+                data: recoveryEq.some(([c, v]) => c === "payment_status" && v === "unpaid")
+                  ? { ...PAID_ORDER_ROW, id: ORD_UUID, order_number: "AGR-RECOVER" }
+                  : null,
+                error: null,
               }),
-              not: () => ({
-                select: () => ({ maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }) }),
-              }),
-            }),
-          }),
+            });
+            return chain;
+          },
         };
       }
       if (table === "ecom_order_items") {

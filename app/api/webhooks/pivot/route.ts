@@ -293,11 +293,15 @@ async function recoverPaidByOrderId(
   const selectFields =
     "id, order_number, customer_name, customer_phone, total, shipping_address";
 
+  // Step 1: the order is awaiting payment. `pending_payment` is an ORDER
+  // status, never a payment_status (CHECK: unpaid/paid/expired/refunded) —
+  // filtering it here matched zero rows and pushed every recovered PAID onto
+  // the expired-step fallback. #226 enum fix, same class.
   let { data: updatedOrder, error } = await supabase
     .from("ecom_orders")
     .update(paidFields)
     .eq("id", orderId)
-    .eq("payment_status", "pending_payment")
+    .eq("payment_status", "unpaid")
     .select(selectFields)
     .maybeSingle();
   let wasExpired = false;
