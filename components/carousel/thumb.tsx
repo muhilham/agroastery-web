@@ -1,9 +1,8 @@
 "use client";
 
 import React from "react";
-import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { COFFEE_BLUR_DATA_URL } from "@/lib/blurDataUrl";
+import { FallbackImage } from "@/components/ui/fallback-image";
 
 type ThumbProps = {
   selected: boolean;
@@ -34,7 +33,7 @@ export const Thumb: React.FC<ThumbProps> = ({
           "focus:outline-none",
         )}
       >
-        <Image src={src} alt={alt} fill className="object-cover" sizes="80px" placeholder="blur" blurDataURL={COFFEE_BLUR_DATA_URL} />
+        <FallbackImage src={src} alt={alt} fill className="object-cover" sizes="80px" />
       </button>
     </div>
   );
