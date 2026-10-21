@@ -93,8 +93,9 @@ export default async function TrackingPage({ params }: PageProps) {
         </div>
 
         {/* #226 P1b: pending_payment is the one status where action matters —
-            the lookup funnel dead-ended here before. */}
-        {order.payment_status === "pending_payment" && (
+            the lookup funnel dead-ended here before. `pending_payment` is an
+            ORDER status; payment_status is unpaid/paid/expired/refunded. */}
+        {order.status === "pending_payment" && order.payment_status === "unpaid" && (
           <Link
             href={`/checkout/payment/${orderId}`}
             data-testid="lanjut-bayar-track"

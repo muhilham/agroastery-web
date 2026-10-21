@@ -27,8 +27,11 @@ export default function PendingOrderBanner() {
         // deliberately KEEPS the pointer so the next mount retries.
         if (res.status === 404) return { terminal: true as const };
         if (!res.ok) throw new Error(`status ${res.status}`);
-        return res.json().then((data: { payment_status?: string }) => ({
-          terminal: data.payment_status !== "pending_payment",
+        return res.json().then((data: { payment_status?: string; status?: string }) => ({
+          // #226: `pending_payment` is an ORDER status; payment_status is
+          // unpaid/paid/expired/refunded. The banner shows only while BOTH
+          // say "unpaid": payment_status 'unpaid' + status 'pending_payment'.
+          terminal: !(data.payment_status === "unpaid" && data.status === "pending_payment"),
         }));
       })
       .then((result) => {
