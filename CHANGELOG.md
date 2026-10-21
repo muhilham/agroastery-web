@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.38.1](https://github.com/muhilham/agroastery-web/compare/v0.38.0...v0.38.1) (2026-10-21)
+
+
+### Bug Fixes
+
+* **checkout:** key payment-recovery predicates off the real enum ([#226](https://github.com/muhilham/agroastery-web/issues/226)) ([#229](https://github.com/muhilham/agroastery-web/issues/229)) ([8f83f0b](https://github.com/muhilham/agroastery-web/commit/8f83f0b86fb460f4bf64430e8af1821767c39f30))
+* **qris:** proactive QR reissue + replaced-session webhook safety ([#231](https://github.com/muhilham/agroastery-web/issues/231)) ([#232](https://github.com/muhilham/agroastery-web/issues/232)) ([c5104f8](https://github.com/muhilham/agroastery-web/commit/c5104f81618e1e61a42ebed7387db3a72c546d31))
+
 ## [0.38.0](https://github.com/muhilham/agroastery-web/compare/v0.37.0...v0.38.0) (2026-10-17)
 
 
