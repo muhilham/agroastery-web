@@ -1,6 +1,6 @@
 {
   "name": "agroastery-web",
-  "version": "0.38.0",
+  "version": "0.38.1",
   "private": true,
   "engines": {
     "node": ">=24.0.0"
@@ -9,7 +9,7 @@
     "dev": "node api.js && bash -c '. \"$HOME/.nvm/nvm.sh\" && nvm use && next dev --turbopack'",
     "dev:log": "node api.js && bash -c '. \"$HOME/.nvm/nvm.sh\" && nvm use && next dev --turbopack' 2>&1 | tee .claude-context/service.log",
     "dev:tunnel": "node api.js && bash -c '. \"$HOME/.nvm/nvm.sh\"; nvm use 2>/dev/null || true; trap \"kill 0\" EXIT; ngrok http --url=deviant-pancreas-stinking.ngrok-free.dev --log=false 3000 & next dev --turbopack' 2>&1 | tee .claude-context/service.log",
-    "build": "next build",
+    "build": "node api.js && next build",
     "start": "node api.js && next start",
     "lint": "eslint .",
     "test": "node vitest-runner.js"
