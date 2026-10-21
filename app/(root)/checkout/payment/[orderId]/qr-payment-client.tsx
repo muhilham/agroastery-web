@@ -138,7 +138,7 @@ export default function QrPaymentClient({
       try {
         const res = await fetch(`/api/orders/${orderId}/status`);
         if (!res.ok) return;
-        const { payment_status } = await res.json();
+        const { payment_status, status } = await res.json();
         if (payment_status === "paid") {
           clearInterval(pollingRef.current!);
           clearCart();
@@ -153,7 +153,9 @@ export default function QrPaymentClient({
           // without order params, so PurchaseTracking never mounts with data
           // and the GA4 purchase event never fires (issue #186).
           window.location.href = `/checkout/success?order=${orderId}`;
-        } else if (payment_status === "expired" || payment_status === "cancelled") {
+        } else if (payment_status === "expired" || status === "cancelled") {
+          // `cancelled` is an ORDER status — payment_status is only
+          // unpaid/paid/expired/refunded, so checking it there never matched.
           if (graceDeadlineRef.current === null) {
             graceDeadlineRef.current = Date.now() + POLL_GRACE_MS;
             setInGracePeriod(true);
