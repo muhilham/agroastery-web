@@ -14,6 +14,22 @@ type BiteshipDraftLookupResponse = {
   drafts?: Array<{ id: string; reference_id?: string }>;
 };
 
+/**
+ * Biteship's Grab same_day partner rejects any draft that carries an item
+ * `category` — 400 `40002021 "No courier available for requested location"` —
+ * even though the exact same lane quotes fine on /rates/couriers. Verified
+ * live against grab/same_day: removing the category, or replacing it with
+ * `others`, makes the draft succeed; grab/instant, gojek/same_day and
+ * lalamove all accept `food_and_drink` unchanged, so the omission is scoped
+ * to this one lane. Category only influences handling/insurance metadata
+ * here, so dropping it for Grab same_day costs nothing.
+ */
+export function shouldSendItemCategory(courierCode: string, serviceCode: string): boolean {
+  const courier = courierCode.trim().toLowerCase();
+  const service = serviceCode.trim().toLowerCase().replace(/[-_\s]/g, '');
+  return !(courier === 'grab' && service === 'sameday');
+}
+
 export async function createBiteshipDraft(
   orderId: string,
   overrideReferenceId?: string
@@ -64,6 +80,11 @@ export async function createBiteshipDraft(
   const originGeo = checkoutOriginGeo();
   const originPostal = checkoutOriginPostal(); // #154 D: same source as quotes
 
+  const includeItemCategory = shouldSendItemCategory(
+    order.shipping_courier,
+    order.shipping_service
+  );
+
   const payload: Record<string, unknown> = {
     origin_contact_name: process.env.ORIGIN_CONTACT_NAME,
     origin_contact_phone: process.env.ORIGIN_CONTACT_PHONE,
@@ -94,7 +115,7 @@ export async function createBiteshipDraft(
       value: item.unit_price,
       quantity: item.quantity,
       weight: item.ship_weight_grams,
-      category: 'food_and_drink',
+      ...(includeItemCategory ? { category: 'food_and_drink' } : {}),
       height: 10,
       length: 20,
       width: 15,
