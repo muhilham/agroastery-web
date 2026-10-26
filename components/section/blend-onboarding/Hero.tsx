@@ -15,7 +15,7 @@ export function Hero() {
         Dirancang untuk minuman berbasis susu.
       </p>
       <p className="mx-auto mt-6 max-w-md text-sm leading-relaxed text-[hsl(var(--secondary))]">
-        Halaman ini membagikan resep persis yang digunakan AGRoastery untuk menyeduh Blend 50:50.
+        Halaman ini membagikan resep persis yang digunakan Agroastery untuk menyeduh Blend 50:50.
       </p>
       <nav className="mt-10 flex flex-wrap justify-center gap-3">
         <a
