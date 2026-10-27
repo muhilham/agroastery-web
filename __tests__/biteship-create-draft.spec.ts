@@ -46,12 +46,13 @@ const ITEMS_ROW = [
   { product_name: 'Kopi Arabika 150g', unit_price: 120000, quantity: 2, ship_weight_grams: 220 },
 ];
 
-function setupHappyPathMocks() {
+function setupHappyPathMocks(orderOverride: Partial<typeof ORDER_ROW> = {}) {
+  const order = { ...ORDER_ROW, ...orderOverride };
   let callIndex = 0;
   mockFrom.mockImplementation((table: string) => {
     if (table === 'ecom_orders' && callIndex === 0) {
       callIndex++;
-      return { select: vi.fn().mockReturnValue(resolvedChain(ORDER_ROW)) };
+      return { select: vi.fn().mockReturnValue(resolvedChain(order)) };
     }
     if (table === 'ecom_order_items') {
       return { select: vi.fn().mockReturnValue(resolvedChain(ITEMS_ROW)) };
@@ -161,5 +162,88 @@ describe('createBiteshipDraft', () => {
     expect(postPayload.reference_id).toBe('order-1--retry-0');
     const [lookupUrl] = mockFetch.mock.calls[1] as [string, RequestInit];
     expect(lookupUrl).toContain('/v1/draft_orders?reference_id=order-1--retry-0');
+  });
+
+  // Regression: Biteship's Grab same_day partner rejects drafts whose items
+  // carry a `category` (400 40002021 "No courier available for requested
+  // location"), while the same lane quotes normally. Every grab/same_day
+  // order before this fix failed draft creation and needed manual booking.
+  it('omits item category for grab/same_day drafts', async () => {
+    const { createBiteshipDraft } = await import('@/lib/biteship/createDraft');
+    setupHappyPathMocks({ shipping_courier: 'grab', shipping_service: 'same_day' });
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ success: true, id: 'bs-draft-grab' }),
+    });
+
+    await createBiteshipDraft('order-1');
+
+    const [, options] = mockFetch.mock.calls[0] as [string, RequestInit];
+    const payload = JSON.parse(options.body as string);
+    expect(payload.courier_company).toBe('grab');
+    expect(payload.courier_type).toBe('same_day');
+    expect(payload.items[0]).not.toHaveProperty('category');
+    // Dimensions/weight/value must survive the omission.
+    expect(payload.items[0]).toMatchObject({ weight: 220, value: 120000, quantity: 2 });
+  });
+
+  it.each(['same_day', 'same-day', 'sameday', 'SAME_DAY'])(
+    'omits item category for grab service variant %s',
+    async (service) => {
+      const { createBiteshipDraft } = await import('@/lib/biteship/createDraft');
+      setupHappyPathMocks({ shipping_courier: 'grab', shipping_service: service });
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ success: true, id: 'bs-draft-variant' }),
+      });
+
+      await createBiteshipDraft('order-1');
+
+      const [, options] = mockFetch.mock.calls[0] as [string, RequestInit];
+      expect(JSON.parse(options.body as string).items[0]).not.toHaveProperty('category');
+    }
+  );
+
+  it('keeps item category for grab/instant drafts', async () => {
+    const { createBiteshipDraft } = await import('@/lib/biteship/createDraft');
+    setupHappyPathMocks({ shipping_courier: 'grab', shipping_service: 'instant' });
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ success: true, id: 'bs-draft-instant' }),
+    });
+
+    await createBiteshipDraft('order-1');
+
+    const [, options] = mockFetch.mock.calls[0] as [string, RequestInit];
+    expect(JSON.parse(options.body as string).items[0].category).toBe('food_and_drink');
+  });
+
+  it('keeps item category for non-Grab couriers', async () => {
+    const { createBiteshipDraft } = await import('@/lib/biteship/createDraft');
+    setupHappyPathMocks({ shipping_courier: 'jne', shipping_service: 'reg' });
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ success: true, id: 'bs-draft-jne' }),
+    });
+
+    await createBiteshipDraft('order-1');
+
+    const [, options] = mockFetch.mock.calls[0] as [string, RequestInit];
+    expect(JSON.parse(options.body as string).items[0].category).toBe('food_and_drink');
+  });
+});
+
+describe('shouldSendItemCategory', () => {
+  it.each([
+    ['grab', 'same_day', false],
+    ['grab', 'same-day', false],
+    ['GRAB', 'SAME_DAY', false],
+    ['grab', 'instant', true],
+    ['gojek', 'same_day', true],
+    ['jne', 'reg', true],
+    ['lalamove', 'motorcycle', true],
+  ])('%s/%s -> %s', async (courier, service, expected) => {
+    const { shouldSendItemCategory } = await import('@/lib/biteship/createDraft');
+    expect(shouldSendItemCategory(courier, service)).toBe(expected);
   });
 });
