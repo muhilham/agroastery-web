@@ -23,6 +23,11 @@ type BiteshipDraftLookupResponse = {
  * lalamove all accept `food_and_drink` unchanged, so the omission is scoped
  * to this one lane. Category only influences handling/insurance metadata
  * here, so dropping it for Grab same_day costs nothing.
+ *
+ * NOTE: intentionally NOT sharing scheduledDelivery.isSameDayCourier — that
+ * predicate also covers gojek and drives the 16:00 cutoff switch; this one is
+ * scoped to the exact grab/same_day lane the vendor rejects. Canonical DB
+ * codes ('same_day') resolve identically in both.
  */
 export function shouldSendItemCategory(courierCode: string, serviceCode: string): boolean {
   const courier = courierCode.trim().toLowerCase();
