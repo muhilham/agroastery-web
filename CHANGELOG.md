@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.38.2](https://github.com/muhilham/agroastery-web/compare/v0.38.1...v0.38.2) (2026-10-27)
+
+
+### Bug Fixes
+
+* **biteship:** omit item category for grab same_day drafts ([#240](https://github.com/muhilham/agroastery-web/issues/240)) ([69771cd](https://github.com/muhilham/agroastery-web/commit/69771cd8a9cbb357a9cde49b9ab108a2e764c922))
+
 ## [0.38.1](https://github.com/muhilham/agroastery-web/compare/v0.38.0...v0.38.1) (2026-10-21)
 
 
