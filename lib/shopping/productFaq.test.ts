@@ -9,6 +9,7 @@ import {
   purchasablePackPrices,
   priceAnchor,
   productFaqs,
+  milkMenuMatch,
   idr,
 } from "./productFaq";
 
@@ -169,6 +170,52 @@ describe("productFaqs", () => {
     expect(qs).not.toContain("Kopi apa yang cocok untuk es kopi susu ekonomis?");
     expect(qs).not.toContain("Arabica atau robusta untuk menu susu?");
     expect(qs).toContain("Apakah Arabica Gayo Wine dikirim ke luar kota?");
+  });
+
+  // Live-data regression (verified against Supabase products 2026-10-28):
+  // single-species products tagged "Kopi Susu Ekonomis" must NOT be called a
+  // blend or get the blend-vs-single substitution question, while ES46 (whose
+  // ratio only lives in the description, "40% Arabica ... 60% Fine Robusta")
+  // must quote its real 40/60 ratio.
+  it("single-species kopi susu products get no false blend claim", () => {
+    for (const single of [
+      {
+        name: "Biji Kopi Full Robusta Kopi Susu Ekonomis",
+        description:
+          "<p>Di rekomendasikan untuk menu es kopi susu aren dengan 100% Robusta.</p>",
+      },
+      {
+        name: "Biji Kopi Full Arabica Kopi Susu Ekonomis",
+        description:
+          "<p>Di rekomendasikan untuk menu es kopi susu aren dengan 100% Arabica.</p>",
+      },
+    ]) {
+      const qs = productFaqs({ ...single, product_options: [SIZE_OPT], product_variants: [variant("s1kg", "v-beans", 150000)] }).map((f) => f.question);
+      expect(qs, single.name).not.toContain("Kopi apa yang cocok untuk es kopi susu ekonomis?");
+      expect(qs, single.name).not.toContain("Arabica atau robusta untuk menu susu?");
+      const joined = JSON.stringify(productFaqs({ ...single, product_options: [SIZE_OPT], product_variants: [variant("s1kg", "v-beans", 150000)] }));
+      expect(joined, single.name).not.toMatch(/adalah blend/i);
+    }
+  });
+
+  it("ES46 description-only ratio quotes 40/60, not a generic blend", () => {
+    const es46 = {
+      name: "House Blend Espresso - Arabica & Fine Robusta - ES46",
+      description:
+        "<p>40% Arabica Wethull - (Fullcityplus Roast)<br>60% Fine Robusta Fullwash<br>Di rekomendasikan untuk menu kopi susu aren.</p>",
+      product_options: [SIZE_OPT],
+      product_variants: [variant("s1kg", "v-beans", 165000)],
+    };
+    const first = productFaqs(es46)[0];
+    expect(first.question).toBe("Kopi apa yang cocok untuk es kopi susu ekonomis?");
+    expect(first.answer).toContain("blend 40% Arabica dan 60% Robusta");
+  });
+
+  it("milkMenuMatch fires only when both species are offered", () => {
+    expect(milkMenuMatch({ name: "Biji Kopi Blend 50/50 Kopi Susu Ekonomis", description: "50% Arabica dan 50% Robusta" }).fires).toBe(true);
+    expect(milkMenuMatch({ name: "Biji Kopi Full Arabica Kopi Susu Ekonomis", description: "100% Arabica untuk kopi susu" }).fires).toBe(false);
+    expect(milkMenuMatch({ name: "Biji Kopi Full Robusta Kopi Susu Ekonomis", description: "100% Robusta kopi susu" }).fires).toBe(false);
+    expect(milkMenuMatch({ name: "Arabica Gayo Wine", description: "v60 manual brew" }).fires).toBe(false);
   });
 
   it("answers are 1-3 sentences — quotable for AI engines", () => {

@@ -96,12 +96,45 @@ export function idr(nominal: number): string {
 }
 
 /**
+ * Milk-menu intent match, derived from the product itself (issue #235).
+ * Factual-guarded: an "es kopi susu"-tagged SINGLE-species product (live
+ * "Full Robusta Kopi Susu Ekonomis" = 100% Robusta, "Full Arabica Kopi Susu
+ * Ekonomis" = 100% Arabica) must not be called "blend arabica dan robusta",
+ * and the substitution question "Arabica atau robusta untuk menu susu?"
+ * would invite LLMs to recommend a single-origin for a blend-vs-single
+ * intent. Both questions therefore fire only when the product copy offers
+ * BOTH species. The ratio sentence, when derivable from the name
+ * ("Blend 50/50") or the description ("40% Arabica ... 60% ... Robusta"),
+ * is quoted exactly so sibling blends (20/80, 70/30, ES46) stay true.
+ */
+export function milkMenuMatch(product: {
+  name: string;
+  description?: string | null;
+}): { fires: boolean; ratioSentence: string | null } {
+  const name = product.name.toLowerCase();
+  const desc = (product.description ?? "").toLowerCase();
+  const haystack = `${desc} ${name}`;
+  const fires =
+    /kopi susu/.test(haystack) && /arabica/.test(haystack) && /robusta/.test(haystack);
+  if (!fires) return { fires: false, ratioSentence: null };
+  const ratio =
+    /(?:blend\s*)?(\d{1,2})\s*\/\s*(\d{1,2})/i.exec(name) ||
+    /(\d{1,2})\s*%\s*arabica[\s\S]{0,80}?(\d{1,2})\s*%[^.]{0,20}robusta/i.exec(haystack);
+  return {
+    fires: true,
+    ratioSentence: ratio
+      ? `blend ${ratio[1]}% Arabica dan ${ratio[2]}% Robusta`
+      : "blend arabica dan robusta",
+  };
+}
+
+/**
  * The single source of truth for the PDP FAQ block (visible DOM + JSON-LD).
  * Intent questions ("kopi apa yang cocok untuk es kopi susu ekonomis?") come
  * first — they are what users type and what AI engines quote — followed by
  * the operational ones (grind, packing, delivery). The milk-menu questions
- * only appear when name/description contain "kopi susu" (verified against the
- * live 5050 product).
+ * only appear when the product is genuinely suited to milk menus AND never
+ * assert a composition the product doesn't have (see milkMenuMatch).
  */
 export function productFaqs(
   product: {
@@ -119,24 +152,18 @@ export function productFaqs(
   packs = purchasablePackPrices(product)
 ): ProductFaq[] {
   const faqs: ProductFaq[] = [];
-  const haystack = `${(product.description ?? "").toLowerCase()} ${product.name.toLowerCase()}`;
-  const isMilkDrink = /kopi susu/.test(haystack);
   const anchor = priceAnchor(packs);
 
   // Intent: substitution/recommendation query for the milk-menu category.
-  // The ratio sentence is derived from the product itself ("Blend 50/50" or
-  // "50% Arabica dan 50% Robusta" in name/description) — never hardcoded, so
-  // sibling blends (20/80, 70/30) sharing this builder stay factually true.
-  const ratioMatch =
-    /(?:blend\s*)?(\d{1,2})\s*\/\s*(\d{1,2})/i.exec(product.name) ||
-    /(\d{1,2})%\s*arabica\s*(?:dan|and)?\s*(\d{1,2})%\s*robusta/i.exec(haystack);
-  if (isMilkDrink) {
-    const ratioSentence = ratioMatch
-      ? `blend ${ratioMatch[1]}% Arabica dan ${ratioMatch[2]}% Robusta`
-      : "blend arabica dan robusta";
+  // milkMenuMatch guards against asserting a composition the product doesn't
+  // offer (single-species "Kopi Susu Ekonomis" products exist live) and
+  // derives the ratio sentence from the product itself — never hardcoded, so
+  // sibling blends (20/80, 70/30, ES46 40/60) sharing this builder stay true.
+  const milk = milkMenuMatch(product);
+  if (milk.fires) {
     faqs.push({
       question: "Kopi apa yang cocok untuk es kopi susu ekonomis?",
-      answer: `${product.name} adalah ${ratioSentence} yang dirancang untuk menu es kopi susu: karakter robusta membuat rasa kopi tetap terasa setelah dicampur susu dan gula aren, sementara arabica menjaga profil tetap halus. Blend seperti ini adalah basis menu kopi susu paling umum di cafe.`,
+      answer: `${product.name} adalah ${milk.ratioSentence} yang dirancang untuk menu es kopi susu: karakter robusta membuat rasa kopi tetap terasa setelah dicampur susu dan gula aren, sementara arabica menjaga profil tetap halus. Blend seperti ini adalah basis menu kopi susu paling umum di cafe.`,
     });
     faqs.push({
       question: "Arabica atau robusta untuk menu susu?",
