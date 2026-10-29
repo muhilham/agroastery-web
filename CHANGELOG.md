@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.38.3](https://github.com/muhilham/agroastery-web/compare/v0.38.2...v0.38.3) (2026-10-29)
+
+
+### Bug Fixes
+
+* **seo:** 5050 PDP intent copy, visible+parity FAQ, Recipe JSON-LD on brew guide ([#235](https://github.com/muhilham/agroastery-web/issues/235)) ([#238](https://github.com/muhilham/agroastery-web/issues/238)) ([1893522](https://github.com/muhilham/agroastery-web/commit/189352232d548c24fbe28c41078102786a48ff66))
+
 ## [0.38.2](https://github.com/muhilham/agroastery-web/compare/v0.38.1...v0.38.2) (2026-10-27)
 
 
