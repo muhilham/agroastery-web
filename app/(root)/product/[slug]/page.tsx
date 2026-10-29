@@ -3,11 +3,12 @@ import { notFound } from "next/navigation";
 import { cache } from "react";
 import { getProductBySlug, getAggregateSoldCount } from "@/lib/supabase/queries/products";
 import { getMinPrice, getProductImageUrl } from "@/lib/supabase/queries/productUtils";
-import { numberToIdr } from "@/lib/numberToIdr";
 import type { SupabaseProduct } from "@/types/product";
 import SupabaseProductDetail from "@/components/section/product-detail/SupabaseProductDetail";
 import { BreadcrumbJsonLd } from "@/components/BreadcrumbJsonLd";
 import { buildMetaProductTags, resolveInitialSelection, resolveShownVariant } from "@/lib/shopping/metaProduct";
+import { productFaqs, purchasablePackPrices, priceAnchor, idr } from "@/lib/shopping/productFaq";
+import { faqJsonLd } from "@/lib/seo/content-jsonld";
 
 const getCachedProductBySlug = cache(getProductBySlug);
 
@@ -41,23 +42,39 @@ function truncateText(text: string, maxLength: number): string {
   return truncated + "...";
 }
 
-function buildProductDescription(product: SupabaseProduct, price: number): string {
-  const priceStr = numberToIdr({ nominal: price });
+function buildProductDescription(product: SupabaseProduct): string {
+  // Issue #235: the old copy bled a stray min-variant price ("...budget... —
+  // Rp 29.370" was the 100g pack) into every meta description, undercutting
+  // the per-kg anchor users actually search for. Lead with the use-case
+  // sentence and anchor on the purchasable kg pack rate (never min variant).
+  const anchor = priceAnchor(purchasablePackPrices(product));
+  // Price label must match the pack the number comes from — a 500g pack
+  // price never gets "/kg" appended.
+  const priceStr = anchor
+    ? anchor.kind === "kg"
+      ? `${idr(anchor.price)}/kg`
+      : `${idr(anchor.price)} per pack`
+    : null;
 
-  if (product.short_description) {
-    const truncated = truncateText(product.short_description, 150);
-    return `${truncated} — ${priceStr}`;
+  const lead =
+    product.short_description?.trim() ||
+    stripHtml(product.description ?? "").trim() ||
+    "";
+
+  if (!lead) {
+    return priceStr
+      ? `Beli ${product.name} di Agroastery — ${priceStr}, kirim seluruh Indonesia`
+      : `Beli ${product.name} di Agroastery — kirim seluruh Indonesia`;
   }
 
-  if (product.description) {
-    const plain = stripHtml(product.description);
-    if (plain.trim()) {
-      const truncated = truncateText(plain.trim(), 150);
-      return `${truncated} — ${priceStr}`;
-    }
+  if (priceStr) {
+    const suffix = ` — ${priceStr}, kirim seluruh Indonesia`;
+    // truncateText appends "..." — reserve its 3 chars so the final string
+    // stays within the 160-char acceptance budget (issue #235).
+    const budget = 160 - suffix.length - 3;
+    return `${truncateText(lead, budget)}${suffix}`;
   }
-
-  return `Beli ${product.name} di Agroastery — ${priceStr}`;
+  return truncateText(lead, 155);
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata | null> {
@@ -68,8 +85,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata 
     return null;
   }
 
-  const minPrice = getMinPrice(product.product_variants);
-  const description = buildProductDescription(product, minPrice);
+  const description = buildProductDescription(product);
   const imageUrl = getProductImageUrl(product);
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
   const ogImage = imageUrl.startsWith("http") ? imageUrl : siteUrl ? `${siteUrl}${imageUrl}` : DEFAULT_OG_IMAGE;
@@ -96,48 +112,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata 
       description,
       images: [{ url: ogImage, alt: product.name }],
     },
-  };
-}
-
-function faqJsonLd(product: SupabaseProduct, siteUrl: string): Record<string, unknown> {
-  const productUrl = `${siteUrl}/product/${product.slug}`;
-  return {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: [
-      {
-        "@type": "Question",
-        name: `Berapa gram per porsi ${product.name}?`,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: `Kami menyediakan berbagai ukuran gramase untuk ${product.name}. Silakan pilih varian yang tersedia sesuai kebutuhan cafe atau konsumsi pribadi Anda.`,
-        },
-      },
-      {
-        "@type": "Question",
-        name: `Apakah ${product.name} bisa digiling?`,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: `Ya, ${product.name} dapat digiling sesuai metode seduh pilihan Anda. Pilih opsi gilingan saat checkout — espresso, V60, French Press, atau lainnya.`,
-        },
-      },
-      {
-        "@type": "Question",
-        name: `Berapa lama resting period ${product.name}?`,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: `Resting period bervariasi tergantung profil roast. Umumnya kopi kami optimal setelah 7-14 hari post-roast. Detail spesifik tercantum pada kemasan produk.`,
-        },
-      },
-      {
-        "@type": "Question",
-        name: `${product.name} cocok untuk espresso atau susu?`,
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: `${product.name} memiliki karakter yang dapat dinikmati sebagai espresso maupun basis minuman susu. Cek catatan rasa pada deskripsi produk untuk rekomendasi terbaik.`,
-        },
-      },
-    ],
   };
 }
 
@@ -200,8 +174,11 @@ export default async function Page({ params, searchParams }: PageProps) {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://agroastery.com";
   const jsonLd = productJsonLd(product, siteUrl);
   const jsonStr = escapeJsonLd(JSON.stringify(jsonLd));
-  const faqLd = faqJsonLd(product, siteUrl);
-  const faqStr = escapeJsonLd(JSON.stringify(faqLd));
+  // One FAQ list feeds BOTH the visible block (SupabaseProductDetail) and the
+  // FAQPage JSON-LD — Google's parity rule: markup must match shown content
+  // (issue #235; same pattern as lib/seo/content-jsonld.ts on content pages).
+  const faqs = productFaqs(product);
+  const faqHtml = faqJsonLd(faqs).__html;
 
   // Open Graph product namespace: what MetaExternalAgent scrapes to match a
   // catalog item against this page. Tag the variant the shopper actually
@@ -230,7 +207,7 @@ export default async function Page({ params, searchParams }: PageProps) {
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: faqStr }}
+        dangerouslySetInnerHTML={{ __html: faqHtml }}
       />
       <BreadcrumbJsonLd
         items={[
@@ -244,6 +221,7 @@ export default async function Page({ params, searchParams }: PageProps) {
         product={product}
         initialSelection={resolveInitialSelection(product, variant)}
         aggregateSoldCount={aggregateSoldCount}
+        faqs={faqs}
       />
     </>
   );

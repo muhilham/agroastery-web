@@ -3,6 +3,7 @@ import EmblaCarousel from "@/components/carousel";
 import { Footer } from "@/components/ui/footer";
 import { EmblaOptionsType } from "embla-carousel";
 import { Fragment, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Minus, Plus, ShoppingCart, LoaderCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,18 @@ import { findMatchingVariant, getMinPrice, getMinOriginalPrice, getProductImageU
 import { useCart } from "@/lib/hooks/useCart";
 import { formatSoldCount, formatAllChannelSold } from "@/lib/utils/formatSoldCount";
 
+/**
+ * Recipes/brew guides keyed by product slug. The 5050 PDP's conversion asset
+ * (/start/blend-50-50) was only reachable via the packaging QR — issue #235
+ * links it from the page body so organic visitors and crawlers find it.
+ */
+const BREW_GUIDE_BY_SLUG: Record<string, { href: string; label: string }> = {
+  "biji-kopi-blend-5050-kopi-susu-ekonomis": {
+    href: "/start/blend-50-50",
+    label: "Resep resmi: Es Kopi Susu, Espresso, Americano & Mokapot",
+  },
+};
+
 type Props = {
   product: SupabaseProduct;
   /** Pre-selected variant from ?variant= deep link (Instagram product tags). */
@@ -26,9 +39,14 @@ type Props = {
    * `null` (table not migrated yet) → fall back to products.total_sold_count.
    */
   aggregateSoldCount?: number | null;
+  /**
+   * Intent-first FAQ list (issue #235). Rendered visibly AND mirrored into the
+   * FAQPage JSON-LD by page.tsx from the SAME array — Google parity rule.
+   */
+  faqs?: { question: string; answer: string }[];
 };
 
-const SupabaseProductDetail = ({ product, initialSelection, aggregateSoldCount = null }: Props) => {
+const SupabaseProductDetail = ({ product, initialSelection, aggregateSoldCount = null, faqs = [] }: Props) => {
   const router = useRouter();
   const OPTIONS: EmblaOptionsType = {};
   const { addToCart } = useCart();
@@ -272,7 +290,36 @@ const SupabaseProductDetail = ({ product, initialSelection, aggregateSoldCount =
                 __html: (product.description ?? "").replace(/[\u2028\u2029]/g, " "),
               }}
             />
+            {BREW_GUIDE_BY_SLUG[product.slug] && (
+              <Link
+                href={BREW_GUIDE_BY_SLUG[product.slug].href}
+                className="mt-4 inline-flex items-center gap-2 rounded-lg border border-white/10 bg-[#242424] px-4 py-3 text-sm text-secondary hover:border-primary/50 transition-colors"
+              >
+                {BREW_GUIDE_BY_SLUG[product.slug].label} →
+              </Link>
+            )}
           </div>
+
+          {/* Intent FAQ (issue #235) — same list the FAQPage JSON-LD mirrors */}
+          {faqs.length > 0 && (
+            <div className="px-4 tablet:px-6 pb-10">
+              <div className="text-base font-bold text-primary mb-3">
+                Pertanyaan yang sering muncul
+              </div>
+              <dl className="flex flex-col gap-4">
+                {faqs.map((faq) => (
+                  <div key={faq.question} className="flex flex-col gap-1">
+                    <dt className="text-sm tablet:text-base font-bold text-secondary">
+                      {faq.question}
+                    </dt>
+                    <dd className="text-sm leading-relaxed text-[#ccc4a9]">
+                      {faq.answer}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          )}
         </section>
 
         {/* Desktop Sidebar */}
