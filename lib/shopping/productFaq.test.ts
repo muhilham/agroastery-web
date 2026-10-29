@@ -142,6 +142,74 @@ describe("productFaqs", () => {
     expect(qs).toContain("Berapa harga Biji Kopi Blend 50/50 Kopi Susu Ekonomis?");
   });
 
+  // "mulai" (starting at) must quote the CHEAPEST purchasable pack — the
+  // original code paired "mulai" with the LARGEST pack's price, stating a
+  // false price floor (Rp120.000 for a product buyable at Rp33.000) that
+  // AI engines then quote verbatim.
+  it("no-kg pack price answer quotes 'mulai' from the cheapest pack", () => {
+    const noKg = {
+      ...live5050,
+      product_variants: live5050.product_variants.filter(
+        (v) => !v.product_variant_option_values?.some((l) => l.option_value_id === "s1kg")
+      ),
+    };
+    const faq = productFaqs(noKg).find((f) => f.question === "Berapa harga Biji Kopi Blend 50/50 Kopi Susu Ekonomis?");
+    expect(faq?.answer).toContain(`mulai ${idr(33000)}`);
+    expect(faq?.answer).toContain("pack 100 gram");
+    // the 500g anchor price may still be named, but never as the "mulai" floor
+    expect(faq?.answer).toContain(`Pack terbesar 500 gram ${idr(120000)}`);
+    expect(faq?.answer).not.toMatch(/mulai Rp120\.000|mulai .*untuk pack terbesar/);
+  });
+
+  it("single-size product: no 'compare other pack size' advice (only one exists)", () => {
+    const onePack = {
+      name: "Biji Kopi Single Gayo",
+      description: "<p>single origin arabica</p>",
+      product_options: [SIZE_OPT],
+      product_variants: [variant("s200", "v-beans", 55000)],
+    };
+    const faq = productFaqs(onePack).find((f) => /^Berapa harga /.test(f.question));
+    expect(faq?.answer).toBe(
+      `Biji Kopi Single Gayo dijual mulai ${idr(55000)} untuk pack 200 gram.`
+    );
+  });
+
+  // Non-bean products (live catalog has merch, Waterworks additives, liquid
+  // espresso, bundles) must not receive bean-only claims.
+  it("merch product gets no gram-per-porsi or resting-period claim", () => {
+    const merch = {
+      name: "AGR Oversize Official Merch",
+      description:
+        "<p>Material FORMLOCK — teknologi material terbaru dari NO VOID MINDS yang dirancang untuk elevate penampilan.</p>",
+      product_options: null,
+      product_variants: [{ price: 172883, stock_quantity: 5, is_active: true, product_variant_option_values: null }],
+    };
+    const qs = productFaqs(merch).map((f) => f.question);
+    expect(qs.some((q) => /gram per porsi/.test(q))).toBe(false);
+    expect(qs.some((q) => /resting period/.test(q))).toBe(false);
+    // shop-level operational fact still fine
+    expect(qs).toContain("Apakah AGR Oversize Official Merch dikirim ke luar kota?");
+  });
+
+  it("Waterworks additive with coffee words in copy still gets no bean claims", () => {
+    const waterworks = {
+      name: "AGR WATERWORKS - Acidity",
+      description:
+        "<p>Meningkatkan keasaman yang segar pada kopi. Diformulasikan untuk kopi susu arabica roast lembut.</p>",
+      product_options: null,
+      product_variants: [{ price: 44500, stock_quantity: 5, is_active: true, product_variant_option_values: null }],
+    };
+    const qs = productFaqs(waterworks).map((f) => f.question);
+    expect(qs.some((q) => /gram per porsi/.test(q))).toBe(false);
+    expect(qs.some((q) => /resting period/.test(q))).toBe(false);
+  });
+
+  it("bean products DO keep gram-per-porsi + resting claims", () => {
+    const qs = productFaqs(live5050).map((f) => f.question);
+    expect(qs).toContain("Berapa gram per porsi Biji Kopi Blend 50/50 Kopi Susu Ekonomis?");
+    expect(qs).toContain("Berapa lama resting period Biji Kopi Blend 50/50 Kopi Susu Ekonomis?");
+  });
+
   it("quotes the blend ratio from the product, not from hardcode (sibling blends stay true)", () => {
     const blend2080 = {
       ...live5050,

@@ -128,6 +128,25 @@ export function milkMenuMatch(product: {
   };
 }
 
+/** Roasted-bean products only — gates the gram-per-porsi and resting-period
+ * claims. Name+description heuristic, deny-list first so a merch item whose
+ * description mentions coffee (e.g. a tumbler "untuk kopi susu") never slips
+ * through the allow-list. */
+export function isBeansProduct(product: {
+  name: string;
+  description?: string | null;
+}): boolean {
+  const haystack = `${product.name} ${product.description ?? ""}`.toLowerCase();
+  return (
+    /biji kopi|whole beans|single origin|\bblend\b|arabica|robusta|sangrai|roast/.test(
+      haystack
+    ) &&
+    !/tumbler|merch|apparel|kaos|hoodie|topping|sirup|creamer|sedotan|stainless|botol|kertas kerja|waterworks|aksesoris|dripper|kettle|grinder|gilingan mesin|mesin|1000ml/.test(
+      haystack
+    )
+  );
+}
+
 /**
  * The single source of truth for the PDP FAQ block (visible DOM + JSON-LD).
  * Intent questions ("kopi apa yang cocok untuk es kopi susu ekonomis?") come
@@ -186,9 +205,24 @@ export function productFaqs(
         answer: `${product.name} dijual ${idr(anchor.price)}/kg untuk pack 1 kg.${otherNote} Harga per pack terlihat langsung di halaman ini.`,
       });
     } else {
+      // "mulai" quotes the CHEAPEST purchasable pack, never the largest
+      // pack's price — "mulai Rp120.000" on a product buyable at Rp33.000
+      // is a misstated price floor, and AI engines quote it verbatim.
+      const entries = [...packs.entries()];
+      const cheapest = entries.reduce((a, b) => (b[1] < a[1] ? b : a));
+      const sizeLabel = (g: number) => (g >= 1000 ? `${g / 1000} kg` : `${g} gram`);
+      const rangeNote =
+        anchor.grams !== cheapest[0]
+          ? ` Pack terbesar ${sizeLabel(anchor.grams)} ${idr(anchor.price)}.`
+          : "";
+      // "choose another pack size" is false advice when only one size exists.
+      const compareHint =
+        packs.size > 1
+          ? " Pilih ukuran pack lain di halaman produk untuk bandingkan harga."
+          : "";
       faqs.push({
         question: `Berapa harga ${product.name}?`,
-        answer: `${product.name} dijual mulai ${idr(anchor.price)} untuk pack terbesar yang tersedia (${anchor.grams >= 1000 ? `${anchor.grams / 1000} kg` : `${anchor.grams} gram`}). Pilih ukuran pack lain di halaman produk untuk bandingkan harga.`,
+        answer: `${product.name} dijual mulai ${idr(cheapest[1])} untuk pack ${sizeLabel(cheapest[0])}.${rangeNote}${compareHint}`,
       });
     }
   }
@@ -213,20 +247,27 @@ export function productFaqs(
     });
   }
 
-  faqs.push({
-    question: `Berapa gram per porsi ${product.name}?`,
-    answer: "Untuk espresso, satu shot memakai 18 g biji kopi; untuk es kopi susu satu sajian sekitar 18-20 g. Satu kilogram beans menghasilkan ±50-55 sajian espresso.",
-  });
+  // Gram-per-porsi is a claim ONLY true for roasted beans — the live catalog
+  // (sitemap 2026-10-29) also sells merch, Waterworks additives, and liquid
+  // espresso; answering "18 g per shot" for a tumbler would be fabricated.
+  if (isBeansProduct(product)) {
+    faqs.push({
+      question: `Berapa gram per porsi ${product.name}?`,
+      answer: "Untuk espresso, satu shot memakai 18 g biji kopi; untuk es kopi susu satu sajian sekitar 18-20 g. Satu kilogram beans menghasilkan ±50-55 sajian espresso.",
+    });
+  }
 
   faqs.push({
     question: `Apakah ${product.name} dikirim ke luar kota?`,
     answer: "Ya, Agroastery mengirim biji kopi ke seluruh Indonesia lewat kurir yang tersedia di checkout. Pesanan mulai diproses setelah pembayaran berhasil.",
   });
 
-  faqs.push({
-    question: `Berapa lama resting period ${product.name}?`,
-    answer: "Kopi kami optimal diseduh setelah 7-14 hari post-roast. Detail tanggal sangrai tercantum pada kemasan setiap pack.",
-  });
+  if (isBeansProduct(product)) {
+    faqs.push({
+      question: `Berapa lama resting period ${product.name}?`,
+      answer: "Kopi kami optimal diseduh setelah 7-14 hari post-roast. Detail tanggal sangrai tercantum pada kemasan setiap pack.",
+    });
+  }
 
   return faqs;
 }
