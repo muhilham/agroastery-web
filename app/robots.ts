@@ -40,10 +40,18 @@ export default function robots(): MetadataRoute.Robots {
         // /checkout/{payment,success} URLs stuck in the index (GA4 saw
         // organic landings on them). The noindex, follow robots meta on those
         // pages is now the de-indexing mechanism.
-        // (AI-crawler rules above still keep /checkout/ out for GPTBot et al.)
+        // Issue #237: same defect found for /account/ and /orders/ — both
+        // pages ship a noindex meta (account/page.tsx, orders/page.tsx) that
+        // a disallow made unreachable, so GSC removals could never stick.
+        // They are now crawlable + noindexed; /orders/[id] gained its own
+        // noindex meta to cover every per-order URL shape.
+        // /login/ deliberately STAYS disallowed: it is a "use client" page
+        // with no metadata export (no layout), carries zero organic landings
+        // in GA4 (30d), so exposing it buys nothing (issue #237).
+        // (AI-crawler rules above still keep all private paths out.)
         userAgent: "*",
         allow: "/",
-        disallow: ["/api/", "/account/", "/orders/", "/login/"],
+        disallow: ["/api/", "/login/"],
       },
     ],
     sitemap: `${siteUrl}/sitemap.xml`,
