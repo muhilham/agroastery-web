@@ -6,9 +6,10 @@
  * because robots.txt disallowed /orders/ (a disallow blocks the crawl, so
  * Google can never read noindex — the exact defect #177 fixed for
  * /checkout/). Both routes must now resolve `noindex` as framework-served
- * HTML meta, at object level AND rendered-tag level (a page that simply
- * forgot the metadata export is invisible to the object tier only if the
- * file is never imported — the DOM tier is the repo-standard second lock).
+ * HTML meta. Two tiers, per AGENTS.md SEO layering: object level catches a
+ * missing/changed `metadata` export (mutation-proven), DOM level
+ * (`renderMetaTags`) catches what actually renders after Next's metadata
+ * resolution — inheritance, merging, and robots serialization.
  */
 import { describe, it, expect, vi } from "vitest";
 
