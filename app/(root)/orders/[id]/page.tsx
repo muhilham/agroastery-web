@@ -10,6 +10,11 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Detail Pesanan | Agroastery",
   description: "Detail pesanan kopi spesialti Anda",
+  // Issue #237: every order mints a new indexable /orders/<uuid> URL.
+  // noindex keeps them out of the index; follow mirrors the /track/[orderId]
+  // precedent — robots.txt no longer disallows /orders/ (the disallow made
+  // this very meta unreachable; see app/robots.ts).
+  robots: { index: false, follow: true },
 };
 
 const STATUS_LABELS: Record<string, string> = {
