@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.38.4](https://github.com/muhilham/agroastery-web/compare/v0.38.3...v0.38.4) (2026-11-07)
+
+
+### Bug Fixes
+
+* **seo:** make /account/ + /orders/ noindex reachable; noindex /orders/[id] ([#237](https://github.com/muhilham/agroastery-web/issues/237)) ([#243](https://github.com/muhilham/agroastery-web/issues/243)) ([617153d](https://github.com/muhilham/agroastery-web/commit/617153d73496287b46fc9de72395ff1b9b5bebf7))
+
 ## [0.38.3](https://github.com/muhilham/agroastery-web/compare/v0.38.2...v0.38.3) (2026-10-29)
 
 
