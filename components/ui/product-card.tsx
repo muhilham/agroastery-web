@@ -8,8 +8,7 @@ import {
   CardTitle,
 } from "./card";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
-import { COFFEE_BLUR_DATA_URL } from "@/lib/blurDataUrl";
+import { FallbackImage } from "./fallback-image";
 
 interface I_ProductCardProps {
   productSlug: string;
@@ -47,14 +46,12 @@ export function ProductCard({
         <div className="relative aspect-[16/9] w-full overflow-hidden rounded-t-xl mb-4">
           <div className="w-full h-14 bg-gradient-to-t from-[#252525] absolute bottom-0"></div>
           <div className="w-full h-14 bg-gradient-to-b from-[#252525] absolute top-0"></div>
-          <Image
+          <FallbackImage
             src={productImage}
             alt={productTitle}
             fill
             className="object-cover"
             sizes="(max-width: 768px) 50vw, (max-width: 1280px) 33vw, 25vw"
-            placeholder="blur"
-            blurDataURL={COFFEE_BLUR_DATA_URL}
           />
         </div>
         <CardHeader>
