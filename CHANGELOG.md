@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.38.5](https://github.com/muhilham/agroastery-web/compare/v0.38.4...v0.38.5) (2026-11-12)
+
+
+### Bug Fixes
+
+* **products:** render placeholder instead of broken icon on CDN image errors ([#234](https://github.com/muhilham/agroastery-web/issues/234)) ([b7bcef6](https://github.com/muhilham/agroastery-web/commit/b7bcef6b7dad440576e20ec8c8ff31d92dfeccfb))
+
 ## [0.38.4](https://github.com/muhilham/agroastery-web/compare/v0.38.3...v0.38.4) (2026-11-07)
 
 
